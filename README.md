@@ -1,11 +1,11 @@
-# Miko project
+﻿# Miko project
 
-An experimental minimalist multiplayer game (en fran�ais)
+An experimental minimalist multiplayer game (en français)
 
-##Server
+## Server
 Voir dans server (non fonctionnel)
 
-##Client
+## Client
 Voir dans client (non fonctionnel)
 
-##Protocole
+## Protocole
