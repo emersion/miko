@@ -1,4 +1,5 @@
-﻿# Miko project
+﻿
+# Miko project
 
 An experimental minimalist multiplayer game (en français)
 
