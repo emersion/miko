@@ -1,0 +1,77 @@
+>> Etude du jeu Miko
+> Précisions sur le fonctionnement
+on garde une liste d'entités, créées et supprimées sur demande du serveur
+chaque entité est identifiée de manière unique grâce à un "entityid" (envoyable sous forme de SHORT)
+il y a un nombre fini d'actions possibles de la part des entités, on envoit action avec entityid et byte d'action (params supplémentaires éventuellement)
+on envoit assez souvent des updates des entités (plus précisément sans doute pos+vitesse)
+ainsi, le niveau d'interaction des clients avec le serveur est pos et actions, qui est assez haut niveau, il faudra prendre des mesures de protection au niveau du serveur (par exemple vérifier si l'entité a la capacité de se déplacer là/d'utiliser telle action (cooldown, etc))
+pour l'envoi du terrain, normalement ça se fait automatiquement, mais le client peut request du terrain en particulier (ne fonctionne pas sur le mode demande/réponse parce qu'on a pas besoin que la réponse soit envoyée en tant que réponse, elle peut etre simplement prise en compte et renvoyée ultérieurement normalement)
+on va peut etre devoir, si besoin, en fonction du jeu, envoyer une requete explicite depuis le serveur pour supprimer du terrain pour aider le client à poubeller le terrain inutile au fur et à mesure
+niveau implémentation, il faudra trouver moyen d'associer connection/compte à chaque socket ouvert, pour gérer envois de ping et fermeture de session de manière objet/jolie, etc.
+> Protocole
+Binaire, TCP
+ne pas envoyer de OK/ack systématique (on est en tcp)
+il faut se mettre d'accord sur littleendian/bigendian (voir lequel est le plus rapide, sans doute le par défaut (BE?) mais faut que ce soit fixé dans le protocole)
+str: short contentlength, utf-8 bytes
+on parse tout en mode: byte d'enum puis contenu du message
+contenu du message dépend de enum
+par exemple message vide peut avoir 0 contenu: pas besoin de spécifier de content-length avant le message tout le temps
++ 2^7 = réponse
+0:SC ping | pong
+1:SC exit (un byte exit code ? (server déco/client déco/whatever))
+2:C login (str pseudo, str password) | 1 byte responsecode (ok, usr inconnu, mauvais pwd, too many tries, déjà connecté, limite de joueurs atteinte, ...)
+3:C register (str pseudo, str password) | 1 byte responsecode (ok, usr déjà utilisé, usr impossible, pwd impossible, too many tries, création désactivée, ...)
+4:S playermeta (short entityid, byte metaaction (joined(str playername), left)
+5:S terrainupdate (bytes terrain (à voir plus précisément))
+6:C terrainrequest (éventuellement un hint pour où on a besoin de terrain)
+7:S entitiesupdate (bytes entities (pour chaque entité, bytes de position?))
+8:C entityupdate(bytes entité (celle du joueur))
+9:S actions(bytes actions(eventuellement des parametres supplémentaires en fonction de l'action))
+10:C action(byte action(idem))
+11:S entitescreate (short entityid, bytes des params)
+12:S entitiesdestroy (short entityid, peutetre bytes des params)
+13:C chat(str message)
+14:S chat(short entityid, str message)
+# pour faire un event global, on pourra faire actions avec comme senderid un nombre spécial (short.max_value?)
+# pour faire parler un monstre, il suffit de chat avec comme entityid son id
+exemple de jeu:
+[initiation du ssl, session tcp établie]
+S ping
+C |ping
+...
+C login(usr,pwd)
+S |login (usr inconnu)
+C register(usr,pwd)
+S |register(ok)
+C login(usr,pwd)
+S |login(ok)
+S (en broadcast) playermeta(id,joined(usr))
+S (en broadcast) entitiesupdate([id, bytes de pos/vitesse])
+...
+S ping
+C |ping
+...
+S terrainupdate(terrain)
+C entityupdate(bytes)
+S (en broadcast) entitiesupdate([...])
+S (en broadcast) entitiesupdate([...])
+C terrainrequest(hint)
+S terrainupdate(terrain)
+...
+C chat("cc")
+S (en broadcast) (id, "cc")
+...
+C ping
+S |ping
+...
+C action(action)
+S (en broadcast) actions(...)
+...
+S exit(server exit/player bannedmdr) OU C exit(player quit) S (broadcast) entitiesdestroy(id) S (broadcast) playermeta(id, left)
+[celui qui a envoyé exit peut fermer direct le stream, celui qui le reçoit peut fermer direct le stream]
+fin d'exemple de jeu
+c'est assez général comme protocole, mais il faudra assez spécifier les bytes de action/terrain/entité
+de manière générale, les commandes qui ont une réponse sont envoyées en attendant la réponse
+le ping peut se résumer à j'envois un ping si j'ai pas reçu de message depuis 5 secondes, et si j'ai rien pendant 10 secondes d'affilée (en tout) je exit(ping timeout)
+paramètres à faire varier: fréquence d'envoi de entitiesupdate/entityupdate, du terrain (même si il est invariant, on peut dire qu'on envoit par plus petits morceaux mais plus souvent, voir plus précisément en testant), timeout du ping, et quelques autres trucs plus précis dont il faudra parler liés à l'optimisation du multijoueur
+le serveur attend avant d'envoyer des entitiesupdate, par exemple il le fait toutes les n frames, il ne l'envoit pas dès qu'il reçoit une update
