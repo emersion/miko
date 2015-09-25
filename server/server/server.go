@@ -5,7 +5,8 @@ import (
 	"log"
 	"net"
 	"encoding/binary"
-	"fmt"
+
+	"../message"
 )
 
 // Client holds info about connection
@@ -26,7 +27,7 @@ type server struct {
 func (c *Client) listen() {
 	reader := bufio.NewReader(c.conn)
 
-	var msg_type uint16
+	var msg_type message.Type
 	for {
 		err := binary.Read(reader, binary.BigEndian, &msg_type)
 		if err != nil {
@@ -34,7 +35,7 @@ func (c *Client) listen() {
 			log.Println("binary.Read failed:", err)
 			return
 		}
-		fmt.Print(msg_type)
+		message.Handle(msg_type, *reader, c.conn)
 	}
 }
 

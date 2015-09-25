@@ -1,6 +1,6 @@
 all:
-	go build main.go
+	go build miko.go
 start:
-	go run main.go
+	go run miko.go
 
 .PHONY: all run
