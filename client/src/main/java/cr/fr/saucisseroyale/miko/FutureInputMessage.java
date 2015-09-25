@@ -1,9 +1,18 @@
 package cr.fr.saucisseroyale.miko;
 
-
+/**
+ * Représente un message d'entrée avec des actions à effectuer.
+ * <p>
+ * N'appeler qu'une seule fois {@link #execute(MessageHandler)} par message.
+ *
+ */
 public interface FutureInputMessage {
 
-  public void execute(Miko miko);
-  // TODO Peut-être que Miko n'est pas le plus adapté, peut-être une classe faite pour serait mieux,
-  // ou alors en plus rajouter un moyen d'envoyer des paquets de manière brute
+  /**
+   * Exécute la procédure stockée dans le message. N'appeler qu'une seule fois cette méthode par
+   * message.
+   * 
+   * @param handler Le {@link MessageHandler} dans lequel effectuer les actions.
+   */
+  public void execute(MessageHandler handler);
 }

@@ -15,11 +15,11 @@ public class OutputMessageFactory {
 
   // TODO créer toutes les méthodes public FutureOutputMessage
 
-  public FutureOutputMessage ping() {
+  public static FutureOutputMessage ping() {
     return (dos) -> dos.writeByte(MessageType.PING.getId(false));
   }
 
-  public FutureOutputMessage pong() {
+  public static FutureOutputMessage pong() {
     return (dos) -> dos.writeByte(MessageType.PING.getId(true));
   }
 

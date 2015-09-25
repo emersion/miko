@@ -21,6 +21,7 @@ public class Miko {
   private BufferStrategy strategy;
   private boolean closeRequested = false;
   private NetworkClient networkClient = new NetworkClient();
+  private MessageHandler messageHandler = new MessageHandler(networkClient);
 
   private void connect() {
     // TODO
@@ -64,7 +65,7 @@ public class Miko {
       long deltaTime = newTime - lastFrame;
       lastFrame = newTime;
       accumulator += deltaTime;
-      // TODO prendre en compte messages (ici ou dans la loop de logic)
+      network();
       while (accumulator >= TICK_TIME * 1000000) {
         logic();
         accumulator -= TICK_TIME * 1000000;
@@ -74,6 +75,14 @@ public class Miko {
       frame.getToolkit().sync();
     }
     exit();
+  }
+
+  private void network() {
+    FutureInputMessage fim = networkClient.getMessage();
+    while (fim != null) {
+      fim.execute(messageHandler);
+      fim = networkClient.getMessage();
+    }
   }
 
   private void render(float alpha) {

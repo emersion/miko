@@ -32,9 +32,9 @@ public class InputMessageFactory {
     int rawType = byteToInt(dis.readByte());
     MessageType type = MessageType.getType(rawType);
     switch (type) {
-      // case PING:
-      // return (miko)->miko.sendPing();
-      // TODO ajouter cas
+      case PING:
+        return (handler) -> handler.pong();
+        // TODO ajouter cas
       default:
         throw new MessageParsingException("Unknown message type, aborted parsing");
     }
