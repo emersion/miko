@@ -9,6 +9,7 @@ enum MessageType {
 
   // On ne stocke pas les cas de réponse (+ 2^7), ils correspondent à leur version normale donc pas
   // besoin de les faire en double. On fera la différence entre les deux lors du parsing.
+  // TODO maj care le protocole a changé
   // @noformatting
   PING(0), EXIT(1),
   LOGIN(2), REGISTER(3), METAACTION(4),
