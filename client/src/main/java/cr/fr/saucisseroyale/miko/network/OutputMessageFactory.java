@@ -1,6 +1,7 @@
 package cr.fr.saucisseroyale.miko.network;
 
-import cr.fr.saucisseroyale.miko.FutureOutputMessage;
+import cr.fr.saucisseroyale.miko.protocol.MessageType;
+
 
 /**
  * Factory permettant de créer des {@link FutureOutputMessage} à partir de méthodes haut niveau.
@@ -8,7 +9,7 @@ import cr.fr.saucisseroyale.miko.FutureOutputMessage;
  */
 public class OutputMessageFactory {
 
-  // Static class
+  // Classe statique
   private OutputMessageFactory() {
     throw new IllegalArgumentException("This class cannot be instantiated");
   }
@@ -16,11 +17,11 @@ public class OutputMessageFactory {
   // TODO créer toutes les méthodes public FutureOutputMessage
 
   public static FutureOutputMessage ping() {
-    return (dos) -> dos.writeByte(MessageType.PING.getId(false));
+    return (dos) -> dos.writeByte(MessageType.PING.getId());
   }
 
   public static FutureOutputMessage pong() {
-    return (dos) -> dos.writeByte(MessageType.PING.getId(true));
+    return (dos) -> dos.writeByte(MessageType.PONG.getId());
   }
 
 }

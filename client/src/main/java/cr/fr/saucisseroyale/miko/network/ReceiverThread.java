@@ -1,7 +1,5 @@
 package cr.fr.saucisseroyale.miko.network;
 
-import cr.fr.saucisseroyale.miko.FutureInputMessage;
-
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -34,7 +32,7 @@ class ReceiverThread extends Thread {
         fim = InputMessageFactory.parseMessage(dis);
       } catch (MessageParsingException e) {
         // Si l'on arrive ici, c'est sans doute qu'un parse a échoué et qu'on est dans un état
-        // corrompu, ou qu'on un client maicieux envoit n'importe quoi
+        // corrompu, ou qu'on un client malicieux envoit n'importe quoi
         e.printStackTrace();
         // TODO log cet évènement/notifier le networking
         break;

@@ -1,4 +1,4 @@
-package cr.fr.saucisseroyale.miko;
+package cr.fr.saucisseroyale.miko.network;
 
 import java.io.DataOutputStream;
 import java.io.IOException;

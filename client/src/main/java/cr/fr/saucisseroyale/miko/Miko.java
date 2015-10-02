@@ -1,5 +1,6 @@
 package cr.fr.saucisseroyale.miko;
 
+import cr.fr.saucisseroyale.miko.network.FutureInputMessage;
 import cr.fr.saucisseroyale.miko.network.NetworkClient;
 
 import java.awt.Color;

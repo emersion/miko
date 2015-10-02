@@ -1,6 +1,6 @@
 package cr.fr.saucisseroyale.miko.network;
 
-import cr.fr.saucisseroyale.miko.FutureInputMessage;
+import cr.fr.saucisseroyale.miko.protocol.MessageType;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -10,7 +10,7 @@ import java.io.IOException;
  *
  * @see #parseMessage(DataInputStream)
  */
-public class InputMessageFactory {
+class InputMessageFactory {
 
   // Classe statique
   private InputMessageFactory() {
@@ -33,7 +33,7 @@ public class InputMessageFactory {
     MessageType type = MessageType.getType(rawType);
     switch (type) {
       case PING:
-        return (handler) -> handler.pong();
+        return (handler) -> handler.ping();
         // TODO ajouter cas
       default:
         throw new MessageParsingException("Unknown message type, aborted parsing");

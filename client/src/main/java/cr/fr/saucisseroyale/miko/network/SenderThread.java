@@ -1,7 +1,5 @@
 package cr.fr.saucisseroyale.miko.network;
 
-import cr.fr.saucisseroyale.miko.FutureOutputMessage;
-
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -33,6 +31,7 @@ class SenderThread extends Thread {
       try {
         fom = outputMessages.take();
       } catch (InterruptedException e) {
+        // On a demandé notre interruption, quitter
         break;
       }
       try {

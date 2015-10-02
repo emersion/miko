@@ -4,8 +4,8 @@ import cr.fr.saucisseroyale.miko.network.NetworkClient;
 import cr.fr.saucisseroyale.miko.network.OutputMessageFactory;
 
 /**
- * Interface entre les messages entrants et le jeu et son engine. Fournit des méthodes appelables
- * par le message entrant pour s'exécuter.
+ * Interface entre les messages entrants et le jeu et son engine. Les méthodes portant le nom de
+ * messages doivent être appelées une fois par chaque message entrant correspondant.
  *
  */
 public class MessageHandler {
@@ -17,10 +17,22 @@ public class MessageHandler {
     // TODO il y aura évidemment d'autres paramètres
   }
 
-  // TODO ajouter un framework pour l'exécution de l'input message
+  // TODO ajouter toutes les méthodes d'entrée
+
+  public void ping() {
+    messageReceived();
+    networkClient.putMessage(OutputMessageFactory.pong());
+  }
 
   public void pong() {
-    networkClient.putMessage(OutputMessageFactory.pong());
+    messageReceived();
+  }
+
+  /**
+   * Hook appelé lors de la réception de n'importe quel message.
+   */
+  private void messageReceived() {
+    // Prévenir qu'on a reçu un message pour éviter le timeout
   }
 
 }

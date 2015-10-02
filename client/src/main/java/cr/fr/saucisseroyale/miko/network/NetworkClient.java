@@ -1,8 +1,5 @@
 package cr.fr.saucisseroyale.miko.network;
 
-import cr.fr.saucisseroyale.miko.FutureInputMessage;
-import cr.fr.saucisseroyale.miko.FutureOutputMessage;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Queue;
@@ -42,9 +39,9 @@ public class NetworkClient {
 
 
   /**
-   * Termine la connection et l'envoi et la réception des messages.
+   * Termine définitivement la connection et l'envoi et la réception des messages.
    *
-   * @throws IOException S'il y a des erreurs quelconques d'IO lors de la terminaison.
+   * @throws IOException S'il y a des erreurs quelconques d'IO lors de l'extinction.
    */
   public void exit() throws IOException {
     receiverThread.interrupt();
@@ -54,9 +51,9 @@ public class NetworkClient {
 
   /**
    * Renvoie un message de la liste de réception des messages.
-   * 
+   *
    * @return Le message reçu le plus ancien, ou <code>null</code> si aucun message n'est en attente.
-   * 
+   *
    */
   public FutureInputMessage getMessage() {
     return inputMessages.poll();
