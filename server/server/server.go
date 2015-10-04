@@ -19,13 +19,15 @@ type Client struct {
 // TCP server
 type server struct {
 	clients []*Client
-	address string // Address to open connection: localhost:9999
+	address string // Address to open connection, e.g. localhost:9999
 	joins chan net.Conn // Channel for new connections
 }
 
 // Read client data from channel
 func (c *Client) listen() {
 	reader := bufio.NewReader(c.conn)
+
+	clientIO := &message.IO{reader, c, c.Server}
 
 	var msg_type message.Type
 	for {
@@ -35,14 +37,13 @@ func (c *Client) listen() {
 			log.Println("binary.Read failed:", err)
 			return
 		}
-		message.Handle(msg_type, *reader, c.conn)
+		message.Handle(msg_type, clientIO)
 	}
 }
 
 // Send message to client
-func (c *Client) Send(msg []byte) error {
-	_, err := c.conn.Write(msg)
-	return err
+func (c *Client) Write(msg []byte) (n int, err error) {
+	return c.conn.Write(msg)
 }
 
 // Creates new Client instance and starts listening
@@ -78,6 +79,16 @@ func (s *server) Listen() {
 		conn, _ := listener.Accept()
 		s.joins <- conn
 	}
+}
+
+// Broadcast a message to all clients
+func (s *server) Write(msg []byte) (n int, err error) {
+	N := 0
+	for _, c := range s.clients {
+		n, _ = c.Write(msg)
+		N += n
+	}
+	return N, nil
 }
 
 // Creates new tcp server instance
