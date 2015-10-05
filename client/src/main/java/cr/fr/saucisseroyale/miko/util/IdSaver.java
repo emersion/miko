@@ -37,11 +37,11 @@ public class IdSaver {
       throw new IllegalArgumentException("Enum " + enumeration.getCanonicalName()
           + " has not been registered before use");
     }
-    // On sait que l'élément récupéré est du type de sa clef
     if (id < 0 || id > ordered.length) {
       throw new IndexOutOfBoundsException("Id " + id + " must be between 0 and "
           + (ordered.length - 1) + " (inclusive)");
     }
+    // On sait que l'élément récupéré est du type de sa clef
     @SuppressWarnings("unchecked")
     T value = (T) ordered[id];
     if (value == null) {
