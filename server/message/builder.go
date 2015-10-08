@@ -5,18 +5,34 @@ import(
 	"encoding/binary"
 )
 
-func send(writer io.Writer, data interface{}) error {
-	return binary.Write(writer, binary.BigEndian, data)
+func write(w io.Writer, data interface{}) error {
+	return binary.Write(w, binary.BigEndian, data)
 }
 
-func SendPingResp(writer io.Writer) error {
-	return send(writer, GetRespType(Types["ping"]))
+func writeString(w io.Writer, data string) error {
+	if err := write(w, uint8(len(data))); err != nil {
+		return err;
+	}
+	return write(w, data)
 }
 
-func SendLoginResp(writer io.Writer, code string) error {
-	err := send(writer, GetRespType(Types["login"]))
-	if err != nil {
+func SendPingResp(w io.Writer) error {
+	return write(w, GetRespType(Types["ping"]))
+}
+
+func SendLoginResp(w io.Writer, code string) error {
+	if err := write(w, GetRespType(Types["login"])); err != nil {
 		return err
 	}
-	return send(writer, LoginResponseCode[code])
+	return write(w, LoginResponseCode[code])
+}
+
+func SendPlayerJoined(w io.Writer, username string) error {
+	if err := write(w, Types["playermeta"]); err != nil {
+		return err
+	}
+	if err := write(w, MetaActionCode["playerjoined"]); err != nil {
+		return err
+	}
+	return writeString(w, username)
 }

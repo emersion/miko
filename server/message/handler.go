@@ -49,7 +49,11 @@ func main() {
 		} else {
 			resp = "unknownpseudo"
 		}
-		return SendLoginResp(io.Writer, resp)
+		if err := SendLoginResp(io.Writer, resp); err != nil {
+			return err
+		}
+
+		return SendPlayerJoined(io.BroadcastWriter, username)
 	}
 }
 
