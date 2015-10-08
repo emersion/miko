@@ -1,16 +1,25 @@
-﻿# Miko
+# Miko
+
 An experimental minimalist multiplayer top-down adventure game (en français)
+
 ## Organisation du projet
+
 ### Client
+
 * /client
 * java 8 se
 * non fonctionnel
+
 ### Serveur
+
 * /server
 * go
 * non fonctionnel
+
 ## Protocole
+
 ### Généralités
+
 * Binaire
 * TCP + SSL
 * Bigendian
@@ -22,11 +31,13 @@ An experimental minimalist multiplayer top-down adventure game (en français)
 * messsage : headers + contenu
 * header : uint1
 * le stream est fermé après réception ou envoi d'un exit
+
 ### Messages
+
 Envoyeur | Valeur | Nom | Contenu
 --- | --- | --- | ---
-SC | 0 | ping | 
-SC | 1 | pong | 
+SC | 0 | ping |
+SC | 1 | pong |
 SC | 0 | exit | uint1 exitcode
 C | 0 | login | str pseudo + str password
 S | 4 | loginresponse | uint1 loginresponsecode
@@ -42,8 +53,10 @@ C | 13 | action | bytes action
 S | 14 | entitycreate | uint2 entityid + bytes entitycreate
 S | 15 | entitiydestroy | uint2 entityid + bytes entitydestroy
 C | 16 | chatsend | str message
-S | 17 | chatreceive | uint2 entityid + str message 
+S | 17 | chatreceive | uint2 entityid + str message
+
 #### Loginresponsecode
+
 Valeur | Signification
 --- | ---
 0 | ok
@@ -52,7 +65,9 @@ Valeur | Signification
 3 | toomanytries
 4 | alreadyconnected
 5 | playerlimitreached
+
 #### Registerresponsecode
+
 Valeur | Signification
 --- | ---
 0 | ok
@@ -61,20 +76,27 @@ Valeur | Signification
 2 | invalidpassword
 3 | toomanytries
 4 | registerdisabled
+
 #### Metaactioncode
+
 Valeur | Signification | Contenu
 --- | --- | ---
 0 | playerjoined | str pseudo
 1 | playerleft
+
 ### Terrain
+
 #### Description
+
 * blocs de 256x256 : x dans [k;256+k[ ; y dans [l;256+l[
 * x vers la droite; y vers le haut
 * un uint1 par case pour décrire caractéristiques
 * chaque point est décrit par (bx;by;x;y) avec bx et by coordonnées du bloc, x;y coordonnées de la case dans le bloc
 * coordonnées d'un bloc: multiple de 256 de ses coordonnées en x et y
 * coordonnées d'une case dans un bloc: différence de ses coordonnées par rapport à la case en bas à gauche du bloc
+
 #### Envoi d'un bloc
+
 ```
 sint2 bx + sint2 by
 uint1 defaultvalue
@@ -83,19 +105,24 @@ size times:
 	uint1 x + uint1 y
     uint1 value
 ```
+
 * bx;by : coordonnées du bloc
 * default : valeur par défaut des cases non envoyées
 * size : nombre de cases envoyées
 * x, y : coordonnées de la case dans le bloc
 * value : valeur de la case
+
 ### Entités
+
 ```
 uint2 entityid
 uint1 bitfield
 for bit in bitfield:
 	bytes data
 ```
+
 #### Bitfield
+
 * les bits sont lus de gauche à droite : 01234567
 
 Bit | Signification | Contenu
@@ -108,10 +135,14 @@ Bit | Signification | Contenu
 5 |
 6 |
 7 | object | objectbitfield + bytes objectdata
+
 #### Object
+
 * caractéristiques spécifiques au type de l'entité à update
 * même principe que précédemment, mais la table de bitfield dépend du type de l'entité
+
 ### Session exemple
+
 ```
 [initiation du ssl, session tcp établie]
 S ping
@@ -149,7 +180,9 @@ C exit(player quit)
 S (broadcast) entitiesdestroy(id)
 S (broadcast) playermeta(id, left)
 ```
+
 ## Fonctionnement (todo)
+
 * on garde une liste d'entités, créées et supprimées sur demande du serveur.
 * chaque entité est identifiée de manière unique grâce à un "entityid" (envoyable sous forme de unsigned short)
 * il y a un nombre fini d'actions possibles de la part des entités, on envoit action avec entityid et byte d'action (params supplémentaires éventuellement)
