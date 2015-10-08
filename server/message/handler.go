@@ -31,15 +31,15 @@ type Handler func(*IO) error
 var handlers = map[Type]Handler{}
 
 func main() {
-	handlers[Ping] = func(io *IO) error {
+	handlers[Types["ping"]] = func(io *IO) error {
 		return SendPingResp(io.Writer)
 	}
 
-	handlers[Exit] = func(io *IO) error {
+	handlers[Types["exit"]] = func(io *IO) error {
 		return io.Writer.Close()
 	}
 
-	handlers[Login] = func(io *IO) error {
+	handlers[Types["login"]] = func(io *IO) error {
 		username := readString(io.Reader)
 		password := readString(io.Reader)
 

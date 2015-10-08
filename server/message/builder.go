@@ -10,11 +10,11 @@ func send(writer io.Writer, data interface{}) error {
 }
 
 func SendPingResp(writer io.Writer) error {
-	return send(writer, GetRespType(Ping))
+	return send(writer, GetRespType(Types["ping"]))
 }
 
 func SendLoginResp(writer io.Writer, code string) error {
-	err := send(writer, GetRespType(Login))
+	err := send(writer, GetRespType(Types["login"]))
 	if err != nil {
 		return err
 	}

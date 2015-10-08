@@ -2,11 +2,11 @@ package message
 
 type Type uint8
 
-const (
-	Ping Type = 0
-	Exit Type = 1
-	Login Type = 2
-)
+var Types = map[string]Type{
+	"ping": 0,
+	"exit": 1,
+	"login": 2,
+}
 
 var LoginResponseCode = map[string]uint8{
 	"ok": 0,
