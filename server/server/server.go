@@ -27,7 +27,7 @@ type server struct {
 func (c *Client) listen() {
 	reader := bufio.NewReader(c.conn)
 
-	clientIO := &message.IO{reader, c, c.Server}
+	clientIO := &message.IO{reader, c.conn, c.Server}
 
 	var msg_type message.Type
 	for {
@@ -39,15 +39,6 @@ func (c *Client) listen() {
 		}
 		message.Handle(msg_type, clientIO)
 	}
-}
-
-// Send message to client
-func (c *Client) Write(msg []byte) (n int, err error) {
-	return c.conn.Write(msg)
-}
-
-func (c *Client) Close() error {
-	return c.conn.Close()
 }
 
 // Creates new Client instance and starts listening
@@ -89,7 +80,7 @@ func (s *server) Listen() {
 func (s *server) Write(msg []byte) (n int, err error) {
 	N := 0
 	for _, c := range s.clients {
-		n, _ = c.Write(msg)
+		n, _ = c.conn.Write(msg)
 		N += n
 	}
 	return N, nil
