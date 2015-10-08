@@ -12,3 +12,11 @@ func send(writer io.Writer, data interface{}) error {
 func SendPingResp(writer io.Writer) error {
 	return send(writer, GetRespType(Ping))
 }
+
+func SendLoginResp(writer io.Writer, code string) error {
+	err := send(writer, GetRespType(Login))
+	if err != nil {
+		return err
+	}
+	return send(writer, LoginResponseCode[code])
+}

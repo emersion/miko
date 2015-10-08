@@ -1,8 +1,30 @@
 package message
 
 import (
+	"io"
 	"errors"
+	"encoding/binary"
 )
+
+func read(r io.Reader, data interface{}) error {
+	return binary.Read(r, binary.BigEndian, data)
+}
+
+func readString(r io.Reader) string {
+	var len uint8
+	err := read(r, &len)
+	if err != nil {
+		return ""
+	}
+
+	out := make([]byte, len)
+	n, err := r.Read(out)
+	if n < int(len) || err != nil {
+		return ""
+	}
+
+	return string(out)
+}
 
 type Handler func(*IO) error
 
@@ -15,6 +37,19 @@ func main() {
 
 	handlers[Exit] = func(io *IO) error {
 		return io.Writer.Close()
+	}
+
+	handlers[Login] = func(io *IO) error {
+		username := readString(io.Reader)
+		password := readString(io.Reader)
+
+		var resp string
+		if username == "root" && password == "root" {
+			resp = "ok"
+		} else {
+			resp = "unknownpseudo"
+		}
+		return SendLoginResp(io.Writer, resp)
 	}
 }
 

@@ -2,11 +2,10 @@ package message
 
 import (
 	"io"
-	"bufio"
 )
 
 type IO struct {
-	Reader *bufio.Reader
+	Reader io.Reader
 	Writer io.WriteCloser
 	BroadcastWriter io.Writer
 }
