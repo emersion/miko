@@ -9,6 +9,6 @@ func send(writer io.Writer, data interface{}) error {
 	return binary.Write(writer, binary.BigEndian, data)
 }
 
-func SendPingResp(writer io.Writer) {
-	send(writer, GetRespType(Ping))
+func SendPingResp(writer io.Writer) error {
+	return send(writer, GetRespType(Ping))
 }

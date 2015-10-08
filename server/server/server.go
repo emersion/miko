@@ -46,6 +46,10 @@ func (c *Client) Write(msg []byte) (n int, err error) {
 	return c.conn.Write(msg)
 }
 
+func (c *Client) Close() error {
+	return c.conn.Close()
+}
+
 // Creates new Client instance and starts listening
 func (s *server) newClient(conn net.Conn) {
 	client := &Client{

@@ -10,8 +10,11 @@ var handlers = map[Type]Handler{}
 
 func main() {
 	handlers[Ping] = func(io *IO) error {
-		SendPingResp(io.Writer)
-		return nil
+		return SendPingResp(io.Writer)
+	}
+
+	handlers[Exit] = func(io *IO) error {
+		return io.Writer.Close()
 	}
 }
 

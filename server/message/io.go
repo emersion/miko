@@ -7,6 +7,6 @@ import (
 
 type IO struct {
 	Reader *bufio.Reader
-	Writer io.Writer
+	Writer io.WriteCloser
 	BroadcastWriter io.Writer
 }
