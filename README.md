@@ -6,13 +6,13 @@ An experimental minimalist multiplayer top-down adventure game (en français)
 
 ### Client
 
-* /client
+* `/client`
 * java 8 se
 * non fonctionnel
 
 ### Serveur
 
-* /server
+* `/server`
 * go
 * non fonctionnel
 
@@ -26,10 +26,9 @@ An experimental minimalist multiplayer top-down adventure game (en français)
 * uint(n) : entier non signé de n bytes
 * sint(n) : entier signé de n bytes
 * float : nombre décimal sur 4 bytes
-* str : chaine de caractères
-* str : uint2 contentlength + utf-8 bytes
+* str : chaine de caractères, uint2 contentlength + utf-8 bytes
 * messsage : headers + contenu
-* header : uint1
+* header : uint1, type du message
 * le stream est fermé après réception ou envoi d'un exit
 
 ### Messages
