@@ -28,18 +28,14 @@ func readString(r io.Reader) string {
 
 type Handler func(*IO) error
 
-var handlers = map[Type]Handler{}
-
-func main() {
-	handlers[Types["ping"]] = func(io *IO) error {
+var handlers = map[Type]Handler{
+	Types["ping"]: func(io *IO) error {
 		return SendPingResp(io.Writer)
-	}
-
-	handlers[Types["exit"]] = func(io *IO) error {
+	},
+	Types["exit"]: func(io *IO) error {
 		return io.Writer.Close()
-	}
-
-	handlers[Types["login"]] = func(io *IO) error {
+	},
+	Types["login"]: func(io *IO) error {
 		username := readString(io.Reader)
 		password := readString(io.Reader)
 
@@ -54,7 +50,7 @@ func main() {
 		}
 
 		return SendPlayerJoined(io.BroadcastWriter, username)
-	}
+	},
 }
 
 func Handle(t Type, io *IO) error {
