@@ -14,6 +14,7 @@ type Client struct {
 	conn net.Conn
 	Server *server
 	incoming chan string // Channel for incoming data from client
+	id int
 }
 
 // TCP server
@@ -27,7 +28,12 @@ type server struct {
 func (c *Client) listen() {
 	reader := bufio.NewReader(c.conn)
 
-	clientIO := &message.IO{reader, c.conn, c.Server}
+	clientIO := &message.IO{
+		Reader: reader,
+		Writer: c.conn,
+		BroadcastWriter: c.Server,
+		Id: c.id,
+	}
 
 	var msg_type message.Type
 	for {
@@ -46,7 +52,9 @@ func (s *server) newClient(conn net.Conn) {
 	client := &Client{
 		conn:   conn,
 		Server: s,
+		id: len(s.clients),
 	}
+	s.clients = append(s.clients, client)
 	go client.listen()
 }
 

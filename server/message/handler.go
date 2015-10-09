@@ -26,6 +26,8 @@ func readString(r io.Reader) string {
 	return string(out)
 }
 
+var ctx Context
+
 type Handler func(*IO) error
 
 var handlers = map[Type]Handler{
@@ -39,17 +41,20 @@ var handlers = map[Type]Handler{
 		username := readString(io.Reader)
 		password := readString(io.Reader)
 
-		var resp string
-		if username == "root" && password == "root" {
-			resp = "ok"
-		} else {
-			resp = "unknownpseudo"
-		}
-		if err := SendLoginResp(io.Writer, resp); err != nil {
+		code := ctx.Auth.Login(io, username, password)
+		if err := SendLoginResp(io.Writer, code); err != nil {
 			return err
 		}
 
-		return SendPlayerJoined(io.BroadcastWriter, username)
+		if code == LoginResponseCodes["ok"] {
+			return SendPlayerJoined(io.BroadcastWriter, username)
+		} else {
+			return nil
+		}
+	},
+	Types["chatsend"]: func(io *IO) error {
+		//msg := readString(io.Reader)
+		return nil
 	},
 }
 
@@ -59,4 +64,8 @@ func Handle(t Type, io *IO) error {
 	} else {
 		return errors.New("Unknown message type")
 	}
+}
+
+func SetContext(c *Context) {
+	ctx = *c
 }

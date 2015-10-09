@@ -8,4 +8,5 @@ type IO struct {
 	Reader io.Reader
 	Writer io.WriteCloser
 	BroadcastWriter io.Writer
+	Id int
 }
