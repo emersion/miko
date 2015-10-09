@@ -1,13 +1,14 @@
 package main
 
 import(
+	"./auth"
 	"./message"
 	"./server"
 )
 
 func main() {
 	ctx := &message.Context{
-		Auth: server.NewAuthService(),
+		Auth: auth.NewService(),
 	}
 	message.SetContext(ctx)
 

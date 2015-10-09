@@ -53,8 +53,10 @@ var handlers = map[Type]Handler{
 		}
 	},
 	Types["chatsend"]: func(io *IO) error {
-		//msg := readString(io.Reader)
-		return nil
+		msg := readString(io.Reader)
+		sender := ctx.Auth.GetSession(io.Id)
+
+		return SendChatReceive(io.BroadcastWriter, sender.Username, msg)
 	},
 }
 

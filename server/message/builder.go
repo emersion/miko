@@ -36,3 +36,13 @@ func SendPlayerJoined(w io.Writer, username string) error {
 	}
 	return writeString(w, username)
 }
+
+func SendChatReceive(w io.Writer, username string, msg string) error {
+	if err := write(w, Types["chatreceive"]); err != nil {
+		return err
+	}
+	if err := writeString(w, username); err != nil {
+		return err
+	}
+	return writeString(w, msg)
+}
