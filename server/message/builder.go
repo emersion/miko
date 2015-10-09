@@ -27,14 +27,20 @@ func SendLoginResp(w io.Writer, code LoginResponseCode) error {
 	return write(w, code)
 }
 
-func SendPlayerJoined(w io.Writer, username string) error {
+func SendPlayerMeta(w io.Writer, code MetaActionCode, username string) error {
 	if err := write(w, Types["playermeta"]); err != nil {
 		return err
 	}
-	if err := write(w, MetaActionCodes["playerjoined"]); err != nil {
+	if err := write(w, code); err != nil {
 		return err
 	}
 	return writeString(w, username)
+}
+func SendPlayerJoined(w io.Writer, username string) error {
+	return SendPlayerMeta(w, MetaActionCodes["playerjoined"], username)
+}
+func SendPlayerLeft(w io.Writer, username string) error {
+	return SendPlayerMeta(w, MetaActionCodes["playerleft"], username)
 }
 
 func SendChatReceive(w io.Writer, username string, msg string) error {

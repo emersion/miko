@@ -35,7 +35,16 @@ var handlers = map[Type]Handler{
 		return SendPingResp(io.Writer)
 	},
 	Types["exit"]: func(io *IO) error {
-		return io.Writer.Close()
+		sender := ctx.Auth.GetSession(io.Id)
+
+		// TODO: check if user is logged in
+		ctx.Auth.Logout(io)
+
+		if err := io.Writer.Close(); err != nil {
+			return err
+		}
+
+		return SendPlayerLeft(io.BroadcastWriter, sender.Username)
 	},
 	Types["login"]: func(io *IO) error {
 		username := readString(io.Reader)

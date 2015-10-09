@@ -8,6 +8,11 @@ type AuthService struct {
 	sessions []*message.Session
 }
 
+func (a *AuthService) IsLoggedIn(id int) bool {
+	session := a.GetSession(id)
+	return (session != nil)
+}
+
 func (a *AuthService) GetSession(id int) *message.Session {
 	// TODO: make sure session ID is io ID
 	return a.sessions[id]
@@ -29,7 +34,13 @@ func (a *AuthService) Login(io *message.IO, username string, password string) me
 	return message.LoginResponseCodes[code]
 }
 
-func (a *AuthService) Logout(io *message.IO) {}
+func (a *AuthService) Logout(io *message.IO) {
+	if a.IsLoggedIn(io.Id) {
+		return
+	}
+
+	a.sessions[io.Id] = nil
+}
 
 func (a *AuthService) Register(io *message.IO, username string, password string) message.RegisterResponseCode {
 	return message.RegisterResponseCodes["registerdisabled"]
