@@ -55,8 +55,6 @@ func (a *AuthService) Logout(io *message.IO) {
 }
 
 func (a *AuthService) Register(io *message.IO, username string, password string) message.RegisterResponseCode {
-	//return message.RegisterResponseCodes["registerdisabled"]
-
 	var code string
 	for _, user := range a.users {
 		if username == user.Username {
