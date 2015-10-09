@@ -47,7 +47,7 @@ func (a *AuthService) Login(io *message.IO, username string, password string) me
 }
 
 func (a *AuthService) Logout(io *message.IO) {
-	if a.IsLoggedIn(io.Id) {
+	if !a.IsLoggedIn(io.Id) {
 		return
 	}
 
