@@ -61,6 +61,13 @@ var handlers = map[Type]Handler{
 			return nil
 		}
 	},
+	Types["register"]: func(io *IO) error {
+		username := readString(io.Reader)
+		password := readString(io.Reader)
+
+		code := ctx.Auth.Register(io, username, password)
+		return SendRegisterResp(io.Writer, code)
+	},
 	Types["chatsend"]: func(io *IO) error {
 		msg := readString(io.Reader)
 		sender := ctx.Auth.GetSession(io.Id)

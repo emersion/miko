@@ -6,6 +6,7 @@ import(
 
 type AuthService struct {
 	sessions []*message.Session
+	users []*User
 }
 
 func (a *AuthService) IsLoggedIn(id int) bool {
@@ -20,17 +21,28 @@ func (a *AuthService) GetSession(id int) *message.Session {
 
 func (a *AuthService) Login(io *message.IO, username string, password string) message.LoginResponseCode {
 	var code string
-	if username == "root" && password == "root" {
-		code = "ok"
+	for _, user := range a.users {
+		if username != user.Username {
+			continue
+		}
 
+		if user.CheckPassword(password) {
+			code = "ok"
+		} else {
+			code = "wrongpassword"
+		}
+	}
+
+	if code == "ok" {
 		session := &message.Session{
 			Id: io.Id,
 			Username: username,
 		}
 		a.sessions = append(a.sessions, session)
-	} else {
+	} else if code == "" {
 		code = "unknownpseudo"
 	}
+
 	return message.LoginResponseCodes[code]
 }
 
@@ -47,5 +59,7 @@ func (a *AuthService) Register(io *message.IO, username string, password string)
 }
 
 func NewService() *AuthService {
-	return &AuthService{}
+	return &AuthService{
+		users: LoadUserDb(),
+	}
 }

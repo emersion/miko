@@ -27,6 +27,13 @@ func SendLoginResp(w io.Writer, code LoginResponseCode) error {
 	return write(w, code)
 }
 
+func SendRegisterResp(w io.Writer, code RegisterResponseCode) error {
+	if err := write(w, GetRespType(Types["register"])); err != nil {
+		return err
+	}
+	return write(w, code)
+}
+
 func SendPlayerMeta(w io.Writer, code MetaActionCode, username string) error {
 	if err := write(w, Types["playermeta"]); err != nil {
 		return err
