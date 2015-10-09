@@ -55,7 +55,7 @@ S | 15 | entitiydestroy | uint2 entityid + bytes entitydestroy
 C | 16 | chatsend | str message
 S | 17 | chatreceive | uint2 entityid + str message
 
-#### Loginresponsecode
+#### loginresponsecode
 
 Valeur | Signification
 --- | ---
@@ -66,7 +66,7 @@ Valeur | Signification
 4 | alreadyconnected
 5 | playerlimitreached
 
-#### Registerresponsecode
+#### registerresponsecode
 
 Valeur | Signification
 --- | ---
@@ -77,7 +77,7 @@ Valeur | Signification
 3 | toomanytries
 4 | registerdisabled
 
-#### Metaactioncode
+#### metaactioncode
 
 Valeur | Signification | Contenu
 --- | --- | ---
