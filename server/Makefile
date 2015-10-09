@@ -3,4 +3,4 @@ all:
 start:
 	go run miko.go
 
-.PHONY: all run
+.PHONY: all start
