@@ -1,6 +1,13 @@
 all:
-	go build miko.go
+	go build server.go
 start:
-	go run miko.go
+	go run server.go
 
-.PHONY: all start
+browser-client:
+	gopherjs build browser/client.go -o browser/client.js
+browser-server:
+	go build browser/server.go -o browser/server
+browser-start:
+	go run browser/server.go
+
+.PHONY: all start browser-client browser-server browser-start
