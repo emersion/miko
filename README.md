@@ -37,51 +37,51 @@ Envoyeur | Valeur | Nom | Contenu
 --- | --- | --- | ---
 SC | 0 | ping |
 SC | 1 | pong |
-SC | 0 | exit | uint1 exitcode
-C | 0 | login | str pseudo + str password
-S | 4 | loginresponse | uint1 loginresponsecode
+SC | 2 | exit | uint1 exitcode
+C | 3 | login | str pseudo + str password
+S | 4 | login_response | uint1 loginresponsecode
 C | 5 | register | str pseudo + str password
-S | 6 | registerresponse | uint1 registerresponsecode
-S | 7 | playermeta | uint2 entityid + uint1 metaactioncode + bytes metaactionbody
-S | 8 | terrainupdate | bytes terrain
-C | 9 | terrainrequest | bytes terrainhint
-S | 10 | entitiesupdate | bytes entities
-C | 11 | entityupdate | bytes entity
+S | 6 | register_response | uint1 registerresponsecode
+S | 7 | meta_action | uint2 entityid + uint1 metaactioncode + uint2 messagebodysize + bytes metaactionbody
+S | 8 | terrain_update | bytes terrain
+C | 9 | terrain_request | bytes terrainhint
+S | 10 | entities_update | bytes entities
+C | 11 | entity_update | bytes entity
 S | 12 | actions | bytes actions
 C | 13 | action | bytes action
-S | 14 | entitycreate | uint2 entityid + bytes entitycreate
-S | 15 | entitiydestroy | uint2 entityid + bytes entitydestroy
-C | 16 | chatsend | str message
-S | 17 | chatreceive | uint2 entityid + str message
+S | 14 | entity_create | uint2 entityid + bytes entity_create
+S | 15 | entity_destroy | uint2 entityid + bytes entity_destroy
+C | 16 | chat_send | str message
+S | 17 | chat_receive | uint2 entityid + str message
 
 #### loginresponsecode
 
 Valeur | Signification
 --- | ---
 0 | ok
-1 | unknownpseudo
-2 | wrongpassword
-3 | toomanytries
-4 | alreadyconnected
-5 | playerlimitreached
+1 | unknown_pseudo
+2 | wrong_password
+3 | too_many_tries
+4 | already_connected
+5 | player_limit_reached
 
 #### registerresponsecode
 
 Valeur | Signification
 --- | ---
 0 | ok
-1 | usedpseudo
-2 | invalidpseudo
-2 | invalidpassword
-3 | toomanytries
-4 | registerdisabled
+1 | used_pseudo
+2 | invalid_pseudo
+3 | invalid_password
+4 | too_many_tries
+5 | register_disabled
 
 #### metaactioncode
 
 Valeur | Signification | Contenu
 --- | --- | ---
-0 | playerjoined | str pseudo
-1 | playerleft
+0 | player_joined | str pseudo
+1 | player_left
 
 ### Terrain
 
@@ -113,11 +113,21 @@ size times:
 
 ### Entités
 
+* entity_update:
 ```
 uint2 entityid
 uint1 bitfield
 for bit in bitfield:
 	bytes data
+```
+* entities_update:
+```
+uint2 size
+size times:
+	uint2 entityid
+	uint1 bitfield
+	for bit in bitfield:
+		bytes data
 ```
 
 #### Bitfield
@@ -133,12 +143,13 @@ Bit | Signification | Contenu
 4 |
 5 |
 6 |
-7 | object | objectbitfield + bytes objectdata
+7 | object | objectbitfield + uint2 size + bytes objectdata
 
 #### Object
 
 * caractéristiques spécifiques au type de l'entité à update
 * même principe que précédemment, mais la table de bitfield dépend du type de l'entité
+* et mettre un uint2 pour la taille des données (sans compter le bitfield)
 
 ### Session exemple
 
