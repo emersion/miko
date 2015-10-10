@@ -4,6 +4,7 @@ type Type uint8
 type LoginResponseCode uint8
 type RegisterResponseCode uint8
 type MetaActionCode uint8
+type PointType uint8
 
 var Types = map[string]Type{
 	"ping": 0,
