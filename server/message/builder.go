@@ -93,10 +93,10 @@ func SendTerrainUpdate(w io.Writer, block *Block) error {
 				continue
 			}
 
-			if err := write(w, x); err != nil {
+			if err := write(w, PointCoord(x)); err != nil {
 				return err
 			}
-			if err := write(w, y); err != nil {
+			if err := write(w, PointCoord(y)); err != nil {
 				return err
 			}
 			if err := write(w, ptType); err != nil {
