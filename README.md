@@ -37,8 +37,8 @@ Envoyeur | Valeur | Nom | Contenu
 --- | --- | --- | ---
 SC | 0 | ping |
 SC | 1 | pong |
-SC | 0 | exit | uint1 exitcode
-C | 0 | login | str pseudo + str password
+SC | 2 | exit | uint1 exitcode
+C | 3 | login | str pseudo + str password
 S | 4 | loginresponse | uint1 loginresponsecode
 C | 5 | register | str pseudo + str password
 S | 6 | registerresponse | uint1 registerresponsecode
