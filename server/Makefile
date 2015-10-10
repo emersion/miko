@@ -1,5 +1,5 @@
 all:
-	go build server.go
+	go build server.go -o miko
 start:
 	go run server.go
 
