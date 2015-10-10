@@ -68,6 +68,13 @@ var handlers = map[Type]Handler{
 		code := ctx.Auth.Register(io, username, password)
 		return SendRegisterResp(io.Writer, code)
 	},
+	Types["terrainrequest"]: func(io *IO) error {
+		var x, y BlockCoord
+		read(io.Reader, x)
+		read(io.Reader, y)
+
+		return SendTerrainUpdate(io.Writer, ctx.Terrain.GetBlockAt(x, y))
+	},
 	Types["chatsend"]: func(io *IO) error {
 		msg := readString(io.Reader)
 		sender := ctx.Auth.GetSession(io.Id)

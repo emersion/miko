@@ -9,7 +9,7 @@ type Terrain struct {
 }
 
 func (t *Terrain) GetBlockAt(x, y message.BlockCoord) *message.Block {
-	pts := message.BlockPoints{}
+	pts := &message.BlockPoints{}
 
 	for i := 0; i < message.BLOCK_LEN; i++ {
 		for j := 0; j < message.BLOCK_LEN; j++ {

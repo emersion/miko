@@ -13,7 +13,7 @@ type Terrain interface {
 type Block struct {
 	X BlockCoord
 	Y BlockCoord
-	Points BlockPoints
+	Points *BlockPoints
 }
 
 func (b *Block) Size() int {
