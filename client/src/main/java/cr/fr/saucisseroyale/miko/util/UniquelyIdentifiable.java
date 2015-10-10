@@ -1,7 +1,7 @@
 package cr.fr.saucisseroyale.miko.util;
 
 /**
- * Représente un objet pouvant être identifié par un entier positif et unique. <b>Tous les éléments
+ * Un objet pouvant être identifié par un entier positif et unique. <b>Tous les éléments
  * implémentant cette interface doivent renvoyer une valeur différente.</b>
  *
  */

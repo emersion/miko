@@ -3,7 +3,7 @@ package cr.fr.saucisseroyale.miko.network;
 import cr.fr.saucisseroyale.miko.MessageHandler;
 
 /**
- * Représente un message d'entrée avec des actions à effectuer.
+ * Un message d'entrée avec des actions à effectuer.
  * <p>
  * N'appeler qu'une seule fois {@link #execute(MessageHandler)} par message.
  *

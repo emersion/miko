@@ -1,1 +1,4 @@
-miko/
+miko
+browser/client.js
+browser/client.js.map
+browser/server

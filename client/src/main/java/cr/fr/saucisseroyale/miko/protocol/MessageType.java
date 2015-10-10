@@ -5,7 +5,7 @@ import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 
 
 /**
- * Représente un type de message (entrant ou sortant) sous forme de byte.
+ * Un type de message (entrant ou sortant).
  *
  */
 public enum MessageType implements UniquelyIdentifiable {
@@ -15,12 +15,12 @@ public enum MessageType implements UniquelyIdentifiable {
   EXIT(2),
   LOGIN(3), LOGIN_RESPONSE(4),
   REGISTER(5), REGISTER_RESPONSE(6),
-  METAACTION(7),
-  TERRAINUPDATE(8), TERRAINREQUEST(9),
-  ENTITIESUPDATE(10), ENTITYUPDATE(11),
+  META_ACTION(7),
+  TERRAIN_UPDATE(8), TERRAIN_REQUEST(9),
+  ENTITIES_UPDATE(10), ENTITY_UPDATE(11),
   ACTIONS(12), ACTION(13),
-  ENTITIESCREATE(14), ENTITIESDESTROY(15),
-  CHATSEND(16), CHATRECEIVE(17);
+  ENTITY_CREATE(14), ENTITY_DESTROY(15),
+  CHAT_SEND(16), CHAT_RECEIVE(17);
   // @formatting
 
   static {
@@ -35,8 +35,6 @@ public enum MessageType implements UniquelyIdentifiable {
   }
 
   /**
-   * Renvoit l'identifiant correspondant à un message.
-   *
    * @return L'identifiant correspondant au type du message.
    */
   @Override

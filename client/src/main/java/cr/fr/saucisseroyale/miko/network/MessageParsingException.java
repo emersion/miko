@@ -3,7 +3,7 @@ package cr.fr.saucisseroyale.miko.network;
 import java.io.IOException;
 
 /**
- * Représente une erreur ayant eu lieu lors du parsing d'un message.
+ * Une erreur de parsing d'un message.
  *
  */
 class MessageParsingException extends IOException {

@@ -4,7 +4,7 @@ import cr.fr.saucisseroyale.miko.network.NetworkClient;
 import cr.fr.saucisseroyale.miko.network.OutputMessageFactory;
 
 /**
- * Interface entre les messages entrants et le jeu et son engine. Les méthodes portant le nom de
+ * Une interface entre les messages entrants et le jeu et son engine. Les méthodes portant le nom de
  * messages doivent être appelées une fois par chaque message entrant correspondant.
  *
  */

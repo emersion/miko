@@ -33,6 +33,8 @@ public class NetworkClient {
    */
   public void connect(String address, int port) throws IOException {
     socket = SSLSocketFactory.getDefault().createSocket(address, port);
+    socket.setTcpNoDelay(true);
+    socket.setTrafficClass(0x10); // LOWDELAY
     receiverThread = new ReceiverThread(socket.getInputStream(), inputMessages);
     senderThread = new SenderThread(socket.getOutputStream(), outputMessages);
   }
