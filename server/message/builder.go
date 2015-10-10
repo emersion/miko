@@ -17,18 +17,18 @@ func writeString(w io.Writer, data string) error {
 }
 
 func SendPingResp(w io.Writer) error {
-	return write(w, GetRespType(Types["ping"]))
+	return write(w, Types["pong"])
 }
 
 func SendLoginResp(w io.Writer, code LoginResponseCode) error {
-	if err := write(w, GetRespType(Types["login"])); err != nil {
+	if err := write(w, Types["loginresponse"]); err != nil {
 		return err
 	}
 	return write(w, code)
 }
 
 func SendRegisterResp(w io.Writer, code RegisterResponseCode) error {
-	if err := write(w, GetRespType(Types["register"])); err != nil {
+	if err := write(w, Types["registerresponse"]); err != nil {
 		return err
 	}
 	return write(w, code)

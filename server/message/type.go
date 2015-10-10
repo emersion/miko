@@ -7,20 +7,23 @@ type MetaActionCode uint8
 
 var Types = map[string]Type{
 	"ping": 0,
-	"exit": 1,
-	"login": 2,
-	"register": 3,
-	"playermeta": 4,
-	"terrainupdate": 5,
-	"terrainrequest": 6,
-	"entitiesupdate": 7,
-	"entityupdate": 8,
-	"actions": 9,
-	"action": 10,
-	"entitycreate": 11,
-	"entitiydestroy": 12,
-	"chatsend": 13,
-	"chatreceive": 14,
+	"pong": 1,
+	"exit": 2,
+	"login": 3,
+	"loginresponse": 4,
+	"register": 5,
+	"registerresponse": 6,
+	"playermeta": 7,
+	"terrainupdate": 8,
+	"terrainrequest": 9,
+	"entitiesupdate": 10,
+	"entityupdate": 11,
+	"actions": 12,
+	"action": 13,
+	"entitycreate": 14,
+	"entitiydestroy": 15,
+	"chatsend": 16,
+	"chatreceive": 17,
 }
 
 var LoginResponseCodes = map[string]LoginResponseCode{
@@ -44,8 +47,4 @@ var RegisterResponseCodes = map[string]RegisterResponseCode{
 var MetaActionCodes = map[string]MetaActionCode{
  	"playerjoined": 0,
 	"playerleft": 1,
-}
-
-func GetRespType(t Type) Type {
-	return Type(t + 128)
 }
