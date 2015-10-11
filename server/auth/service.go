@@ -58,21 +58,16 @@ func (a *AuthService) Logout(io *message.IO) {
 }
 
 func (a *AuthService) Register(io *message.IO, username string, password string) message.RegisterResponseCode {
-	var code string
 	for _, user := range a.users {
 		if username == user.Username {
-			code = "used_pseudo"
-			break
+			return message.RegisterResponseCodes["used_pseudo"]
 		}
 	}
 
-	if code != "" {
-		code = "ok"
-		hash, _ := hashPassword(password)
-		a.users = append(a.users, &User{username, hash})
-	}
+	hash, _ := hashPassword(password)
+	a.users = append(a.users, &User{username, hash})
 
-	return message.RegisterResponseCodes[code]
+	return message.RegisterResponseCodes["used_pseudo"]
 }
 
 func NewService() *AuthService {
