@@ -26,7 +26,7 @@ type server struct {
 
 // Read client data from channel
 func (c *Client) listen() {
-	log.Println("New client: ", c.id)
+	log.Println("New client:", c.id)
 
 	clientIO := &message.IO{
 		Reader: c.conn,
@@ -63,7 +63,10 @@ func (s *server) Listen() {
 func (s *server) Write(msg []byte) (n int, err error) {
 	N := 0
 	for _, c := range s.clients {
-		n, _ = c.conn.Write(msg)
+		n, err = c.conn.Write(msg)
+		if err != nil {
+			return N, err
+		}
 		N += n
 	}
 	return N, nil

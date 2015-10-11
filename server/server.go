@@ -9,6 +9,7 @@ import(
 
 func main() {
 	ctx := &message.Context{
+		Type: message.ServerContext,
 		Auth: auth.NewService(),
 		Terrain: terrain.New(),
 	}

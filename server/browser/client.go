@@ -10,7 +10,9 @@ import(
 )
 
 func main() {
-	ctx := &message.Context{}
+	ctx := &message.Context{
+		Type: message.ClientContext,
+	}
 	hdlr := handler.New(ctx)
 
 	c, err := websocket.Dial("ws://localhost:9998/socket")
@@ -27,7 +29,12 @@ func main() {
 
 	err = builder.SendPing(clientIO.Writer)
 	if err != nil {
-		panic("Write: " + err.Error())
+		panic("SendPing: " + err.Error())
+	}
+
+	err = builder.SendChatSend(clientIO.Writer, "Hello World!")
+	if err != nil {
+		panic("SendChatSend: " + err.Error())
 	}
 
 	/*err = c.Close()

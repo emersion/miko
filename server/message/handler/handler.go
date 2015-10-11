@@ -30,7 +30,11 @@ func (h *Handler) Listen(io *message.IO) {
 			log.Println("binary.Read failed:", err)
 			return
 		}
-		h.Handle(msg_type, io)
+
+		err = h.Handle(msg_type, io)
+		if err != nil {
+			log.Println("Handle failed:", err)
+		}
 	}
 }
 
@@ -47,8 +51,17 @@ func mergeHandlers(handlersList ...*map[message.Type]TypeHandler) map[message.Ty
 }
 
 func New(ctx *message.Context) *Handler {
+	var handlers map[message.Type]TypeHandler
+	if ctx.Type == message.ServerContext {
+		handlers = mergeHandlers(commonHandlers, serverHandlers)
+	} else if ctx.Type == message.ClientContext {
+		handlers = mergeHandlers(commonHandlers, clientHandlers)
+	} else {
+		handlers = *commonHandlers
+	}
+
 	return &Handler{
 		ctx: ctx,
-		handlers: mergeHandlers(commonHandlers, serverHandlers),
+		handlers: handlers,
 	}
 }

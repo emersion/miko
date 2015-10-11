@@ -11,6 +11,7 @@ func main() {
 	address := ":9998"
 
 	ctx := &message.Context{
+		Type: message.ServerContext,
 		Auth: auth.NewService(),
 		Terrain: terrain.New(),
 	}

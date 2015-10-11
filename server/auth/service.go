@@ -9,13 +9,16 @@ type AuthService struct {
 	users []*User
 }
 
-func (a *AuthService) IsLoggedIn(id int) bool {
+func (a *AuthService) HasSession(id int) bool {
 	session := a.GetSession(id)
 	return (session != nil)
 }
 
 func (a *AuthService) GetSession(id int) *message.Session {
 	// TODO: make sure session ID is io ID
+	if id >= len(a.sessions) {
+		return nil
+	}
 	return a.sessions[id]
 }
 
@@ -47,7 +50,7 @@ func (a *AuthService) Login(io *message.IO, username string, password string) me
 }
 
 func (a *AuthService) Logout(io *message.IO) {
-	if !a.IsLoggedIn(io.Id) {
+	if !a.HasSession(io.Id) {
 		return
 	}
 

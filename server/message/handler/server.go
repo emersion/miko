@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"log"
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
 )
@@ -49,8 +50,17 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	},
 	message.Types["chat_send"]: func(ctx *message.Context, io *message.IO) error {
 		msg := readString(io.Reader)
-		sender := ctx.Auth.GetSession(io.Id)
 
-		return builder.SendChatReceive(io.BroadcastWriter, sender.Username, msg)
+		log.Println("Broadcasting chat message:", msg)
+
+		var username string
+		if ctx.Auth.HasSession(io.Id) {
+			sender := ctx.Auth.GetSession(io.Id)
+			username = sender.Username
+		} else {
+			username = "[anonymous]"
+		}
+
+		return builder.SendChatReceive(io.BroadcastWriter, username, msg)
 	},
 }

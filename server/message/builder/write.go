@@ -13,5 +13,5 @@ func writeString(w io.Writer, data string) error {
 	if err := write(w, uint8(len(data))); err != nil {
 		return err;
 	}
-	return write(w, data)
+	return write(w, []byte(data))
 }
