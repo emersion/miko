@@ -13,17 +13,17 @@ func main() {
 		panic("Dial: " + err.Error())
 	}
 
-	err = message.SendPing(c)
-	if err != nil {
-		panic("Write: " + err.Error())
-	}
-
 	clientIO := &message.IO{
 		Reader: c,
 		Writer: c,
 	}
 
-	message.Listen(clientIO)
+	go message.Listen(clientIO)
+
+	err = message.SendPing(clientIO.Writer)
+	if err != nil {
+		panic("Write: " + err.Error())
+	}
 
 	/*err = c.Close()
 	if err != nil {
