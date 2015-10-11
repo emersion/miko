@@ -42,7 +42,7 @@ C | 3 | login | str pseudo + str password
 S | 4 | login_response | uint1 loginresponsecode
 C | 5 | register | str pseudo + str password
 S | 6 | register_response | uint1 registerresponsecode
-S | 7 | meta_action | uint2 entityid + uint1 metaactioncode + uint2 messagebodysize + bytes metaactionbody
+S | 7 | meta_action | uint2 entityid + uint1 metaactioncode + bytes metaactionbody
 S | 8 | terrain_update | bytes terrain
 C | 9 | terrain_request | bytes terrainhint
 S | 10 | entities_update | bytes entities
