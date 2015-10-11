@@ -5,14 +5,6 @@ import (
 	".."
 )
 
-func SendPing(w io.Writer) error {
-	return write(w, message.Types["ping"])
-}
-
-func SendPingResp(w io.Writer) error {
-	return write(w, message.Types["pong"])
-}
-
 func SendLoginResp(w io.Writer, code message.LoginResponseCode) error {
 	if err := write(w, message.Types["login_response"]); err != nil {
 		return err
