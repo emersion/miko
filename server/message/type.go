@@ -1,6 +1,7 @@
 package message
 
 type Type uint8
+type ExitCode uint8
 type LoginResponseCode uint8
 type RegisterResponseCode uint8
 type MetaActionCode uint8
