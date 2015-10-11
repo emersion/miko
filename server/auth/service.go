@@ -29,7 +29,7 @@ func (a *AuthService) Login(io *message.IO, username string, password string) me
 		if user.VerifyPassword(password) {
 			code = "ok"
 		} else {
-			code = "wrongpassword"
+			code = "wrong_password"
 		}
 	}
 
@@ -40,7 +40,7 @@ func (a *AuthService) Login(io *message.IO, username string, password string) me
 		}
 		a.sessions = append(a.sessions, session)
 	} else if code == "" {
-		code = "unknownpseudo"
+		code = "unknown_pseudo"
 	}
 
 	return message.LoginResponseCodes[code]
@@ -58,7 +58,7 @@ func (a *AuthService) Register(io *message.IO, username string, password string)
 	var code string
 	for _, user := range a.users {
 		if username == user.Username {
-			code = "usedpseudo"
+			code = "used_pseudo"
 			break
 		}
 	}
