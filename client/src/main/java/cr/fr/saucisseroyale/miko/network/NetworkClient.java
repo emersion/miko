@@ -32,6 +32,7 @@ public class NetworkClient {
    * @throws IOException S'il y a des erreurs quelconques d'IO lors de la connexion.
    */
   public void connect(String address, int port) throws IOException {
+    // TODO accepter seulement un certain certificat ?
     socket = SSLSocketFactory.getDefault().createSocket(address, port);
     socket.setTcpNoDelay(true);
     socket.setTrafficClass(0x10); // LOWDELAY

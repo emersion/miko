@@ -136,14 +136,36 @@ class InputMessageFactory {
           }
         };
       case ACTIONS:
-        // TODO
-      case LOGIN:
-        // TODO ajouter cas
-      default:
+        // TODO on les lira ici (?)
+        return (handler) -> {
+        };
+      case ENTITY_CREATE:
+        int entityIdCreate = dis.readUnsignedShort();
+        // TODO on lira pas ici (?)
+        return (handler) -> {
+        };
+      case ENTITY_DESTROY:
+        int entityIdDestroy = dis.readUnsignedShort();
+        // TODO on lira pas ici (?)
+        return (handler) -> {
+        };
+      case CHAT_RECEIVE:
+        int entityIdChat = dis.readUnsignedShort();
+        String chatMessage = readString(dis);
+        return (handler) -> handler.chatReceived(entityIdChat, chatMessage);
+      case LOGIN: // client-only
+      case REGISTER: // client-only
+      case TERRAIN_REQUEST: // client-only
+      case ENTITY_UPDATE: // client-only
+      case ACTION: // client-only
+      case CHAT_SEND: // client-only
+      default: // unknown
         throw new MessageParsingException("Unknown message type, aborted parsing");
     }
   }
 
+  // On utilise notre propre méthode de lecture de String au cas où le protocole change (au lieu
+  // d'utiliser dis.readInputStream() qui par coïncidence utilise la même méthode que nous
   private static String readString(DataInputStream dis) throws IOException {
     int length = dis.readUnsignedShort();
     byte[] data = new byte[length];
