@@ -68,7 +68,8 @@ func (a *AuthService) Register(io *message.IO, username string, password string)
 
 	if code != "" {
 		code = "ok"
-		a.users = append(a.users, &User{username, password})
+		hash, _ := hashPassword(password)
+		a.users = append(a.users, &User{username, hash})
 	}
 
 	return message.RegisterResponseCodes[code]
