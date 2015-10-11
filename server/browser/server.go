@@ -1,28 +1,11 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"golang.org/x/net/websocket"
-
 	"git.emersion.fr/saucisse-royale/miko/server/auth"
 	"git.emersion.fr/saucisse-royale/miko/server/message"
-	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
 	"git.emersion.fr/saucisse-royale/miko/server/terrain"
+	"git.emersion.fr/saucisse-royale/miko/server/browser/server"
 )
-
-var hdlr *handler.Handler
-
-func WsServer(ws *websocket.Conn) {
-	clientIO := &message.IO{
-		Reader: ws,
-		Writer: ws,
-		BroadcastWriter: ws,
-		Id: 0,
-	}
-
-	hdlr.Listen(clientIO)
-}
 
 func main() {
 	address := ":9998"
@@ -31,13 +14,7 @@ func main() {
 		Auth: auth.NewService(),
 		Terrain: terrain.New(),
 	}
-	hdlr = handler.New(ctx)
 
-	log.Println("Creating HTTP server with address", address)
-	http.Handle("/socket", websocket.Handler(WsServer))
-	http.Handle("/", http.FileServer(http.Dir("public")))
-	err := http.ListenAndServe(address, nil)
-	if err != nil {
-		panic("ListenAndServe: " + err.Error())
-	}
+	srv := server.New(address, ctx)
+	srv.Listen()
 }
