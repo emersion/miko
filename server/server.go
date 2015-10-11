@@ -12,8 +12,7 @@ func main() {
 		Auth: auth.NewService(),
 		Terrain: terrain.New(),
 	}
-	message.SetContext(ctx)
 
-	srv := server.New(":9999")
+	srv := server.New(":9999", ctx)
 	srv.Listen()
 }

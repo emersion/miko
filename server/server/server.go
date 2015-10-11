@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"../message"
+	"../message/handler"
 )
 
 // Client holds info about connection
@@ -21,6 +22,7 @@ type server struct {
 	clients []*Client
 	address string // Address to open connection, e.g. localhost:9999
 	joins chan net.Conn // Channel for new connections
+	handler *handler.Handler
 }
 
 // Read client data from channel
@@ -34,7 +36,7 @@ func (c *Client) listen() {
 		Id: c.id,
 	}
 
-	message.Listen(clientIO)
+	c.Server.handler.Listen(clientIO)
 }
 
 // Creates new Client instance and starts listening
@@ -85,11 +87,12 @@ func (s *server) Write(msg []byte) (n int, err error) {
 }
 
 // Creates new tcp server instance
-func New(address string) *server {
+func New(address string, ctx *message.Context) *server {
 	log.Println("Creating server with address", address)
 	server := &server{
 		address: address,
-		joins:   make(chan net.Conn),
+		joins: make(chan net.Conn),
+		handler: handler.New(ctx),
 	}
 
 	return server

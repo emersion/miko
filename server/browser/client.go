@@ -5,9 +5,13 @@ import(
 	"github.com/gopherjs/websocket"
 
 	"git.emersion.fr/saucisse-royale/miko/message"
+	"git.emersion.fr/saucisse-royale/miko/message/handler"
 )
 
 func main() {
+	ctx := &message.Context{}
+	hdlr := handler.New(ctx)
+
 	c, err := websocket.Dial("ws://localhost:9998/socket")
 	if err != nil {
 		panic("Dial: " + err.Error())
@@ -18,7 +22,7 @@ func main() {
 		Writer: c,
 	}
 
-	go message.Listen(clientIO)
+	go hdlr.Listen(clientIO)
 
 	err = message.SendPing(clientIO.Writer)
 	if err != nil {

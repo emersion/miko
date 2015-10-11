@@ -7,8 +7,11 @@ import (
 
 	"../auth"
 	"../message"
+	"../message/handler"
 	"../terrain"
 )
+
+var hdlr handler.Handler
 
 func WsServer(ws *websocket.Conn) {
 	clientIO := &message.IO{
@@ -18,7 +21,7 @@ func WsServer(ws *websocket.Conn) {
 		Id: 0,
 	}
 
-	message.Listen(clientIO)
+	hdlr.Listen(clientIO)
 }
 
 func main() {
@@ -28,7 +31,7 @@ func main() {
 		Auth: auth.NewService(),
 		Terrain: terrain.New(),
 	}
-	message.SetContext(ctx)
+	hdlr := handler.New(ctx)
 
 	log.Println("Creating HTTP server with address", address)
 	http.Handle("/socket", websocket.Handler(WsServer))
