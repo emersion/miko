@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"log"
 	"net"
-	"encoding/binary"
 
 	"../message"
 )
@@ -35,16 +34,7 @@ func (c *Client) listen() {
 		Id: c.id,
 	}
 
-	var msg_type message.Type
-	for {
-		err := binary.Read(reader, binary.BigEndian, &msg_type)
-		if err != nil {
-			c.conn.Close()
-			log.Println("binary.Read failed:", err)
-			return
-		}
-		message.Handle(msg_type, clientIO)
-	}
+	message.Listen(clientIO)
 }
 
 // Creates new Client instance and starts listening

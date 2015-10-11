@@ -16,6 +16,10 @@ func writeString(w io.Writer, data string) error {
 	return write(w, data)
 }
 
+func SendPing(w io.Writer) error {
+	return write(w, Types["ping"])
+}
+
 func SendPingResp(w io.Writer) error {
 	return write(w, Types["pong"])
 }
