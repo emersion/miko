@@ -26,7 +26,7 @@ func (a *AuthService) Login(io *message.IO, username string, password string) me
 			continue
 		}
 
-		if user.CheckPassword(password) {
+		if user.VerifyPassword(password) {
 			code = "ok"
 		} else {
 			code = "wrongpassword"
