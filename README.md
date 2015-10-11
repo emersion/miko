@@ -54,6 +54,10 @@ S | 15 | entity_destroy | uint2 entityid + bytes entity_destroy
 C | 16 | chat_send | str message
 S | 17 | chat_receive | uint2 entityid + str message
 
+#### exitcode
+
+_(TODO)_
+
 #### loginresponsecode
 
 Valeur | Signification
