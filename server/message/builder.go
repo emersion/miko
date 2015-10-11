@@ -25,21 +25,21 @@ func SendPingResp(w io.Writer) error {
 }
 
 func SendLoginResp(w io.Writer, code LoginResponseCode) error {
-	if err := write(w, Types["loginresponse"]); err != nil {
+	if err := write(w, Types["login_response"]); err != nil {
 		return err
 	}
 	return write(w, code)
 }
 
 func SendRegisterResp(w io.Writer, code RegisterResponseCode) error {
-	if err := write(w, Types["registerresponse"]); err != nil {
+	if err := write(w, Types["register_response"]); err != nil {
 		return err
 	}
 	return write(w, code)
 }
 
 func SendPlayerMeta(w io.Writer, code MetaActionCode, username string) error {
-	if err := write(w, Types["playermeta"]); err != nil {
+	if err := write(w, Types["player_meta"]); err != nil {
 		return err
 	}
 	if err := write(w, code); err != nil {
@@ -48,10 +48,10 @@ func SendPlayerMeta(w io.Writer, code MetaActionCode, username string) error {
 	return writeString(w, username)
 }
 func SendPlayerJoined(w io.Writer, username string) error {
-	return SendPlayerMeta(w, MetaActionCodes["playerjoined"], username)
+	return SendPlayerMeta(w, MetaActionCodes["player_joined"], username)
 }
 func SendPlayerLeft(w io.Writer, username string) error {
-	return SendPlayerMeta(w, MetaActionCodes["playerleft"], username)
+	return SendPlayerMeta(w, MetaActionCodes["player_left"], username)
 }
 
 func SendTerrainUpdate(w io.Writer, block *Block) error {
@@ -75,7 +75,7 @@ func SendTerrainUpdate(w io.Writer, block *Block) error {
 	}
 
 	// Send the response
-	if err := write(w, Types["terrainupdate"]); err != nil {
+	if err := write(w, Types["terrain_update"]); err != nil {
 		return err
 	}
 	if err := write(w, block.X); err != nil {
@@ -113,7 +113,7 @@ func SendTerrainUpdate(w io.Writer, block *Block) error {
 }
 
 func SendChatReceive(w io.Writer, username string, msg string) error {
-	if err := write(w, Types["chatreceive"]); err != nil {
+	if err := write(w, Types["chat_receive"]); err != nil {
 		return err
 	}
 	if err := writeString(w, username); err != nil {
