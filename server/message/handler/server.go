@@ -8,22 +8,28 @@ import (
 
 var serverHandlers = &map[message.Type]TypeHandler{
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
-		sender := ctx.Auth.GetSession(io.Id)
+		// TODO: read exit code
 
-		// TODO: check if user is logged in
-		ctx.Auth.Logout(io)
+		var username string
+		sender := ctx.Auth.GetSession(io.Id)
+		if sender != nil {
+			username = sender.Username
+			ctx.Auth.Logout(io.Id)
+		} else {
+			username = "[anonymous]"
+		}
 
 		if err := io.Writer.Close(); err != nil {
 			return err
 		}
 
-		return builder.SendPlayerLeft(io.BroadcastWriter, sender.Username)
+		return builder.SendPlayerLeft(io.BroadcastWriter, username)
 	},
 	message.Types["login"]: func(ctx *message.Context, io *message.IO) error {
 		username := readString(io.Reader)
 		password := readString(io.Reader)
 
-		code := ctx.Auth.Login(io, username, password)
+		code := ctx.Auth.Login(io.Id, username, password)
 		if err := builder.SendLoginResp(io.Writer, code); err != nil {
 			return err
 		}
@@ -38,7 +44,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		username := readString(io.Reader)
 		password := readString(io.Reader)
 
-		code := ctx.Auth.Register(io, username, password)
+		code := ctx.Auth.Register(io.Id, username, password)
 		return builder.SendRegisterResp(io.Writer, code)
 	},
 	message.Types["terrain_request"]: func(ctx *message.Context, io *message.IO) error {

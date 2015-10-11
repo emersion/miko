@@ -22,7 +22,7 @@ func (a *AuthService) GetSession(id int) *message.Session {
 	return a.sessions[id]
 }
 
-func (a *AuthService) Login(io *message.IO, username string, password string) message.LoginResponseCode {
+func (a *AuthService) Login(id int, username string, password string) message.LoginResponseCode {
 	var code string
 	for _, user := range a.users {
 		if username != user.Username {
@@ -38,7 +38,7 @@ func (a *AuthService) Login(io *message.IO, username string, password string) me
 
 	if code == "ok" {
 		session := &message.Session{
-			Id: io.Id,
+			Id: id,
 			Username: username,
 		}
 		a.sessions = append(a.sessions, session)
@@ -49,15 +49,15 @@ func (a *AuthService) Login(io *message.IO, username string, password string) me
 	return message.LoginResponseCodes[code]
 }
 
-func (a *AuthService) Logout(io *message.IO) {
-	if !a.HasSession(io.Id) {
+func (a *AuthService) Logout(id int) {
+	if !a.HasSession(id) {
 		return
 	}
 
-	a.sessions[io.Id] = nil
+	a.sessions[id] = nil
 }
 
-func (a *AuthService) Register(io *message.IO, username string, password string) message.RegisterResponseCode {
+func (a *AuthService) Register(id int, username string, password string) message.RegisterResponseCode {
 	for _, user := range a.users {
 		if username == user.Username {
 			return message.RegisterResponseCodes["used_pseudo"]
