@@ -5,8 +5,8 @@ import (
 	"log"
 	"net"
 
-	"../message"
-	"../message/handler"
+	"git.emersion.fr/saucisse-royale/miko/server/message"
+	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
 )
 
 // Client holds info about connection

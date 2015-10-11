@@ -4,8 +4,9 @@ import(
 	//"github.com/gopherjs/gopherjs/js"
 	"github.com/gopherjs/websocket"
 
-	"git.emersion.fr/saucisse-royale/miko/message"
-	"git.emersion.fr/saucisse-royale/miko/message/handler"
+	"git.emersion.fr/saucisse-royale/miko/server/message"
+	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
+	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 
 	go hdlr.Listen(clientIO)
 
-	err = message.SendPing(clientIO.Writer)
+	err = builder.SendPing(clientIO.Writer)
 	if err != nil {
 		panic("Write: " + err.Error())
 	}

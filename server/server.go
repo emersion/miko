@@ -1,10 +1,10 @@
 package main
 
 import(
-	"./auth"
-	"./message"
-	"./server"
-	"./terrain"
+	"git.emersion.fr/saucisse-royale/miko/server/auth"
+	"git.emersion.fr/saucisse-royale/miko/server/message"
+	"git.emersion.fr/saucisse-royale/miko/server/server"
+	"git.emersion.fr/saucisse-royale/miko/server/terrain"
 )
 
 func main() {

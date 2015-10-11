@@ -1,7 +1,7 @@
 package terrain
 
 import (
-	"../message"
+	"git.emersion.fr/saucisse-royale/miko/server/message"
 )
 
 type Terrain struct {

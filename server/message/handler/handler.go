@@ -3,7 +3,7 @@ package handler
 import (
 	"errors"
 	"log"
-	".."
+	"git.emersion.fr/saucisse-royale/miko/server/message"
 )
 
 type TypeHandler func(*message.Context, *message.IO) error

@@ -2,8 +2,8 @@ package handler
 
 import (
 	"log"
-	".."
-	"../builder"
+	"git.emersion.fr/saucisse-royale/miko/server/message"
+	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
 )
 
 var commonHandlers = &map[message.Type]TypeHandler{

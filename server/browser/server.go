@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"golang.org/x/net/websocket"
 
-	"../auth"
-	"../message"
-	"../message/handler"
-	"../terrain"
+	"git.emersion.fr/saucisse-royale/miko/server/auth"
+	"git.emersion.fr/saucisse-royale/miko/server/message"
+	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
+	"git.emersion.fr/saucisse-royale/miko/server/terrain"
 )
 
-var hdlr handler.Handler
+var hdlr *handler.Handler
 
 func WsServer(ws *websocket.Conn) {
 	clientIO := &message.IO{
@@ -31,7 +31,7 @@ func main() {
 		Auth: auth.NewService(),
 		Terrain: terrain.New(),
 	}
-	hdlr := handler.New(ctx)
+	hdlr = handler.New(ctx)
 
 	log.Println("Creating HTTP server with address", address)
 	http.Handle("/socket", websocket.Handler(WsServer))

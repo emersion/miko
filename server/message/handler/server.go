@@ -1,8 +1,8 @@
 package handler
 
 import (
-	".."
-	"../builder"
+	"git.emersion.fr/saucisse-royale/miko/server/message"
+	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
 )
 
 var serverHandlers = &map[message.Type]TypeHandler{

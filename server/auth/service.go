@@ -1,7 +1,7 @@
 package auth
 
 import(
-	"../message"
+	"git.emersion.fr/saucisse-royale/miko/server/message"
 )
 
 type AuthService struct {
