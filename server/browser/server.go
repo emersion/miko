@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 	"golang.org/x/net/websocket"
 
@@ -21,15 +22,18 @@ func WsServer(ws *websocket.Conn) {
 }
 
 func main() {
+	address := ":9998"
+
 	ctx := &message.Context{
 		Auth: auth.NewService(),
 		Terrain: terrain.New(),
 	}
 	message.SetContext(ctx)
 
+	log.Println("Creating HTTP server with address", address)
 	http.Handle("/socket", websocket.Handler(WsServer))
 	http.Handle("/", http.FileServer(http.Dir("public")))
-	err := http.ListenAndServe(":9998", nil)
+	err := http.ListenAndServe(address, nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
