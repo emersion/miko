@@ -2,6 +2,7 @@ package message
 
 import (
 	"io"
+	"log"
 	"errors"
 	"encoding/binary"
 )
@@ -32,7 +33,12 @@ type Handler func(*IO) error
 
 var handlers = map[Type]Handler{
 	Types["ping"]: func(io *IO) error {
+		log.Println("Ping received!")
 		return SendPingResp(io.Writer)
+	},
+	Types["pong"]: func(io *IO) error {
+		log.Println("Pong received!")
+		return nil
 	},
 	Types["exit"]: func(io *IO) error {
 		sender := ctx.Auth.GetSession(io.Id)
@@ -88,6 +94,19 @@ func Handle(t Type, io *IO) error {
 		return val(io);
 	} else {
 		return errors.New("Unknown message type")
+	}
+}
+
+func Listen(io *IO) {
+	var msg_type Type
+	for {
+		err := read(io.Reader, &msg_type)
+		if err != nil {
+			io.Writer.Close()
+			log.Println("binary.Read failed:", err)
+			return
+		}
+		Handle(msg_type, io)
 	}
 }
 

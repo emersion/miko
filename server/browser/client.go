@@ -18,6 +18,13 @@ func main() {
 		panic("Write: " + err.Error())
 	}
 
+	clientIO := &message.IO{
+		Reader: c,
+		Writer: c,
+	}
+
+	message.Listen(clientIO)
+
 	/*err = c.Close()
 	if err != nil {
 		panic("Close: " + err.Error())

@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/binary"
 	"net/http"
-	"log"
 	"golang.org/x/net/websocket"
 
 	"../auth"
@@ -19,16 +17,7 @@ func WsServer(ws *websocket.Conn) {
 		Id: 0,
 	}
 
-	var msg_type message.Type
-	for {
-		err := binary.Read(ws, binary.BigEndian, &msg_type)
-		if err != nil {
-			ws.Close()
-			log.Println("binary.Read failed:", err)
-			return
-		}
-		message.Handle(msg_type, clientIO)
-	}
+	message.Listen(clientIO)
 }
 
 func main() {
