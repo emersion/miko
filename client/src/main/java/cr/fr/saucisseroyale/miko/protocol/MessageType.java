@@ -30,7 +30,7 @@ public enum MessageType implements UniquelyIdentifiable {
   private final int id;
 
   private MessageType(int id) {
-    assert id < 1 << 8 && id >= 0;
+    assert id < 1 << 8 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
     this.id = id;
   }
 
