@@ -34,9 +34,21 @@ func (h *Handler) Listen(io *message.IO) {
 	}
 }
 
+func mergeHandlers(handlersList ...*map[message.Type]TypeHandler) map[message.Type]TypeHandler {
+	result := map[message.Type]TypeHandler{}
+
+	for _, handlers := range handlersList {
+		for t, handler := range *handlers {
+			result[t] = handler
+		}
+	}
+
+	return result
+}
+
 func New(ctx *message.Context) *Handler {
 	return &Handler{
 		ctx: ctx,
-		handlers: *serverHandlers,
+		handlers: mergeHandlers(commonHandlers, serverHandlers),
 	}
 }
