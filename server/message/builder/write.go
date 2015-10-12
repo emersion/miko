@@ -1,7 +1,6 @@
 package builder
 
 import (
-	"log"
 	"io"
 	"encoding/binary"
 )
@@ -14,8 +13,6 @@ func writeString(w io.Writer, data string) error {
 	if err := write(w, uint8(len(data))); err != nil {
 		return err;
 	}
-
-	log.Println("Wrote string:", uint8(len(data)), data)
 
 	_, err := w.Write([]byte(data))
 	if err != nil {

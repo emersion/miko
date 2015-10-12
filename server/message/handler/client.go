@@ -1,9 +1,35 @@
 package handler
 
 import (
+	"io"
 	"log"
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 )
+
+func readEntityUpdateBody(r io.Reader) *message.Entity {
+	entity := message.NewEntity()
+
+	var bitfield uint8
+	read(r, &entity.Id)
+	read(r, &bitfield)
+
+	diff := message.NewEntityDiffFromBitfield(bitfield)
+
+	if diff.Position {
+		read(r, &entity.Position.BX)
+		read(r, &entity.Position.BY)
+		read(r, &entity.Position.X)
+		read(r, &entity.Position.Y)
+	}
+	if diff.SpeedAngle {
+		read(r, &entity.Speed.Angle)
+	}
+	if diff.SpeedNorm {
+		read(r, &entity.Speed.Norm)
+	}
+
+	return entity
+}
 
 var clientHandlers = &map[message.Type]TypeHandler{
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
@@ -50,6 +76,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 			read(io.Reader, &t)
 
 			blk.Points[x][y] = t
+			log.Println("Point at:", x, y, t)
 		}
 
 		log.Println("Received terrain", size)
@@ -57,27 +84,20 @@ var clientHandlers = &map[message.Type]TypeHandler{
 
 		return nil
 	},
+	message.Types["entities_update"]: func(ctx *message.Context, io *message.IO) error {
+		var size uint16
+		read(io.Reader, &size)
+
+		for i := 0; i < int(size); i++ {
+			entity := readEntityUpdateBody(io.Reader)
+			// TODO: do something with entity
+			log.Println("Received entity update with ID:", entity.Id)
+		}
+
+		return nil
+	},
 	message.Types["entity_create"]: func(ctx *message.Context, io *message.IO) error {
-		entity := message.NewEntity()
-
-		var bitfield uint8
-		read(io.Reader, &entity.Id)
-		read(io.Reader, &bitfield)
-
-		diff := message.NewEntityDiffFromBitfield(bitfield)
-
-		if diff.Position {
-			read(io.Reader, &entity.Position.BX)
-			read(io.Reader, &entity.Position.BY)
-			read(io.Reader, &entity.Position.X)
-			read(io.Reader, &entity.Position.Y)
-		}
-		if diff.SpeedAngle {
-			read(io.Reader, &entity.Speed.Angle)
-		}
-		if diff.SpeedNorm {
-			read(io.Reader, &entity.Speed.Norm)
-		}
+		entity := readEntityUpdateBody(io.Reader)
 
 		// TODO: entity.Data
 
