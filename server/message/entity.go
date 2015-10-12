@@ -20,6 +20,26 @@ type Entity struct {
 	Speed *Speed
 }
 
+type EntityDiff struct {
+	Position bool
+	SpeedAngle bool
+	SpeedNorm bool
+}
+
+func (d *EntityDiff) GetBitfield() uint8 {
+	var bitfield uint8
+	if d.Position {
+		bitfield |= 1 << 7
+	}
+	if d.SpeedAngle {
+		bitfield |= 1 << 6
+	}
+	if d.SpeedNorm {
+		bitfield |= 1 << 5
+	}
+	return bitfield
+}
+
 type EntityService interface {
 	Get(id EntityId) *Entity
 	Append(entity *Entity)

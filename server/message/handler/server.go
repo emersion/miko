@@ -37,7 +37,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		if code == message.LoginResponseCodes["ok"] {
 			session := ctx.Auth.GetSession(io.Id)
 			ctx.Entity.Append(session.Entity) // TODO: move this elsewhere
-			if err := builder.SendEntitiesUpdate(io.BroadcastWriter, []*message.Entity{session.Entity}); err != nil {
+			if err := builder.SendEntityCreate(io.BroadcastWriter, session.Entity); err != nil {
 				return err
 			}
 

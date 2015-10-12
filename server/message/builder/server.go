@@ -93,7 +93,45 @@ func SendTerrainUpdate(w io.Writer, block *message.Block) error {
 	return nil
 }
 
-func SendEntitiesUpdate(w io.Writer, entities []*message.Entity) error {
+func sendEntityUpdateBody(w io.Writer, entity *message.Entity, diff *message.EntityDiff) error {
+	if err := write(w, entity.Id); err != nil {
+		return err
+	}
+	if err := write(w, diff.GetBitfield()); err != nil {
+		return err
+	}
+
+	var data []interface{}
+	if diff.Position {
+		data = append(data, entity.Position.BX, entity.Position.BY, entity.Position.X, entity.Position.Y)
+	}
+	if diff.SpeedAngle {
+		data = append(data, entity.Speed.Angle)
+	}
+	if diff.SpeedNorm {
+		data = append(data, entity.Speed.Norm)
+	}
+
+	// TODO: entity.Data
+
+	if err := writeAll(w, data); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// TODO: check proto
+func SendEntityCreate(w io.Writer, entity *message.Entity) error {
+	if err := write(w, message.Types["entity_create"]); err != nil {
+		return err
+	}
+
+	diff := &message.EntityDiff{true, true, true}
+	return sendEntityUpdateBody(w, entity, diff)
+}
+
+func SendEntitiesUpdate(w io.Writer, entities []*message.Entity, diffs []*message.EntityDiff) error {
 	if err := write(w, message.Types["entities_update"]); err != nil {
 		return err
 	}
@@ -101,38 +139,10 @@ func SendEntitiesUpdate(w io.Writer, entities []*message.Entity) error {
 		return err
 	}
 
-	for _, entity := range entities {
-		if err := write(w, entity.Id); err != nil {
-			return err
-		}
+	for i, entity := range entities {
+		diff := diffs[i]
 
-		var bitfield uint8
-		var data []interface{}
-
-		if entity.Position != nil {
-			bitfield |= 1 << 7
-			data = append(data, entity.Position.BX)
-			data = append(data, entity.Position.BY)
-			data = append(data, entity.Position.X)
-			data = append(data, entity.Position.Y)
-		}
-		if entity.Speed != nil {
-			// TODO: null values
-			if entity.Speed.Angle != 0 {
-				bitfield |= 1 << 6
-				data = append(data, entity.Speed.Angle)
-			}
-			if entity.Speed.Norm != 0 {
-				bitfield |= 1 << 5
-				data = append(data, entity.Speed.Norm)
-			}
-		}
-		// TODO: entity.Data
-
-		if err := write(w, bitfield); err != nil {
-			return err
-		}
-		if err := writeAll(w, data); err != nil {
+		if err := sendEntityUpdateBody(w, entity, diff); err != nil {
 			return err
 		}
 	}
