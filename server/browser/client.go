@@ -1,7 +1,7 @@
 package main
 
 import(
-	//"github.com/gopherjs/gopherjs/js"
+	"github.com/gopherjs/gopherjs/js"
 	"github.com/gopherjs/websocket"
 
 	"git.emersion.fr/saucisse-royale/miko/server/message"
@@ -15,7 +15,8 @@ func main() {
 	}
 	hdlr := handler.New(ctx)
 
-	c, err := websocket.Dial("ws://localhost:9998/socket")
+	host := js.Global.Get("window").Get("location").Get("host").String()
+	c, err := websocket.Dial("ws://"+host+"/socket")
 	if err != nil {
 		panic("Dial: " + err.Error())
 	}
