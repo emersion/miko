@@ -33,12 +33,17 @@ func main() {
 		panic("SendPing: " + err.Error())
 	}
 
-	err = builder.SendChatSend(clientIO.Writer, "Hello World!")
+	err = builder.SendLogin(clientIO.Writer, "root", "root")
+	if err != nil {
+		panic("SendLogin: " + err.Error())
+	}
+
+	/*err = builder.SendChatSend(clientIO.Writer, "Hello World!")
 	if err != nil {
 		panic("SendChatSend: " + err.Error())
 	}
 
-	/*err = c.Close()
+	err = c.Close()
 	if err != nil {
 		panic("Close: " + err.Error())
 	}*/

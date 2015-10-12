@@ -50,5 +50,7 @@ func (s *EntityService) Flush() *message.EntityDiffPool {
 }
 
 func NewService() *EntityService {
-	return &EntityService{}
+	return &EntityService{
+		diff: &message.EntityDiffPool{},
+	}
 }

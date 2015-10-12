@@ -13,6 +13,12 @@ var clientHandlers = &map[message.Type]TypeHandler{
 
 		return io.Writer.Close()
 	},
+	message.Types["login_response"]: func(ctx *message.Context, io *message.IO) error {
+		var code message.LoginResponseCode
+		read(io.Reader, code)
+		log.Println("Login response:", code)
+		return nil
+	},
 	message.Types["chat_receive"]: func(ctx *message.Context, io *message.IO) error {
 		username := readString(io.Reader)
 		msg := readString(io.Reader)

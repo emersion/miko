@@ -20,6 +20,13 @@ type Entity struct {
 	Speed *Speed
 }
 
+func NewEntity() *Entity {
+	return &Entity{
+		Position: &Position{},
+		Speed: &Speed{},
+	}
+}
+
 type EntityDiff struct {
 	Position bool
 	SpeedAngle bool

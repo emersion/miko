@@ -37,7 +37,7 @@ func (a *AuthService) Login(id int, username string, password string) message.Lo
 	}
 
 	if code == "ok" {
-		entity := &message.Entity{}
+		entity := message.NewEntity()
 		session := &message.Session{
 			Id: id,
 			Username: username,
