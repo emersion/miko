@@ -43,7 +43,7 @@ func (h *Handler) flushEntitiesDiff(w io.Writer) error {
 		return err
 	}
 
-	// Delete entities
+	// Deleted entities
 	for _, entityId := range pool.Deleted {
 		err := builder.SendEntityDestroy(w, entityId)
 		if err != nil {
