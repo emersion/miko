@@ -134,7 +134,7 @@ size times:
 		bytes data
 ```
 
-#### Bitfield
+#### bitfield
 
 * les bits sont lus de gauche à droite : 01234567
 
@@ -149,13 +149,13 @@ Bit | Signification | Contenu
 6 |
 7 | object | objectbitfield + uint2 size + bytes objectdata
 
-#### Object
+#### object
 
 * caractéristiques spécifiques au type de l'entité à update
 * même principe que précédemment, mais la table de bitfield dépend du type de l'entité
 * et mettre un uint2 pour la taille des données (sans compter le bitfield)
 
-### Session exemple
+### Exemple de session
 
 ```
 [initiation du ssl, session tcp établie]

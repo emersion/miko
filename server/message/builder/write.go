@@ -15,3 +15,19 @@ func writeString(w io.Writer, data string) error {
 	}
 	return write(w, []byte(data))
 }
+
+func writeAll(w io.Writer, data []interface{}) error {
+	for _, item := range data {
+		var err error
+		switch item.(type) {
+		case string:
+			err = writeString(w, item.(string))
+		default:
+			err = write(w, item)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
