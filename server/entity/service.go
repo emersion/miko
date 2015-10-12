@@ -26,10 +26,11 @@ func (s *EntityService) Add(entity *message.Entity) {
 func (s *EntityService) Update(entity *message.Entity, diff *message.EntityDiff) {
 	s.entities[entity.Id] = entity
 
-	s.diff.Updated = append(s.diff.Updated, &message.EntityUpdate{
-		EntityId: entity.Id,
-		Diff: diff,
-	})
+	if _, ok := s.diff.Updated[entity.Id]; ok {
+		s.diff.Updated[entity.Id].Merge(diff)
+	} else {
+		s.diff.Updated[entity.Id] = diff
+	}
 }
 
 func (s *EntityService) Delete(id message.EntityId) {
@@ -45,7 +46,6 @@ func (s *EntityService) IsDirty() bool {
 func (s *EntityService) Flush() *message.EntityDiffPool {
 	diff := s.diff
 	s.diff = &message.EntityDiffPool{}
-	diff.MergeUpdated()
 	return diff
 }
 

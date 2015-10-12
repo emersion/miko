@@ -31,9 +31,11 @@ func (h *Handler) flushEntitiesDiff(w io.Writer) error {
 	// Updated entities
 	entities := make([]*message.Entity, len(pool.Updated))
 	diffs := make([]*message.EntityDiff, len(pool.Updated))
-	for i, update := range pool.Updated {
-		entities[i] = h.ctx.Entity.Get(update.EntityId)
-		diffs[i] = update.Diff
+	i := 0
+	for entityId, diff := range pool.Updated {
+		entities[i] = h.ctx.Entity.Get(entityId)
+		diffs[i] = diff
+		i++
 	}
 
 	err := builder.SendEntitiesUpdate(w, entities, diffs)
