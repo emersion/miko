@@ -31,6 +31,8 @@ func (t *Terrain) Generate() {
 	for i := range t.points {
 		t.points[i] = make([]message.PointType, DEFAULT_LEN)
 	}
+
+	t.points[100][100] = message.PointType(1)
 }
 
 func New() *Terrain {
