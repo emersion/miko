@@ -20,4 +20,7 @@ type Entity struct {
 	Speed *Speed
 }
 
-type EntityService interface {}
+type EntityService interface {
+	Get(id EntityId) *Entity
+	Append(entity *Entity)
+}

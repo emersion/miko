@@ -19,20 +19,20 @@ func SendRegisterResp(w io.Writer, code message.RegisterResponseCode) error {
 	return write(w, code)
 }
 
-func SendPlayerMeta(w io.Writer, code message.MetaActionCode, username string) error {
-	if err := write(w, message.Types["player_meta"]); err != nil {
-		return err
-	}
-	if err := write(w, code); err != nil {
-		return err
-	}
-	return writeString(w, username)
+func SendPlayerJoined(w io.Writer, id message.EntityId, username string) error {
+	return writeAll(w, []interface{}{
+		message.Types["player_meta"],
+		message.MetaActionCodes["player_joined"],
+		id,
+		username,
+	})
 }
-func SendPlayerJoined(w io.Writer, username string) error {
-	return SendPlayerMeta(w, message.MetaActionCodes["player_joined"], username)
-}
-func SendPlayerLeft(w io.Writer, username string) error {
-	return SendPlayerMeta(w, message.MetaActionCodes["player_left"], username)
+func SendPlayerLeft(w io.Writer, id message.EntityId) error {
+	return writeAll(w, []interface{}{
+		message.Types["player_meta"],
+		message.MetaActionCodes["player_left"],
+		id,
+	})
 }
 
 func SendTerrainUpdate(w io.Writer, block *message.Block) error {

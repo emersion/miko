@@ -10,5 +10,6 @@ const (
 type Context struct {
 	Type ContextType
 	Auth AuthService
+	Entity EntityService
 	Terrain Terrain
 }

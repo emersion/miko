@@ -10,20 +10,20 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
 		// TODO: read exit code
 
-		var username string
 		sender := ctx.Auth.GetSession(io.Id)
 		if sender != nil {
-			username = sender.Username
 			ctx.Auth.Logout(io.Id)
-		} else {
-			username = "[anonymous]"
 		}
 
 		if err := io.Writer.Close(); err != nil {
 			return err
 		}
 
-		return builder.SendPlayerLeft(io.BroadcastWriter, username)
+		if sender != nil {
+			return builder.SendPlayerLeft(io.BroadcastWriter, sender.Entity.Id)
+		} else {
+			return nil
+		}
 	},
 	message.Types["login"]: func(ctx *message.Context, io *message.IO) error {
 		username := readString(io.Reader)
@@ -35,7 +35,13 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		}
 
 		if code == message.LoginResponseCodes["ok"] {
-			return builder.SendPlayerJoined(io.BroadcastWriter, username)
+			session := ctx.Auth.GetSession(io.Id)
+			ctx.Entity.Append(session.Entity) // TODO: move this elsewhere
+			if err := builder.SendEntitiesUpdate(io.BroadcastWriter, []*message.Entity{session.Entity}); err != nil {
+				return err
+			}
+
+			return builder.SendPlayerJoined(io.BroadcastWriter, session.Entity.Id, username)
 		} else {
 			return nil
 		}

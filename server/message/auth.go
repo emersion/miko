@@ -3,6 +3,7 @@ package message
 type Session struct {
 	Id int
 	Username string
+	Entity *Entity
 }
 
 type AuthService interface {
