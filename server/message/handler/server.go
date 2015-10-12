@@ -39,6 +39,10 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			session := ctx.Auth.GetSession(io.Id)
 			ctx.Entity.Add(session.Entity) // TODO: move this elsewhere
 
+			// Send initial terrain
+			pos := session.Entity.Position
+			err := builder.SendTerrainUpdate(io.Writer, ctx.Terrain.GetBlockAt(pos.BX, pos.BY))
+
 			return builder.SendPlayerJoined(io.BroadcastWriter, session.Entity.Id, username)
 		} else {
 			return nil
