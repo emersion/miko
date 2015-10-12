@@ -10,8 +10,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
 		// TODO: read exit code
 
-		sender := ctx.Auth.GetSession(io.Id)
-		if sender != nil {
+		session := ctx.Auth.GetSession(io.Id)
+		if session != nil {
+			ctx.Entity.Delete(session.Entity.Id) // TODO: move this elsewhere
 			ctx.Auth.Logout(io.Id)
 		}
 
@@ -19,8 +20,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			return err
 		}
 
-		if sender != nil {
-			return builder.SendPlayerLeft(io.BroadcastWriter, sender.Entity.Id)
+		if session != nil {
+			return builder.SendPlayerLeft(io.BroadcastWriter, session.Entity.Id)
 		} else {
 			return nil
 		}
@@ -64,8 +65,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		var username string
 		if ctx.Auth.HasSession(io.Id) {
-			sender := ctx.Auth.GetSession(io.Id)
-			username = sender.Username
+			session := ctx.Auth.GetSession(io.Id)
+			username = session.Username
 		} else {
 			username = "[anonymous]"
 		}
