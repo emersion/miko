@@ -4,6 +4,8 @@ import (
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 )
 
+const DEFAULT_LEN = 2 * message.BLOCK_LEN
+
 type Terrain struct {
 	points [][]message.PointType
 }
@@ -21,6 +23,13 @@ func (t *Terrain) GetBlockAt(x, y message.BlockCoord) *message.Block {
 		X: x,
 		Y: y,
 		Points: pts,
+	}
+}
+
+func (t *Terrain) Generate() {
+	t.points = make([][]message.PointType, DEFAULT_LEN)
+	for i := range t.points {
+		t.points[i] = make([]message.PointType, DEFAULT_LEN)
 	}
 }
 

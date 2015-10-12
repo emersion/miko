@@ -9,11 +9,14 @@ import(
 )
 
 func main() {
+	trn := terrain.New()
+	trn.Generate()
+
 	ctx := &message.Context{
 		Type: message.ServerContext,
 		Auth: auth.NewService(),
 		Entity: entity.NewService(),
-		Terrain: terrain.New(),
+		Terrain: trn,
 	}
 
 	srv := server.New(":9999", ctx)
