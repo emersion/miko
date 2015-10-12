@@ -53,6 +53,14 @@ func (d *EntityDiff) Merge(other *EntityDiff) {
 	d.SpeedNorm = d.SpeedNorm || other.SpeedNorm
 }
 
+func NewEntityDiffFromBitfield(bitfield uint8) *EntityDiff {
+	return &EntityDiff{
+		bitfield & (1 << 7) > 0,
+		bitfield & (1 << 6) > 0,
+		bitfield & (1 << 5) > 0,
+	}
+}
+
 type EntityDiffPool struct {
 	Created []*Entity
 	Updated map[EntityId]*EntityDiff

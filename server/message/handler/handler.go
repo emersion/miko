@@ -2,7 +2,7 @@ package handler
 
 import (
 	"io"
-	"errors"
+	"fmt"
 	"log"
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
@@ -61,14 +61,16 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 			return err
 		}
 	} else {
-		return errors.New("Unknown message type")
+		return fmt.Errorf("Unknown message type: %d", t)
 	}
 
-	// No errors, send updates
-	if h.ctx.Entity.IsDirty() {
-		err := h.flushEntitiesDiff(io.BroadcastWriter)
-		if err != nil {
-			return err
+	if h.ctx.Type == message.ServerContext {
+		// No errors, send updates
+		if h.ctx.Entity.IsDirty() {
+			err := h.flushEntitiesDiff(io.BroadcastWriter)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
