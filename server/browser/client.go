@@ -1,6 +1,8 @@
 package main
 
 import(
+	"bufio"
+
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/gopherjs/websocket"
 
@@ -21,17 +23,18 @@ func main() {
 		panic("Dial: " + err.Error())
 	}
 
+	reader := bufio.NewReader(c)
 	clientIO := &message.IO{
-		Reader: c,
+		Reader: reader,
 		Writer: c,
 	}
 
 	go hdlr.Listen(clientIO)
 
-	err = builder.SendPing(clientIO.Writer)
+	/*err = builder.SendPing(clientIO.Writer)
 	if err != nil {
 		panic("SendPing: " + err.Error())
-	}
+	}*/
 
 	err = builder.SendLogin(clientIO.Writer, "root", "root")
 	if err != nil {

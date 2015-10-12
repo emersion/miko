@@ -36,6 +36,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		}
 
 		if code == message.LoginResponseCodes["ok"] {
+			log.Println("Client logged in:", username)
+
 			session := ctx.Auth.GetSession(io.Id)
 			ctx.Entity.Add(session.Entity) // TODO: move this elsewhere
 

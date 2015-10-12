@@ -90,6 +90,7 @@ func (h *Handler) Listen(io *message.IO) {
 		err = h.Handle(msg_type, io)
 		if err != nil {
 			log.Println("Handle failed:", err)
+			log.Println("Message type:", msg_type)
 		}
 	}
 }
