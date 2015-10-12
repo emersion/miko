@@ -15,7 +15,7 @@ type Handler struct {
 
 func (h *Handler) Handle(t message.Type, io *message.IO) error {
 	if val, ok := h.handlers[t]; ok {
-		return val(h.ctx, io);
+		return val(h.ctx, io)
 	} else {
 		return errors.New("Unknown message type")
 	}
