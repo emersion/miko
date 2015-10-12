@@ -77,17 +77,20 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 	return nil
 }
 
-func (h *Handler) Listen(io *message.IO) {
+func (h *Handler) Listen(clientIO *message.IO) {
 	var msg_type message.Type
 	for {
-		err := read(io.Reader, &msg_type)
-		if err != nil {
-			io.Writer.Close()
+		err := read(clientIO.Reader, &msg_type)
+		if err == io.EOF {
+			log.Println("Connection closed.")
+			return
+		} else if err != nil {
+			clientIO.Writer.Close()
 			log.Println("binary.Read failed:", err)
 			return
 		}
 
-		err = h.Handle(msg_type, io)
+		err = h.Handle(msg_type, clientIO)
 		if err != nil {
 			log.Println("Handle failed:", err)
 			log.Println("Message type:", msg_type)

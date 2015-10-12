@@ -62,8 +62,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	},
 	message.Types["terrain_request"]: func(ctx *message.Context, io *message.IO) error {
 		var x, y message.BlockCoord
-		read(io.Reader, x)
-		read(io.Reader, y)
+		read(io.Reader, &x)
+		read(io.Reader, &y)
 
 		return builder.SendTerrainUpdate(io.Writer, ctx.Terrain.GetBlockAt(x, y))
 	},

@@ -8,22 +8,22 @@ import (
 var clientHandlers = &map[message.Type]TypeHandler{
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
 		var code message.ExitCode
-		read(io.Reader, code)
+		read(io.Reader, &code)
 		log.Println("Server closed connection, reason:", code)
 
 		return io.Writer.Close()
 	},
 	message.Types["login_response"]: func(ctx *message.Context, io *message.IO) error {
 		var code message.LoginResponseCode
-		read(io.Reader, code)
+		read(io.Reader, &code)
 		log.Println("Login response:", code)
 		return nil
 	},
 	message.Types["meta_action"]: func(ctx *message.Context, io *message.IO) error {
 		var code message.MetaActionCode
 		var entityId message.EntityId
-		read(io.Reader, code)
-		read(io.Reader, entityId)
+		read(io.Reader, &code)
+		read(io.Reader, &entityId)
 		username := readString(io.Reader)
 
 		log.Println("Player joined/left:", code, entityId, username)
@@ -35,19 +35,19 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		var blk message.Block
 		var defaultType message.PointType
 		var size uint16
-		read(io.Reader, blk.X)
-		read(io.Reader, blk.Y)
-		read(io.Reader, defaultType)
-		read(io.Reader, size)
+		read(io.Reader, &blk.X)
+		read(io.Reader, &blk.Y)
+		read(io.Reader, &defaultType)
+		read(io.Reader, &size)
 
 		blk.Points = new(message.BlockPoints)
 
 		var x, y message.PointCoord
 		var t message.PointType
 		for i := 0; i < int(size); i++ {
-			read(io.Reader, x)
-			read(io.Reader, y)
-			read(io.Reader, t)
+			read(io.Reader, &x)
+			read(io.Reader, &y)
+			read(io.Reader, &t)
 
 			blk.Points[x][y] = t
 		}
@@ -61,22 +61,22 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		entity := message.NewEntity()
 
 		var bitfield uint8
-		read(io.Reader, entity.Id)
-		read(io.Reader, bitfield)
+		read(io.Reader, &entity.Id)
+		read(io.Reader, &bitfield)
 
 		diff := message.NewEntityDiffFromBitfield(bitfield)
 
 		if diff.Position {
-			read(io.Reader, entity.Position.BX)
-			read(io.Reader, entity.Position.BY)
-			read(io.Reader, entity.Position.X)
-			read(io.Reader, entity.Position.Y)
+			read(io.Reader, &entity.Position.BX)
+			read(io.Reader, &entity.Position.BY)
+			read(io.Reader, &entity.Position.X)
+			read(io.Reader, &entity.Position.Y)
 		}
 		if diff.SpeedAngle {
-			read(io.Reader, entity.Speed.Angle)
+			read(io.Reader, &entity.Speed.Angle)
 		}
 		if diff.SpeedNorm {
-			read(io.Reader, entity.Speed.Norm)
+			read(io.Reader, &entity.Speed.Norm)
 		}
 
 		// TODO: entity.Data
