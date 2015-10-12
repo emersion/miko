@@ -150,6 +150,18 @@ func SendEntitiesUpdate(w io.Writer, entities []*message.Entity, diffs []*messag
 	return nil
 }
 
+func SendEntityDestroy(w io.Writer, id message.EntityId) error {
+	if err := write(w, message.Types["entity_destroy"]); err != nil {
+		return err
+	}
+
+	if err := write(w, id); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func SendChatReceive(w io.Writer, username string, msg string) error {
 	if err := write(w, message.Types["chat_receive"]); err != nil {
 		return err

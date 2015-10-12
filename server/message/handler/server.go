@@ -37,9 +37,6 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		if code == message.LoginResponseCodes["ok"] {
 			session := ctx.Auth.GetSession(io.Id)
 			ctx.Entity.Add(session.Entity) // TODO: move this elsewhere
-			if err := builder.SendEntityCreate(io.BroadcastWriter, session.Entity); err != nil {
-				return err
-			}
 
 			return builder.SendPlayerJoined(io.BroadcastWriter, session.Entity.Id, username)
 		} else {
