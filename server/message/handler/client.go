@@ -66,6 +66,8 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		read(io.Reader, &defaultType)
 		read(io.Reader, &size)
 
+		log.Println("Receiving terrain, size:", size)
+
 		blk.Points = new(message.BlockPoints)
 
 		var x, y message.PointCoord
@@ -76,10 +78,9 @@ var clientHandlers = &map[message.Type]TypeHandler{
 			read(io.Reader, &t)
 
 			blk.Points[x][y] = t
-			log.Println("Point at:", x, y, t)
+			log.Println(" Point at:", x, y, t)
 		}
 
-		log.Println("Received terrain", size)
 		// TODO: do something with terrain
 
 		return nil
