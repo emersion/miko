@@ -26,15 +26,25 @@ func (t *Terrain) GetBlockAt(x, y message.BlockCoord) *message.Block {
 	}
 }
 
+func (t *Terrain) SetBlock(blk *message.Block) {
+	for i := range blk.Points {
+		for j := range blk.Points[i] {
+			t.points[int(blk.X) + i][int(blk.Y) + j] = blk.Points[i][j]
+		}
+	}
+}
+
 func (t *Terrain) Generate() {
+	t.points[100][100] = message.PointType(1)
+}
+
+func New() *Terrain {
+	t := &Terrain{}
+
 	t.points = make([][]message.PointType, DEFAULT_LEN)
 	for i := range t.points {
 		t.points[i] = make([]message.PointType, DEFAULT_LEN)
 	}
 
-	t.points[100][100] = message.PointType(1)
-}
-
-func New() *Terrain {
-	return &Terrain{}
+	return t
 }

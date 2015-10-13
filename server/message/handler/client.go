@@ -82,7 +82,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 			log.Println(" Point at:", x, y, t)
 		}
 
-		// TODO: do something with terrain
+		ctx.Terrain.SetBlock(&blk)
 
 		return nil
 	},

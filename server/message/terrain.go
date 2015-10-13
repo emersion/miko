@@ -8,6 +8,7 @@ type BlockPoints [BLOCK_LEN][BLOCK_LEN]PointType
 
 type Terrain interface {
 	GetBlockAt(x, y BlockCoord) *Block
+	SetBlock(blk *Block)
 }
 
 type Block struct {
