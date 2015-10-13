@@ -69,6 +69,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		log.Println("Receiving terrain, size:", size)
 
 		blk.Points = new(message.BlockPoints)
+		blk.Fill(defaultType)
 
 		var x, y message.PointCoord
 		var t message.PointType

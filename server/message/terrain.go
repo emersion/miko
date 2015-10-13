@@ -19,3 +19,11 @@ type Block struct {
 func (b *Block) Size() int {
 	return BLOCK_LEN*BLOCK_LEN
 }
+
+func (b *Block) Fill(t PointType) {
+	for i := range b.Points {
+		for j := range b.Points[i] {
+			b.Points[i][j] = t
+		}
+	}
+}
