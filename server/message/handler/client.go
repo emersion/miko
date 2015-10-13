@@ -31,6 +31,34 @@ func readEntityUpdateBody(r io.Reader) *message.Entity {
 	return entity
 }
 
+func ReadBlock(r io.Reader) *message.Block {
+	blk := &message.Block{}
+	var defaultType message.PointType
+	var size uint16
+	read(r, &blk.X)
+	read(r, &blk.Y)
+	read(r, &defaultType)
+	read(r, &size)
+
+	log.Println("Receiving terrain, size:", size)
+
+	blk.Points = new(message.BlockPoints)
+	blk.Fill(defaultType)
+
+	var x, y message.PointCoord
+	var t message.PointType
+	for i := 0; i < int(size); i++ {
+		read(r, &x)
+		read(r, &y)
+		read(r, &t)
+
+		blk.Points[x][y] = t
+		log.Println(" Point at:", x, y, t)
+	}
+
+	return blk
+}
+
 var clientHandlers = &map[message.Type]TypeHandler{
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
 		var code message.ExitCode
@@ -58,32 +86,8 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["terrain_update"]: func(ctx *message.Context, io *message.IO) error {
-		var blk message.Block
-		var defaultType message.PointType
-		var size uint16
-		read(io.Reader, &blk.X)
-		read(io.Reader, &blk.Y)
-		read(io.Reader, &defaultType)
-		read(io.Reader, &size)
-
-		log.Println("Receiving terrain, size:", size)
-
-		blk.Points = new(message.BlockPoints)
-		blk.Fill(defaultType)
-
-		var x, y message.PointCoord
-		var t message.PointType
-		for i := 0; i < int(size); i++ {
-			read(io.Reader, &x)
-			read(io.Reader, &y)
-			read(io.Reader, &t)
-
-			blk.Points[x][y] = t
-			log.Println(" Point at:", x, y, t)
-		}
-
-		ctx.Terrain.SetBlock(&blk)
-
+		blk := ReadBlock(io.Reader)
+		ctx.Terrain.SetBlock(blk)
 		return nil
 	},
 	message.Types["entities_update"]: func(ctx *message.Context, io *message.IO) error {

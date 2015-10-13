@@ -2,7 +2,6 @@ package main
 
 import(
 	"bufio"
-	"time"
 
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/gopherjs/websocket"
@@ -10,11 +9,12 @@ import(
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
 	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
-	"git.emersion.fr/saucisse-royale/miko/server/terrain"
+
+	"git.emersion.fr/saucisse-royale/miko/server/browser/client"
 )
 
 func main() {
-	trn := terrain.New()
+	trn := client.NewTerrain()
 	ctx := &message.Context{
 		Type: message.ClientContext,
 		Terrain: trn,
@@ -44,8 +44,6 @@ func main() {
 	if err != nil {
 		panic("SendLogin: " + err.Error())
 	}
-
-	time.Sleep(time.Second * 100)
 
 	/*err = builder.SendChatSend(clientIO.Writer, "Hello World!")
 	if err != nil {

@@ -3,7 +3,7 @@ package main
 import(
 	"bufio"
 	"net"
-	"time"
+	//"log"
 
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
@@ -42,7 +42,7 @@ func main() {
 		panic("SendLogin: " + err.Error())
 	}
 
-	time.Sleep(time.Second * 100)
+	for {}
 
 	/*err = builder.SendChatSend(clientIO.Writer, "Hello World!")
 	if err != nil {

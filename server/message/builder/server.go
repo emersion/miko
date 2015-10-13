@@ -35,12 +35,12 @@ func SendPlayerLeft(w io.Writer, id message.EntityId) error {
 	})
 }
 
-func SendTerrainUpdate(w io.Writer, block *message.Block) error {
+func WriteBlock(w io.Writer, blk *message.Block) error {
 	// Get the point type the most used
 	var defaultType message.PointType
 	defaultTypeCount := -1
 	typesStats := make(map[message.PointType]int)
-	for _, column := range block.Points {
+	for _, column := range blk.Points {
 		for _, ptType := range column {
 			if _, present := typesStats[ptType]; !present {
 				typesStats[ptType] = 1
@@ -55,33 +55,30 @@ func SendTerrainUpdate(w io.Writer, block *message.Block) error {
 		}
 	}
 
-	// Send the response
-	if err := write(w, message.Types["terrain_update"]); err != nil {
+	if err := write(w, blk.X); err != nil {
 		return err
 	}
-	if err := write(w, block.X); err != nil {
-		return err
-	}
-	if err := write(w, block.Y); err != nil {
+	if err := write(w, blk.Y); err != nil {
 		return err
 	}
 	if err := write(w, defaultType); err != nil {
 		return err
 	}
-	if err := write(w, uint16(block.Size() - defaultTypeCount)); err != nil {
+	if err := write(w, uint16(blk.Size() - defaultTypeCount)); err != nil {
 		return err
 	}
 
-	for x, column := range block.Points {
-		for y, ptType := range column {
+	for i := range blk.Points {
+		for j := range blk.Points[i] {
+			ptType := blk.Points[i][j]
 			if ptType == defaultType {
 				continue
 			}
 
-			if err := write(w, message.PointCoord(x)); err != nil {
+			if err := write(w, message.PointCoord(i)); err != nil {
 				return err
 			}
-			if err := write(w, message.PointCoord(y)); err != nil {
+			if err := write(w, message.PointCoord(j)); err != nil {
 				return err
 			}
 			if err := write(w, ptType); err != nil {
@@ -90,6 +87,16 @@ func SendTerrainUpdate(w io.Writer, block *message.Block) error {
 		}
 	}
 
+	return nil
+}
+
+func SendTerrainUpdate(w io.Writer, blk *message.Block) error {
+	if err := write(w, message.Types["terrain_update"]); err != nil {
+		return err
+	}
+	if err := WriteBlock(w, blk); err != nil {
+		return err
+	}
 	return nil
 }
 
