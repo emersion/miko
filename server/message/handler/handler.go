@@ -85,7 +85,7 @@ func (h *Handler) Listen(clientIO *message.IO) {
 			log.Println("Connection closed.")
 			return
 		} else if err != nil {
-			clientIO.Writer.Close()
+			//clientIO.Writer.Close()
 			log.Println("binary.Read failed:", err)
 			return
 		}
