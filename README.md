@@ -1,4 +1,4 @@
-# Miko
+﻿# Miko
 
 An experimental minimalist multiplayer top-down adventure game (en français)
 
@@ -56,7 +56,14 @@ S | 17 | chat_receive | uint2 entityid + str message
 
 #### exitcode
 
-_(TODO)_
+Valeur | Signification
+--- | ---
+0 | client_quit
+1 | server_closed
+2 | network_error
+3 | ping_timeout
+4 | client_kicked
+5 | client_banned
 
 #### loginresponsecode
 
@@ -98,7 +105,7 @@ Valeur | Signification | Contenu
 * coordonnées d'un bloc: multiple de 256 de ses coordonnées en x et y
 * coordonnées d'une case dans un bloc: différence de ses coordonnées par rapport à la case en bas à gauche du bloc
 
-#### Envoi d'un bloc
+#### terrain
 
 ```
 sint2 bx + sint2 by
@@ -109,22 +116,39 @@ size times:
     uint1 value
 ```
 
-* bx;by : coordonnées du bloc
+* bx, by : coordonnées du bloc
 * default : valeur par défaut des cases non envoyées
 * size : nombre de cases envoyées
 * x, y : coordonnées de la case dans le bloc
 * value : valeur de la case
 
+#### terrain_hint
+
+* le client envoit une liste de blocs dont il veut recevoir le terrain
+
+```
+uint1 size
+size times:
+	sint2 bx + sint2 by
+```
+
+* bx, by : coordonnées du bloc
+
 ### Entités
 
-* entity_update:
+* le client peut envoyer plusieurs entity_update si interaction d'objets différents de lui
+
+#### entity_update
+
 ```
 uint2 entityid
 uint1 bitfield
 for bit in bitfield:
 	bytes data
 ```
-* entities_update:
+
+#### entities_update
+
 ```
 uint2 size
 size times:
@@ -134,7 +158,7 @@ size times:
 		bytes data
 ```
 
-#### Bitfield
+#### bitfield
 
 * les bits sont lus de gauche à droite : 01234567
 
@@ -147,13 +171,62 @@ Bit | Signification | Contenu
 4 |
 5 |
 6 |
-7 | object | objectbitfield + uint2 size + bytes objectdata
+7 | object | uint1 size + bytes objectupdatetypes
 
-#### Object
+#### objectupdatetype
 
-* caractéristiques spécifiques au type de l'entité à update
-* même principe que précédemment, mais la table de bitfield dépend du type de l'entité
-* et mettre un uint2 pour la taille des données (sans compter le bitfield)
+* liste de uint1 indépendants entre eux
+* pas de paramètres supplémentaires associés aux bytes
+
+Valeur | Signification | Détail
+--- | --- | ---
+0 | disabled | objet désactivé (interrupteur, ...)
+1 | enabled | object activé (inteerrupteur, ...)
+
+#### entitycreate
+
+#### entitydestroy
+
+### Actions
+
+#### Description
+
+* action caractérisée par id et a paramètres optionnels
+* paramètres spécifiés par type de action, type de action<==>type de params
+* on n'envoit pas l'actiontype parce que le peer sait le type de chaque action (fixée)
+* spells à channel: envoyer un action pour début channel et un pour fin channel
+
+#### action
+
+```
+uint2 actionid
+bytes params
+```
+
+#### actions
+
+```
+uint2 size
+size times:
+	uint2 actionid
+	bytes params
+```
+
+#### actionid
+
+Valeur | Signification | actiontype
+--- | --- | ---
+
+* exemple possible: 0 | heal | entitytarget
+
+#### actiontype
+
+Valeur | Signification | Types de params
+--- | --- | ---
+0 | paramless |
+1 | onefloat | float value
+2 | entitytarget | uint2 targetentityid
+3 | terraintarget | sint2 bx sint2 by uint1 x uint1 y
 
 ### Session exemple
 
@@ -206,12 +279,9 @@ S (broadcast) playermeta(id, left)
 * on va peut etre devoir, si besoin, en fonction du jeu, envoyer une requete explicite depuis le serveur pour supprimer du terrain pour aider le client à poubeller le terrain inutile au fur et à mesure
 * niveau implémentation, il faudra trouver moyen d'associer connection/compte à chaque socket ouvert, pour gérer envois de ping et fermeture de session de manière objet/jolie, etc.
 * c'est assez général comme protocole, mais il faudra assez spécifier les bytes de action/terrain/entité
-* de manière générale, les commandes qui ont une response sont envoyées en attendant la réponse
 * le ping peut se résumer à j'envois un ping si j'ai pas reçu de message depuis 5 secondes, et si j'ai rien pendant 10 secondes d'affilée (en tout) je exit(ping timeout)
 * paramètres à faire varier: fréquence d'envoi de entitiesupdate/entityupdate, du terrain (même si il est invariant, on peut dire qu'on envoit par plus petits morceaux mais plus souvent, voir plus précisément en testant), timeout du ping, et quelques autres trucs plus précis dont il faudra parler liés à l'optimisation du multijoueur
 * le serveur attend avant d'envoyer des entitiesupdate, par exemple il le fait toutes les n frames, il ne l'envoit pas dès qu'il reçoit une update
-* notes d'implémentation: ça risque d'être assez difficile à implémenter: comment gérer les collisions efficacement, comment gérer les murs efficacement ? puisque l'espace mémoire n'est pas critique, il faut privilégier la facilité de programmation (contrairement à quand on envoit par réseau). je pense que ça peut être intéressant de garder le système de segmentation par bloc, parce que ça permettera de "naturellement" filtrer les murs à observer lors d'une collision/d'un affichage, vu qu'on n'aura qu'à s'intéresser à tous ceux d'un bloc donné (éventuellement, il faudrait peut-être, dans le cas où on se retrouverait avec une grande quantité de cases non standard, séparer une liste avec toutes les cases non standard, et une avec juste celles qui interviennent dans les collisions, pour itérer plus vite dans la liste de cases lorsqu'il y a une collision)
-* il est très difficile de faire un joli système d'entités (et je ne parle même pas de l'implémentation, mais juste du protocole)
 * chaque entité a un entityid, une position
 * éventuellement une vitesse (négligeons l'accélération pour l'instant)
 * la position sera envoyée en coordonnées cartésiennes, la vitesse en coordonnées _polaires_ ie (x,y,normevitesse,anglevitesse) (on a besoin d'envoyer la vitesse pour faire l'extrapolation (et l'interpolation) des coordonnées des entités entre chaque frame reçue)
@@ -219,6 +289,6 @@ S (broadcast) playermeta(id, left)
 * note d'implémentation: il vaudrait mieux stocker l'angle et la norme sous forme de double pour mieux gérer une accélération éventuelle, mais pas besoin d'autant de précision dans l'envoi puisqu'on mettra à jour suffisament souvent pour corriger les défauts de trajectoire liées aux imprécisions ie (short, short, float, float)
 * notes d'implémentation: comment représenter une entité, avec son image et toutes les caractéristiques supplémentaires ? on peut pour l'instant associer un unsgined byte à chaque entité qui correspond à une image, et un unsigned byte qui correspond à son TYPE (joueur ? ennemi ? piège ? interrupteur ? ... ). clairement on aura besoin de caractéristiques supplémentaires pour certains types d'entités, on pourra utiliser éventuellement un système d'héritage avec des classes, mais ça risque de devenir assez lourd, peut etre un héritage par interface? mais ça reste lourd, il faudra aviser.
 * Puisque le type d'entité restera constant tout au long de son temps de vie, on enverra son type avec ses caractéristiques supplémentaires pendant entitycreate.
-* Il faudra envoyer des caractéristiques supplémentaires en fonction du type de l'entité, au fur et à mesure de son temps de vie, imagine un interrupteur qui passe en mode activé, ou un monstre qui prend une animation particulière lorsqu'il envoit un projectile, ou lorsqu'il dash, ... je propose d'ajouter un bit au bitfield, qui permettra d'ajouter des paramètres spécifiques au type de l'objet
 * pour spécifier plus loin, il faudrait donner les types d'entités, et les caractéristiques supplémentaires de chaque type d'entités, et alors on spécifierait entitycreate assez facilement
 * pour entitesdestroy, il faudrait peut etre garder ça assez minimal, par exemple si la mort d'un personnage crée une explosion, il faudrait peut etre faire spawn une entité explosion, en tous cas déléguer les taches complexes à d'autres choses que entitiesdestroy qui devrait vraiment être minimaliste et générique
+* les objets liront un set de objectupdatetype pour s'update et ne s'intéresseront qu'aux bytes qui les concerne, en les interprétant comme ils le veulent
