@@ -2,6 +2,7 @@ package server
 
 import (
 	"log"
+	"bufio"
 	"net/http"
 	"golang.org/x/net/websocket"
 
@@ -28,8 +29,10 @@ type server struct {
 func (c *Client) listen() {
 	log.Println("New client:", c.id)
 
+	reader := bufio.NewReader(c.conn)
+
 	clientIO := &message.IO{
-		Reader: c.conn,
+		Reader: reader,
 		Writer: c.conn,
 		BroadcastWriter: c.Server,
 		Id: c.id,

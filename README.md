@@ -236,26 +236,26 @@ S ping
 C pong
 ...
 C login(pseudo,password)
-S loginresponse(unknownpseudo)
+S login_response(unknownpseudo)
 C register(pseudo,password)
-S registerresponse(ok)
+S register_response(ok)
 C login(pseudo,password)
-S loginresponse(ok)
-S (en broadcast) playermeta(id,playerjoined,pseudo)
-S (en broadcast) entitiesupdate(...)
+S login_response(ok)
+S (en broadcast) player_meta(id, player_joined, pseudo)
+S (en broadcast) entities_update(...)
 ...
 S ping
 C pong
 ...
-S terrainupdate(terrain)
-C entityupdate(bytes)
-S (en broadcast) entitiesupdate([...])
-S (en broadcast) entitiesupdate([...])
-C terrainrequest(hint)
-S terrainupdate(terrain)
+S terrain_update(terrain)
+C entity_update(bytes)
+S (en broadcast) entities_update([...])
+S (en broadcast) entities_update([...])
+C terrain_request(hint)
+S terrain_update(terrain)
 ...
-C chat("cc")
-S (en broadcast) (id, "cc")
+C chat_send("cc")
+S (en broadcast) chat_receive(id, "cc")
 ...
 C ping
 S pong
@@ -264,8 +264,8 @@ C action(action)
 S (en broadcast) actions(...)
 ...
 C exit(player quit)
-S (broadcast) entitiesdestroy(id)
-S (broadcast) playermeta(id, left)
+S (broadcast) entities_destroy(id)
+S (broadcast) player_meta(id, left)
 ```
 
 ## Fonctionnement (todo)

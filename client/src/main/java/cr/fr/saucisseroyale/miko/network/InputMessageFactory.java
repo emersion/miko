@@ -129,6 +129,7 @@ class InputMessageFactory {
             lambdas.add((handler) -> handler.objectUpdate(entityIdUpdate, objectBooleanField,
                 objectSize, objectInputStream));
           }
+          // TODO non? go optional machin? mais comment gérer dataobject?
         }
         return (handler) -> {
           for (FutureInputMessage lambda : lambdas) {
@@ -165,7 +166,7 @@ class InputMessageFactory {
   }
 
   // On utilise notre propre méthode de lecture de String au cas où le protocole change (au lieu
-  // d'utiliser dis.readInputStream() qui par coïncidence utilise la même méthode que nous
+  // d'utiliser dis.readInputStream() qui par coïncidence utilise la même méthode que nous)
   private static String readString(DataInputStream dis) throws IOException {
     int length = dis.readUnsignedShort();
     byte[] data = new byte[length];

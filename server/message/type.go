@@ -15,7 +15,7 @@ var Types = map[string]Type{
 	"login_response": 4,
 	"register": 5,
 	"register_response": 6,
-	"player_meta": 7,
+	"meta_action": 7,
 	"terrain_update": 8,
 	"terrain_request": 9,
 	"entities_update": 10,

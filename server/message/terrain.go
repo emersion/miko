@@ -8,6 +8,7 @@ type BlockPoints [BLOCK_LEN][BLOCK_LEN]PointType
 
 type Terrain interface {
 	GetBlockAt(x, y BlockCoord) *Block
+	SetBlock(blk *Block)
 }
 
 type Block struct {
@@ -18,4 +19,12 @@ type Block struct {
 
 func (b *Block) Size() int {
 	return BLOCK_LEN*BLOCK_LEN
+}
+
+func (b *Block) Fill(t PointType) {
+	for i := range b.Points {
+		for j := range b.Points[i] {
+			b.Points[i][j] = t
+		}
+	}
 }

@@ -10,20 +10,21 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
 		// TODO: read exit code
 
-		var username string
-		sender := ctx.Auth.GetSession(io.Id)
-		if sender != nil {
-			username = sender.Username
+		session := ctx.Auth.GetSession(io.Id)
+		if session != nil {
+			ctx.Entity.Delete(session.Entity.Id) // TODO: move this elsewhere
 			ctx.Auth.Logout(io.Id)
-		} else {
-			username = "[anonymous]"
 		}
 
 		if err := io.Writer.Close(); err != nil {
 			return err
 		}
 
-		return builder.SendPlayerLeft(io.BroadcastWriter, username)
+		if session != nil {
+			return builder.SendPlayerLeft(io.BroadcastWriter, session.Entity.Id)
+		} else {
+			return nil
+		}
 	},
 	message.Types["login"]: func(ctx *message.Context, io *message.IO) error {
 		username := readString(io.Reader)
@@ -35,7 +36,19 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		}
 
 		if code == message.LoginResponseCodes["ok"] {
-			return builder.SendPlayerJoined(io.BroadcastWriter, username)
+			log.Println("Client logged in:", username)
+
+			session := ctx.Auth.GetSession(io.Id)
+			ctx.Entity.Add(session.Entity) // TODO: move this elsewhere
+
+			// Send initial terrain
+			pos := session.Entity.Position
+			err := builder.SendTerrainUpdate(io.Writer, ctx.Terrain.GetBlockAt(pos.BX, pos.BY))
+			if err != nil {
+				return err
+			}
+
+			return builder.SendPlayerJoined(io.BroadcastWriter, session.Entity.Id, username)
 		} else {
 			return nil
 		}
@@ -49,8 +62,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	},
 	message.Types["terrain_request"]: func(ctx *message.Context, io *message.IO) error {
 		var x, y message.BlockCoord
-		read(io.Reader, x)
-		read(io.Reader, y)
+		read(io.Reader, &x)
+		read(io.Reader, &y)
 
 		return builder.SendTerrainUpdate(io.Writer, ctx.Terrain.GetBlockAt(x, y))
 	},
@@ -61,8 +74,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		var username string
 		if ctx.Auth.HasSession(io.Id) {
-			sender := ctx.Auth.GetSession(io.Id)
-			username = sender.Username
+			session := ctx.Auth.GetSession(io.Id)
+			username = session.Username
 		} else {
 			username = "[anonymous]"
 		}

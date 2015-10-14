@@ -2,27 +2,24 @@ package main
 
 import(
 	"bufio"
-
-	"github.com/gopherjs/gopherjs/js"
-	"github.com/gopherjs/websocket"
+	"net"
+	//"log"
 
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
 	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
-
-	"git.emersion.fr/saucisse-royale/miko/server/browser/client"
+	"git.emersion.fr/saucisse-royale/miko/server/terrain"
 )
 
 func main() {
-	trn := client.NewTerrain()
+	trn := terrain.New()
 	ctx := &message.Context{
 		Type: message.ClientContext,
 		Terrain: trn,
 	}
 	hdlr := handler.New(ctx)
 
-	host := js.Global.Get("window").Get("location").Get("host").String()
-	c, err := websocket.Dial("ws://"+host+"/socket")
+	c, err := net.Dial("tcp", "127.0.0.1:9999")
 	if err != nil {
 		panic("Dial: " + err.Error())
 	}
@@ -44,6 +41,8 @@ func main() {
 	if err != nil {
 		panic("SendLogin: " + err.Error())
 	}
+
+	for {}
 
 	/*err = builder.SendChatSend(clientIO.Writer, "Hello World!")
 	if err != nil {
