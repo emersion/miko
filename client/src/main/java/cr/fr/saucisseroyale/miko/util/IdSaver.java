@@ -3,7 +3,6 @@ package cr.fr.saucisseroyale.miko.util;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 /**
  * Utilitaire permettant de retrouver des enums par leur id.
@@ -22,13 +21,13 @@ public class IdSaver {
   }
 
   /**
-   * Renvoit l'id correspondant à un élément d'une enum précédemment sauvegardée.
+   * Renvoit l'id correspondant à un élément d'une enum précédemment sauvegardée, ou null s'il n'y a
+   * pas d'élément correspondant.
    *
    * @param enumeration L'énumération identifiable dont on souhaite retrouver un élément.
    * @param id La valeur de l'élément à retrouver.
    * @return L'élément correspondant à id pour cette classe.
    * @throws IllegalArgumentException Si la classe n'a pas été sauvegardée avant utilisation.
-   * @throws NoSuchElementException Si aucun élément ne correspond à l'id.
    * @throws IndexOutOfBoundsException Si l'id est négatif ou trop grand.
    */
   public static <T extends Enum<T> & UniquelyIdentifiable> T getValue(Class<T> enumeration, int id) {
@@ -44,10 +43,7 @@ public class IdSaver {
     // On sait que l'élément récupéré est du type de sa clef
     @SuppressWarnings("unchecked")
     T value = (T) ordered[id];
-    if (value == null) {
-      throw new NoSuchElementException("No element of class " + enumeration.getCanonicalName()
-          + " has element of id " + id);
-    }
+    // value == null <=> pas d'élément trouvé
     return value;
   }
 
