@@ -61,11 +61,21 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		return builder.SendRegisterResp(io.Writer, code)
 	},
 	message.Types["terrain_request"]: func(ctx *message.Context, io *message.IO) error {
-		var x, y message.BlockCoord
-		read(io.Reader, &x)
-		read(io.Reader, &y)
+		var size uint8
+		read(io.Reader, &size)
 
-		return builder.SendTerrainUpdate(io.Writer, ctx.Terrain.GetBlockAt(x, y))
+		for i := 0; i < size; i++ {
+			var x, y message.BlockCoord
+			read(io.Reader, &x)
+			read(io.Reader, &y)
+
+			err := builder.SendTerrainUpdate(io.Writer, ctx.Terrain.GetBlockAt(x, y))
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	},
 	message.Types["chat_send"]: func(ctx *message.Context, io *message.IO) error {
 		msg := readString(io.Reader)

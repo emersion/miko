@@ -28,6 +28,15 @@ var Types = map[string]Type{
 	"chat_receive": 17,
 }
 
+var ExitCodes = map[string]ExitCode{
+	"client_quit": 0,
+	"server_closed": 1,
+	"network_error": 2,
+	"ping_timeout": 3,
+	"client_kicked": 4,
+	"client_banned": 5,
+}
+
 var LoginResponseCodes = map[string]LoginResponseCode{
 	"ok": 0,
 	"unknown_pseudo": 1,
