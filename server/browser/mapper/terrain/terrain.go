@@ -17,6 +17,14 @@ func getMouseCoords(event *js.Object) (int, int) {
 	return x, y
 }
 
+func invertPoint(pt message.PointType) message.PointType {
+	if pt == message.PointType(0) {
+		return message.PointType(1)
+	} else {
+		return message.PointType(0)
+	}
+}
+
 func NewTerrain(el *js.Object) *client.Terrain {
 	t := client.NewTerrain(el)
 	t.Reset(1)
@@ -45,11 +53,7 @@ func NewTerrain(el *js.Object) *client.Terrain {
 
 		if fromX == lastX && fromY == lastY {
 			x, y := fromX, fromY
-			if t.Points[x][y] == message.PointType(0) {
-				t.Points[x][y] = message.PointType(1)
-			} else {
-				t.Points[x][y] = message.PointType(0)
-			}
+			t.Points[x][y] = invertPoint(t.Points[x][y])
 			t.DrawPoint(x, y)
 		} else {
 			if fromX > lastX {
@@ -60,7 +64,7 @@ func NewTerrain(el *js.Object) *client.Terrain {
 			}
 			for i := fromX; i < lastX; i++ {
 				for j := fromY; j < lastY; j++ {
-					t.Points[i][j] = message.PointType(1)
+					t.Points[i][j] = invertPoint(t.Points[i][j])
 					t.DrawPoint(i, j)
 				}
 			}
