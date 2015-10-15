@@ -42,12 +42,12 @@ func (t *Terrain) SetBlock(blk *message.Block) {
 
 func NewTerrain() *Terrain {
 	el := js.Global.Get("document").Call("getElementById", "canvas")
-	el.Set("width", terrain.DEFAULT_LEN * res)
-	el.Set("height", terrain.DEFAULT_LEN * res)
+	el.Set("width", message.BLOCK_LEN * res)
+	el.Set("height", message.BLOCK_LEN * res)
 
 	t := &Terrain{}
 	t.canvas = canvas.New(el)
-	t.Reset()
+	t.Reset(1)
 
 	el.Call("addEventListener", "click", func(event *js.Object) {
 		x := int(event.Get("clientX").Int() / res)
