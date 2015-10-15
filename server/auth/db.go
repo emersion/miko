@@ -1,5 +1,6 @@
 package auth
 
+// A user in the database
 type User struct {
 	Username string
 	password string

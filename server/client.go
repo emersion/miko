@@ -11,6 +11,7 @@ import(
 	"git.emersion.fr/saucisse-royale/miko/server/terrain"
 )
 
+// A very basic TCP client, for testing purposes
 func main() {
 	trn := terrain.New()
 	ctx := &message.Context{

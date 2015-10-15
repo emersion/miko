@@ -4,6 +4,8 @@ import(
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 )
 
+// The authentication service
+// It aims to manage users: login, register, sessions
 type AuthService struct {
 	sessions []*message.Session
 	users []*User

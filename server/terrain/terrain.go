@@ -4,10 +4,14 @@ import (
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 )
 
+// The terrain
+// It is a database of the game map. It offers functions to retrieve specific
+// parts of it.
 type Terrain struct {
 	Points [][]message.PointType
 }
 
+// Get the block at a specific position.
 func (t *Terrain) GetBlockAt(x, y message.BlockCoord) *message.Block {
 	pts := &message.BlockPoints{}
 
@@ -24,6 +28,7 @@ func (t *Terrain) GetBlockAt(x, y message.BlockCoord) *message.Block {
 	}
 }
 
+// Update the map with a new block.
 func (t *Terrain) SetBlock(blk *message.Block) {
 	for i := range blk.Points {
 		for j := range blk.Points[i] {
