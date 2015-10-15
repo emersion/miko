@@ -8,13 +8,16 @@ import (
 	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
 )
 
+// A handler for a specific message
 type TypeHandler func(*message.Context, *message.IO) error
 
+// Handles messages from remote
 type Handler struct {
 	ctx *message.Context
 	handlers map[message.Type]TypeHandler
 }
 
+// Send entities updates to all clients that need it
 func (h *Handler) flushEntitiesDiff(w io.Writer) error {
 	pool := h.ctx.Entity.Flush()
 
@@ -54,6 +57,7 @@ func (h *Handler) flushEntitiesDiff(w io.Writer) error {
 	return nil
 }
 
+// Handle a message of the specified type
 func (h *Handler) Handle(t message.Type, io *message.IO) error {
 	if val, ok := h.handlers[t]; ok {
 		err := val(h.ctx, io)
@@ -77,6 +81,7 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 	return nil
 }
 
+// Listen to a remote stream
 func (h *Handler) Listen(clientIO *message.IO) {
 	var msg_type message.Type
 	for {

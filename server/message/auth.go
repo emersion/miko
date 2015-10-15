@@ -1,11 +1,14 @@
 package message
 
+// A session
+// This maps connected clients to usernames and entities.
 type Session struct {
 	Id int
 	Username string
 	Entity *Entity
 }
 
+// An authentication service
 type AuthService interface {
 	GetSession(id int) *Session
 	HasSession(id int) bool

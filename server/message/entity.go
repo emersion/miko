@@ -2,6 +2,7 @@ package message
 
 type EntityId uint16
 
+// A position contains a block coordinates and a point coordinates with that block.
 type Position struct {
 	BX BlockCoord
 	BY BlockCoord
@@ -9,11 +10,14 @@ type Position struct {
 	Y PointCoord
 }
 
+// A speed contains an angle and a norm.
 type Speed struct {
 	Angle float32
 	Norm float32
 }
 
+// An entity
+// Can be a player, an object, a monster, and so on.
 type Entity struct {
 	Id EntityId
 	Position *Position
@@ -27,6 +31,7 @@ func NewEntity() *Entity {
 	}
 }
 
+// Contains a list of fields that have changed in an entity.
 type EntityDiff struct {
 	Position bool
 	SpeedAngle bool
@@ -61,12 +66,15 @@ func NewEntityDiffFromBitfield(bitfield uint8) *EntityDiff {
 	}
 }
 
+// An entity diff pool
+// Contains three lists for created, updated and deleted entities.
 type EntityDiffPool struct {
 	Created []*Entity
 	Updated map[EntityId]*EntityDiff
 	Deleted []EntityId
 }
 
+// An entity service
 type EntityService interface {
 	Get(id EntityId) *Entity
 	Add(entity *Entity)
