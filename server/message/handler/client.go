@@ -52,8 +52,8 @@ func ReadBlock(r io.Reader) *message.Block {
 		read(r, &y)
 		read(r, &t)
 
-		blk.Points[x][y] = t
 		log.Println(" Point at:", x, y, t)
+		blk.Points[x][y] = t
 	}
 
 	return blk
