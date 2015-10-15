@@ -9,21 +9,62 @@ import (
 	"git.emersion.fr/saucisse-royale/miko/server/browser/client"
 )
 
+const res = 5
+
+func getMouseCoords(event *js.Object) (int, int) {
+	x := int(event.Get("pageX").Int() / res)
+	y := int(event.Get("pageY").Int() / res)
+	return x, y
+}
+
 func NewTerrain(el *js.Object) *client.Terrain {
 	t := client.NewTerrain(el)
 	t.Reset(1)
 
-	el.Call("addEventListener", "click", func(event *js.Object) {
-		x := int(event.Get("pageX").Int() / 5)
-		y := int(event.Get("pageY").Int() / 5)
-
-		if t.Points[x][y] == message.PointType(0) {
-			t.Points[x][y] = message.PointType(1)
-		} else {
-			t.Points[x][y] = message.PointType(0)
+	var pressing bool
+	var fromX, fromY, lastX, lastY int
+	el.Call("addEventListener", "mousedown", func(event *js.Object) {
+		fromX, fromY = getMouseCoords(event)
+		lastX, lastY = fromX, fromY
+		pressing = true
+	})
+	el.Call("addEventListener", "mousemove", func(event *js.Object) {
+		if !pressing {
+			return
 		}
 
-		t.DrawPoint(x, y)
+		x, y := getMouseCoords(event)
+		t.DrawRegion(fromX, fromY, lastX - fromX, lastY - fromY)
+		t.Canvas.SetFillStyle("rgba(0,0,255,0.1)")
+		t.Canvas.FillRect(fromX * res, fromY * res, (x - fromX) * res, (y - fromY) * res)
+		lastX, lastY = x, y
+	})
+	el.Call("addEventListener", "mouseup", func(event *js.Object) {
+		t.DrawRegion(fromX, fromY, lastX - fromX, lastY - fromY)
+		pressing = false
+
+		if fromX == lastX && fromY == lastY {
+			x, y := fromX, fromY
+			if t.Points[x][y] == message.PointType(0) {
+				t.Points[x][y] = message.PointType(1)
+			} else {
+				t.Points[x][y] = message.PointType(0)
+			}
+			t.DrawPoint(x, y)
+		} else {
+			if fromX > lastX {
+				fromX, lastX = lastX, fromX
+			}
+			if fromY > lastY {
+				fromY, lastY = lastY, fromY
+			}
+			for i := fromX; i < lastX; i++ {
+				for j := fromY; j < lastY; j++ {
+					t.Points[i][j] = message.PointType(1)
+					t.DrawPoint(i, j)
+				}
+			}
+		}
 	})
 
 	saveBtn := js.Global.Get("document").Call("getElementById", "save-btn")
