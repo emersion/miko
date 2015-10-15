@@ -14,8 +14,8 @@ func NewTerrain(el *js.Object) *client.Terrain {
 	t.Reset(1)
 
 	el.Call("addEventListener", "click", func(event *js.Object) {
-		x := int(event.Get("clientX").Int() / 5)
-		y := int(event.Get("clientY").Int() / 5)
+		x := int(event.Get("pageX").Int() / 5)
+		y := int(event.Get("pageY").Int() / 5)
 
 		if t.Points[x][y] == message.PointType(0) {
 			t.Points[x][y] = message.PointType(1)
