@@ -3,11 +3,13 @@ package cr.fr.saucisseroyale.miko;
 import cr.fr.saucisseroyale.miko.engine.Chunk;
 import cr.fr.saucisseroyale.miko.network.NetworkClient;
 import cr.fr.saucisseroyale.miko.network.OutputMessageFactory;
+import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
 import cr.fr.saucisseroyale.miko.protocol.ExitType;
 import cr.fr.saucisseroyale.miko.protocol.LoginResponseType;
 import cr.fr.saucisseroyale.miko.protocol.RegisterResponseType;
 
 import java.io.DataInputStream;
+import java.util.List;
 
 /**
  * Une interface entre les messages entrants et le jeu et son engine. Les méthodes portant le nom de
@@ -86,6 +88,10 @@ public class MessageHandler {
    */
   private void messageReceived() {
     // Prévenir qu'on a reçu un message pour éviter le timeout
+  }
+
+  public void entitiesUpdate(List<EntityDataUpdate> entitiesUpdateList) {
+
   }
 
 }

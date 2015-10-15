@@ -171,9 +171,9 @@ Bit | Signification | Contenu
 4 |
 5 |
 6 |
-7 | object | uint1 size + bytes objectupdatetypes
+7 | object | uint1 size + uint1...objectattributes
 
-#### objectupdatetype
+#### objectattribute
 
 * liste de uint1 indépendants entre eux
 * pas de paramètres supplémentaires associés aux bytes

@@ -2,14 +2,17 @@ package cr.fr.saucisseroyale.miko.network;
 
 import cr.fr.saucisseroyale.miko.engine.Block;
 import cr.fr.saucisseroyale.miko.engine.Chunk;
+import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
+import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
 import cr.fr.saucisseroyale.miko.protocol.ExitType;
 import cr.fr.saucisseroyale.miko.protocol.LoginResponseType;
+import cr.fr.saucisseroyale.miko.protocol.MapPoint;
 import cr.fr.saucisseroyale.miko.protocol.MessageType;
 import cr.fr.saucisseroyale.miko.protocol.MetaActionType;
+import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
 import cr.fr.saucisseroyale.miko.protocol.RegisterResponseType;
 import cr.fr.saucisseroyale.miko.protocol.TerrainType;
 
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,6 +26,9 @@ import java.util.List;
  * @see #parseMessage(DataInputStream)
  */
 class InputMessageFactory {
+
+  private static MessageParsingException parsingException = new MessageParsingException(
+      "Unknown message type, aborted parsing");
 
   // Classe statique
   private InputMessageFactory() {
@@ -43,6 +49,8 @@ class InputMessageFactory {
       throws MessageParsingException, IOException {
     int messageCode = dis.readUnsignedByte();
     MessageType messageType = MessageType.getType(messageCode);
+    if (messageType == null)
+      throw parsingException;
     switch (messageType) {
       case PING:
         return (handler) -> handler.ping();
@@ -51,27 +59,35 @@ class InputMessageFactory {
       case EXIT:
         int exitCode = dis.readUnsignedByte();
         ExitType exitType = ExitType.getType(exitCode);
+        if (exitType == null)
+          throw parsingException;
         return (handler) -> handler.exit(exitType);
       case LOGIN_RESPONSE:
         int loginResponseCode = dis.readUnsignedByte();
         LoginResponseType loginResponseType = LoginResponseType.getType(loginResponseCode);
+        if (loginResponseType == null)
+          throw parsingException;
         return (handler) -> handler.loginResponse(loginResponseType);
       case REGISTER_RESPONSE:
         int registerResponseCode = dis.readUnsignedByte();
         RegisterResponseType registerResponseType =
             RegisterResponseType.getType(registerResponseCode);
+        if (registerResponseType == null)
+          throw parsingException;
         return (handler) -> handler.registerResponse(registerResponseType);
       case META_ACTION:
         int entityId = dis.readUnsignedShort();
         int metaActionCode = dis.readUnsignedByte();
         MetaActionType metaActionType = MetaActionType.getType(metaActionCode);
+        if (metaActionType == null)
+          throw parsingException;
         switch (metaActionType) {
           case PLAYER_JOINED:
             String pseudo = readString(dis);
             return (handler) -> handler.playerJoined(entityId, pseudo);
           case PLAYER_LEFT:
             return (handler) -> handler.playerLeft(entityId);
-          default:
+          default: // unknown
             throw new MessageParsingException("Unknown message type, aborted parsing");
         }
       case TERRAIN_UPDATE:
@@ -79,6 +95,8 @@ class InputMessageFactory {
         int chunkY = dis.readShort();
         int defaultCode = dis.readUnsignedByte();
         TerrainType defaultType = TerrainType.getType(defaultCode);
+        if (defaultType == null)
+          throw parsingException;
         int blocksSize = dis.readUnsignedShort();
         Block[] blocks = new Block[blocksSize];
         for (int i = 0; i < blocksSize; i++) {
@@ -86,6 +104,8 @@ class InputMessageFactory {
           int y = dis.readUnsignedByte();
           int code = dis.readUnsignedByte();
           TerrainType type = TerrainType.getType(code);
+          if (type == null)
+            throw parsingException;
           Block block = new Block(x, y, type);
           blocks[i] = block;
         }
@@ -93,61 +113,67 @@ class InputMessageFactory {
         return (handler) -> handler.chunkUpdate(chunkX, chunkY, chunk);
       case ENTITIES_UPDATE:
         int entitiesSize = dis.readUnsignedShort();
-        List<FutureInputMessage> lambdas = new ArrayList<>();
+        List<EntityDataUpdate> entitiesUpdateList = new ArrayList<>(entitiesSize);
         for (int i = 0; i < entitiesSize; i++) {
           int entityIdUpdate = dis.readUnsignedShort();
+          EntityDataUpdate dataUpdate = new EntityDataUpdate(entityIdUpdate);
           byte entitiesBitfield = dis.readByte();
-          if ((entitiesBitfield & 1 << 7) != 0) { // position update
-            int entityChunkX = dis.readShort();
-            int entityChunkY = dis.readShort();
-            int entityX = dis.readUnsignedByte();
-            int entityY = dis.readUnsignedByte();
-            lambdas.add((handler) -> handler.positionUpdate(entityIdUpdate, entityChunkX,
-                entityChunkY, entityX, entityY));
-          }
-          if ((entitiesBitfield & 1 << 6) != 0) { // speedangle update
-            float entitySpeedAngle = dis.readFloat();
-            lambdas.add((handler) -> handler.speedAngleUpdate(entityIdUpdate, entitySpeedAngle));
-          }
-          if ((entitiesBitfield & 1 << 5) != 0) { // speednorm update
-            float entitySpeedNorm = dis.readFloat();
-            lambdas.add((handler) -> handler.speedNormUpdate(entityIdUpdate, entitySpeedNorm));
-          }
-          if ((entitiesBitfield & 1 << 0) != 0) { // object update
-            byte objectBitfield = dis.readByte();
-            boolean[] objectBooleanField = new boolean[8];
-            for (int j = 0; j < 8; j++) {
-              objectBooleanField[j] = (objectBitfield & 1 << (7 - j)) != 0;
+          for (int b = 0; b < 8; b++) {
+            if ((entitiesBitfield & 1 << (7 - b)) == 0) // si le bit numéro b est 0
+              continue;
+            EntityUpdateType updateType = EntityUpdateType.getType(b);
+            if (updateType == null)
+              throw parsingException;
+            switch (updateType) {
+              case POSITION:
+                int entityChunkX = dis.readShort();
+                int entityChunkY = dis.readShort();
+                int entityX = dis.readUnsignedByte();
+                int entityY = dis.readUnsignedByte();
+                MapPoint entityPoint = new MapPoint(entityChunkX, entityChunkY, entityX, entityY);
+                dataUpdate.setPosition(entityPoint);
+                break;
+              case SPEED_ANGLE:
+                float entitySpeedAngle = dis.readFloat();
+                dataUpdate.setSpeedAngle(entitySpeedAngle);
+                break;
+              case SPEED_NORM:
+                float entitySpeedNorm = dis.readFloat();
+                dataUpdate.setSpeedNorm(entitySpeedNorm);
+                break;
+              case OBJECT_DATA:
+                int objectDataUpdateSize = dis.readUnsignedByte();
+                List<ObjectAttribute> attributes = new ArrayList<>();
+                for (int j = 0; j < objectDataUpdateSize; j++) {
+                  int objectDataUpdateCode = dis.readUnsignedByte();
+                  ObjectAttribute objectDataUpdateType =
+                      ObjectAttribute.getType(objectDataUpdateCode);
+                  if (objectDataUpdateType == null)
+                    throw parsingException;
+                  attributes.add(objectDataUpdateType);
+                }
+                dataUpdate.setObjectAttributes(attributes);
+                break;
+              default:
+                throw parsingException;
             }
-            int objectSize = dis.readUnsignedShort();
-            // Il vaudrait mieux le lire ici, mais difficile
-            // TODO: faire lire données à entités
-            byte[] objectData = new byte[objectSize];
-            dis.readFully(objectData);
-            DataInputStream objectInputStream =
-                new DataInputStream(new ByteArrayInputStream(objectData));
-            lambdas.add((handler) -> handler.objectUpdate(entityIdUpdate, objectBooleanField,
-                objectSize, objectInputStream));
           }
-          // TODO non? go optional machin? mais comment gérer dataobject?
+          entitiesUpdateList.add(dataUpdate);
         }
-        return (handler) -> {
-          for (FutureInputMessage lambda : lambdas) {
-            lambda.execute(handler);
-          }
-        };
+        return (handler) -> handler.entitiesUpdate(entitiesUpdateList);
       case ACTIONS:
-        // TODO on les lira ici (?)
+        int actionsSize = dis.readUnsignedShort();
+        // TODO créer classe action, def liste actions, pour chaque, parse
         return (handler) -> {
         };
       case ENTITY_CREATE:
         int entityIdCreate = dis.readUnsignedShort();
-        // TODO on lira pas ici (?)
+        // TODO on lira ici
         return (handler) -> {
         };
       case ENTITY_DESTROY:
         int entityIdDestroy = dis.readUnsignedShort();
-        // TODO on lira pas ici (?)
+        // TODO on lira ici
         return (handler) -> {
         };
       case CHAT_RECEIVE:
@@ -161,7 +187,7 @@ class InputMessageFactory {
       case ACTION: // client-only
       case CHAT_SEND: // client-only
       default: // unknown
-        throw new MessageParsingException("Unknown message type, aborted parsing");
+        throw parsingException;
     }
   }
 
