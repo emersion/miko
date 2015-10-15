@@ -64,7 +64,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		var size uint8
 		read(io.Reader, &size)
 
-		for i := 0; i < size; i++ {
+		for i := 0; i < int(size); i++ {
 			var x, y message.BlockCoord
 			read(io.Reader, &x)
 			read(io.Reader, &y)
