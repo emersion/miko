@@ -9,12 +9,11 @@ import(
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
 	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
-
-	"git.emersion.fr/saucisse-royale/miko/server/browser/client"
+	"git.emersion.fr/saucisse-royale/miko/server/terrain"
 )
 
 func main() {
-	trn := client.NewTerrain()
+	trn := terrain.New()
 	ctx := &message.Context{
 		Type: message.ClientContext,
 		Terrain: trn,
