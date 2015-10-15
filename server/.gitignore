@@ -1,5 +1,9 @@
 miko
 miko-client
+
 browser/public/client.js
 browser/public/client.js.map
 browser/miko
+
+browser/mapper/public/client.js
+browser/mapper/public/client.js.map
