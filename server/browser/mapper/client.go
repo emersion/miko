@@ -1,10 +1,13 @@
 package main
 
 import(
-	"git.emersion.fr/saucisse-royale/miko/server/browser/mapper/client"
+	"github.com/gopherjs/gopherjs/js"
+
+	"git.emersion.fr/saucisse-royale/miko/server/browser/mapper/terrain"
 )
 
 func main() {
-	trn := client.NewTerrain()
+	canvas := js.Global.Get("document").Call("getElementById", "canvas")
+	trn := client.NewTerrain(canvas)
 	trn.Draw()
 }

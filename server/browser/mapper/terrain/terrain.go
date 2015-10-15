@@ -2,56 +2,20 @@ package client
 
 import (
 	"github.com/gopherjs/gopherjs/js"
-	"github.com/emersion/go-js-canvas"
 
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
 	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
-	"git.emersion.fr/saucisse-royale/miko/server/terrain"
+	"git.emersion.fr/saucisse-royale/miko/server/browser/client"
 )
 
-const res = 5
-
-type Terrain struct {
-	terrain.Terrain
-	canvas *canvas.Canvas
-}
-
-func (t *Terrain) drawPoint(x, y int) {
-	ptType := t.Points[x][y]
-
-	if int(ptType) == 0 {
-		t.canvas.ClearRect(x * res, y * res, res, res)
-	} else {
-		t.canvas.FillRect(x * res, y * res, res, res)
-	}
-}
-
-func (t *Terrain) Draw() {
-	for i := range t.Points {
-		for j := range t.Points[i] {
-			t.drawPoint(i, j)
-		}
-	}
-}
-
-func (t *Terrain) SetBlock(blk *message.Block) {
-	t.Terrain.SetBlock(blk)
-	t.Draw()
-}
-
-func NewTerrain() *Terrain {
-	el := js.Global.Get("document").Call("getElementById", "canvas")
-	el.Set("width", message.BLOCK_LEN * res)
-	el.Set("height", message.BLOCK_LEN * res)
-
-	t := &Terrain{}
-	t.canvas = canvas.New(el)
+func NewTerrain(el *js.Object) *client.Terrain {
+	t := client.NewTerrain(el)
 	t.Reset(1)
 
 	el.Call("addEventListener", "click", func(event *js.Object) {
-		x := int(event.Get("clientX").Int() / res)
-		y := int(event.Get("clientY").Int() / res)
+		x := int(event.Get("clientX").Int() / 5)
+		y := int(event.Get("clientY").Int() / 5)
 
 		if t.Points[x][y] == message.PointType(0) {
 			t.Points[x][y] = message.PointType(1)
@@ -59,7 +23,7 @@ func NewTerrain() *Terrain {
 			t.Points[x][y] = message.PointType(0)
 		}
 
-		t.drawPoint(x, y)
+		t.DrawPoint(x, y)
 	})
 
 	saveBtn := js.Global.Get("document").Call("getElementById", "save-btn")
