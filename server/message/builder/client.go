@@ -28,8 +28,8 @@ func SendRegister(w io.Writer, username string, password string) error {
 	})
 }
 
-func SendAction(w io.Writer, action *message.Action) error {
-	if err := write(w, message.Types["action"]); err != nil {
+func SendActionDo(w io.Writer, action *message.Action) error {
+	if err := write(w, message.Types["action_do"]); err != nil {
 		return err
 	}
 

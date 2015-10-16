@@ -100,7 +100,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		return nil
 	},
-	message.Types["action"]: func(ctx *message.Context, io *message.IO) error {
+	message.Types["action_do"]: func(ctx *message.Context, io *message.IO) error {
 		if !ctx.Auth.HasSession(io.Id) {
 			// TODO: trigger an error
 			return nil
@@ -116,7 +116,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		log.Println("Client triggered action:", action.Id)
 
-		return builder.SendActions(io.BroadcastWriter, []*message.Action{action})
+		return builder.SendActionsDone(io.BroadcastWriter, []*message.Action{action})
 	},
 	message.Types["chat_send"]: func(ctx *message.Context, io *message.IO) error {
 		msg := readString(io.Reader)

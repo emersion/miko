@@ -112,7 +112,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		log.Println("Received new entity with ID:", entity.Id)
 		return nil
 	},
-	message.Types["actions"]: func(ctx *message.Context, io *message.IO) error {
+	message.Types["actions_done"]: func(ctx *message.Context, io *message.IO) error {
 		var size uint16
 		read(io.Reader, &size)
 

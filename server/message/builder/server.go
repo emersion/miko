@@ -169,8 +169,8 @@ func SendEntityDestroy(w io.Writer, id message.EntityId) error {
 	return nil
 }
 
-func SendActions(w io.Writer, actions []*message.Action) error {
-	if err := write(w, message.Types["actions"]); err != nil {
+func SendActionsDone(w io.Writer, actions []*message.Action) error {
+	if err := write(w, message.Types["actions_done"]); err != nil {
 		return err
 	}
 
