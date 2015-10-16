@@ -47,8 +47,8 @@ S | 8 | terrain_update | bytes terrain
 C | 9 | terrain_request | bytes terrainhint
 S | 10 | entities_update | bytes entities
 C | 11 | entity_update | bytes entity
-S | 12 | actions | bytes actions
-C | 13 | action | bytes action
+S | 12 | actions_done | bytes actions
+C | 13 | action_do | bytes action
 S | 14 | entity_create | uint16 entityid + bytes entity_create
 S | 15 | entity_destroy | uint16 entityid + bytes entity_destroy
 C | 16 | chat_send | str message
@@ -204,14 +204,14 @@ Valeur | Signification | Détail
 * on n'envoit pas l'actiontype parce que le peer sait le type de chaque action (fixée)
 * spells à channel: envoyer un action pour début channel et un pour fin channel
 
-#### action
+#### action_do
 
 ```
 uint16 actionid
 bytes params
 ```
 
-#### actions
+#### actions_done
 
 ```
 uint16 size
