@@ -7,8 +7,8 @@ import java.util.Map;
 /**
  * Utilitaire permettant de retrouver des enums par leur id.
  * <p>
- * Utilisation : enregistrer la classe avec {@link #register(Class, int)} puis récupérer des
- * éléments avec {@link #getValue(Class, int)}.
+ * Utilisation : enregistrer la classe avec {@link #register(Class)} puis récupérer des éléments
+ * avec {@link #getValue(Class, int)}.
  */
 public class IdSaver {
 
@@ -28,7 +28,6 @@ public class IdSaver {
    * @param id La valeur de l'élément à retrouver.
    * @return L'élément correspondant à id pour cette classe.
    * @throws IllegalArgumentException Si la classe n'a pas été sauvegardée avant utilisation.
-   * @throws IndexOutOfBoundsException Si l'id est négatif ou trop grand.
    */
   public static <T extends Enum<T> & UniquelyIdentifiable> T getValue(Class<T> enumeration, int id) {
     Object[] ordered = map.get(enumeration);
@@ -37,8 +36,7 @@ public class IdSaver {
           + " has not been registered before use");
     }
     if (id < 0 || id > ordered.length) {
-      throw new IndexOutOfBoundsException("Id " + id + " must be between 0 and "
-          + (ordered.length - 1) + " (inclusive)");
+      return null;
     }
     // On sait que l'élément récupéré est du type de sa clef
     @SuppressWarnings("unchecked")
@@ -51,25 +49,22 @@ public class IdSaver {
    * Sauvegarde les enums pour retrouver par id ultérieurement.
    *
    * @param enumeration L'énumération identifiable à sauvegarder.
-   * @param maxLength La taille maximum des id. Doit être positive et toujours supérieure ou égale
-   *        aux identifiants.
-   * @throws IllegalArgumentException Si les identifiants ou maxLength ne respectent pas les
-   *         conditions susmentionnées.
    */
-  public static <T extends Enum<T> & UniquelyIdentifiable> void register(Class<T> enumeration,
-      int maxLength) {
-    if (maxLength < 0) {
-      throw new IllegalArgumentException("Maxlength must be positive");
-    }
-    Object[] ordered = new Object[maxLength];
-    Arrays.fill(ordered, null);
+  public static <T extends Enum<T> & UniquelyIdentifiable> void register(Class<T> enumeration) {
     T[] constants = enumeration.getEnumConstants();
+    int maxId = -1;
     for (T constant : constants) {
       int id = constant.getId();
-      if (id < 0 || id >= ordered.length) {
-        throw new IllegalArgumentException("Id " + id + " must be between 0 and "
-            + (ordered.length - 1) + " (inclusive)");
+      if (id < 0) {
+        throw new IllegalArgumentException("Id " + id + " must positive");
       }
+      if (id > maxId)
+        maxId = id;
+    }
+    Object[] ordered = new Object[maxId + 1];
+    Arrays.fill(ordered, null);
+    for (T constant : constants) {
+      int id = constant.getId();
       ordered[id] = constant;
     }
     map.put(enumeration, ordered);

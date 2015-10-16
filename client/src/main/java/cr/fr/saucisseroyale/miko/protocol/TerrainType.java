@@ -15,7 +15,7 @@ public enum TerrainType implements UniquelyIdentifiable {
   // @formatting
 
   static {
-    IdSaver.register(TerrainType.class, 1 << 8);
+    IdSaver.register(TerrainType.class);
   }
 
   private final int id;

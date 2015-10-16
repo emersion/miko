@@ -30,7 +30,7 @@ class ReceiverThread extends Thread {
       FutureInputMessage fim;
       try {
         fim = InputMessageFactory.parseMessage(dis);
-      } catch (MessageParsingException e) {
+      } catch (MessageParseException e) {
         // Si l'on arrive ici, c'est sans doute qu'un parse a échoué et qu'on est dans un état
         // corrompu, ou qu'on un client malicieux envoit n'importe quoi
         e.printStackTrace();

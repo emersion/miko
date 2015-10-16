@@ -1,7 +1,7 @@
 package cr.fr.saucisseroyale.miko.protocol;
 
 /**
- * Un point immutable de le carte de jeu, indépendante de son type. Utilisé pour indiquer un
+ * Un point immutable de la carte de jeu, indépendante de son type. Utilisé pour indiquer un
  * emplacement sans répéter (bx,by,x,y).
  *
  */

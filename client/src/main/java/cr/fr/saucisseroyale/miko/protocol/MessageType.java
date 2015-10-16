@@ -20,11 +20,12 @@ public enum MessageType implements UniquelyIdentifiable {
   ENTITIES_UPDATE(10), ENTITY_UPDATE(11),
   ACTIONS(12), ACTION(13),
   ENTITY_CREATE(14), ENTITY_DESTROY(15),
-  CHAT_SEND(16), CHAT_RECEIVE(17);
+  CHAT_SEND(16), CHAT_RECEIVE(17),
+  VERSION(18);
   // @formatting
 
   static {
-    IdSaver.register(MessageType.class, 1 << 8);
+    IdSaver.register(MessageType.class);
   }
 
   private final int id;

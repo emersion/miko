@@ -18,7 +18,7 @@ public enum EntityUpdateType implements UniquelyIdentifiable {
   // @formatting
 
   static {
-    IdSaver.register(EntityUpdateType.class, 8);
+    IdSaver.register(EntityUpdateType.class);
   }
 
   private final int id;

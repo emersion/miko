@@ -15,6 +15,7 @@ import javax.swing.JFrame;
 public class Miko {
 
   public static final String GAME_NAME = "Miko";
+  public static final int PROTOCOL_VERSION = 1;
   private static final String SERVER_ADDRESS = "localhost";
   private static final int SERVER_PORT = 9997;
   private static final int TICK_TIME = 10;

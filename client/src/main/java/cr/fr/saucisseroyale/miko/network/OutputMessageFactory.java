@@ -1,5 +1,6 @@
 package cr.fr.saucisseroyale.miko.network;
 
+import cr.fr.saucisseroyale.miko.protocol.Action;
 import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
 import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
@@ -138,10 +139,12 @@ public class OutputMessageFactory {
     };
   }
 
-  public static FutureOutputMessage action() {
+
+
+  public static FutureOutputMessage action(Action action) {
     return (dos) -> {
       dos.writeByte(MessageType.ACTION.getId());
-      // TODO action : quels paramètres passer ?
+      writeAction(dos, action);
     };
   }
 
@@ -163,6 +166,25 @@ public class OutputMessageFactory {
     return b;
   }
 
+  private static void writeAction(DataOutputStream dos, Action action) throws IOException {
+    dos.writeByte(action.getType().getId());
+    switch (action.getParameterType()) {
+      case VOID:
+        break;
+      case FLOAT:
+        dos.writeFloat(action.getFloatValue());
+        break;
+      case ENTITY_ID:
+        dos.writeShort(action.getEntityIdValue());
+        break;
+      case MAP_POINT:
+        writeMapPoint(dos, action.getMapPointValue());
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown parameters type set in action");
+    }
+  }
+
   private static void writeMapPoint(DataOutputStream dos, MapPoint mapPoint) throws IOException {
     dos.writeShort(mapPoint.getChunkX());
     dos.writeShort(mapPoint.getChunkY());
@@ -172,6 +194,7 @@ public class OutputMessageFactory {
 
   private static void writeString(DataOutputStream dos, String string) throws IOException {
     // check length by characters length first to avoid heavy data array creation
+    // (characters length >= length in bytes)
     if (string.length() >= 1 << 16)
       throw new IllegalArgumentException("The specified string is too long, max size: 65565 bytes");
     byte[] data = string.getBytes(StandardCharsets.UTF_8);

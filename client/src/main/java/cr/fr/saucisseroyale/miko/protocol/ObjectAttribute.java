@@ -1,6 +1,3 @@
-/**
- * 
- */
 package cr.fr.saucisseroyale.miko.protocol;
 
 import cr.fr.saucisseroyale.miko.util.IdSaver;
@@ -18,7 +15,7 @@ public enum ObjectAttribute implements UniquelyIdentifiable {
   // @formatting
 
   static {
-    IdSaver.register(ObjectAttribute.class, 1 << 8);
+    IdSaver.register(ObjectAttribute.class);
   }
 
   private final int id;

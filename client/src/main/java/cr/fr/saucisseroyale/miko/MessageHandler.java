@@ -3,12 +3,14 @@ package cr.fr.saucisseroyale.miko;
 import cr.fr.saucisseroyale.miko.engine.Chunk;
 import cr.fr.saucisseroyale.miko.network.NetworkClient;
 import cr.fr.saucisseroyale.miko.network.OutputMessageFactory;
+import cr.fr.saucisseroyale.miko.protocol.Action;
+import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
 import cr.fr.saucisseroyale.miko.protocol.ExitType;
 import cr.fr.saucisseroyale.miko.protocol.LoginResponseType;
 import cr.fr.saucisseroyale.miko.protocol.RegisterResponseType;
+import cr.fr.saucisseroyale.miko.util.Pair;
 
-import java.io.DataInputStream;
 import java.util.List;
 
 /**
@@ -28,24 +30,32 @@ public class MessageHandler {
   // TODO ajouter toutes les méthodes d'entrée
   // TODO remplir les méthodes d'entrée
 
+  public void actions(List<Pair<Integer, Action>> actions) {
+    messageReceived();
+  }
+
   public void chatReceived(int entityIdChat, String chatMessage) {
+    messageReceived();
 
   }
 
-  public void chunkUpdate(int chunkX, int chunkY, Chunk chunk) {
+  public void chunkUpdate(ChunkPoint chunkPoint, Chunk chunk) {
+    messageReceived();
+
+  }
+
+  public void entitiesUpdate(List<EntityDataUpdate> entitiesUpdateList) {
+    messageReceived();
 
   }
 
   public void exit(ExitType exitType) {
+    messageReceived();
 
   }
 
   public void loginResponse(LoginResponseType loginResponseType) {
-
-  }
-
-  public void objectUpdate(int entityIdUpdate, boolean[] objectBooleanField, int objectSize,
-      DataInputStream objectInputStream) {
+    messageReceived();
 
   }
 
@@ -55,10 +65,12 @@ public class MessageHandler {
   }
 
   public void playerJoined(int entityId, String pseudo) {
+    messageReceived();
 
   }
 
   public void playerLeft(int entityId) {
+    messageReceived();
 
   }
 
@@ -66,20 +78,8 @@ public class MessageHandler {
     messageReceived();
   }
 
-  public void positionUpdate(int entityIdUpdate, int entityChunkX, int entityChunkY, int entityX,
-      int entityY) {
-
-  }
-
   public void registerResponse(RegisterResponseType registerResponseType) {
-
-  }
-
-  public void speedAngleUpdate(int entityIdUpdate, float entitySpeedAngle) {
-
-  }
-
-  public void speedNormUpdate(int entityIdUpdate, float entitySpeedNorm) {
+    messageReceived();
 
   }
 
@@ -88,10 +88,6 @@ public class MessageHandler {
    */
   private void messageReceived() {
     // Prévenir qu'on a reçu un message pour éviter le timeout
-  }
-
-  public void entitiesUpdate(List<EntityDataUpdate> entitiesUpdateList) {
-
   }
 
 }

@@ -19,7 +19,7 @@ public enum MetaActionType implements UniquelyIdentifiable {
   // @formatting
 
   static {
-    IdSaver.register(MetaActionType.class, 1 << 8);
+    IdSaver.register(MetaActionType.class);
   }
 
   private final int id;

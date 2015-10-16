@@ -7,7 +7,8 @@ import java.util.List;
 
 /**
  * Un bloc de terrain de 256x256 cases.
- *
+ * 
+ * @see Block
  */
 public final class Chunk {
 
@@ -17,6 +18,7 @@ public final class Chunk {
 
   /**
    * @param defaultType Le type de case à utiliser par défaut lorsque la case n'a pas été ajoutée.
+   * @param data Les cases à mettre dans le bloc.
    */
   public Chunk(TerrainType defaultType, List<Block> data) {
     this.defaultType = defaultType;
@@ -26,14 +28,13 @@ public final class Chunk {
     // cache est toujours presque vide et l'overhead des objets est trop grand)
     // 5 cases supplémentaires en cas de petit changement pour ne pas tout redimensionner
     blocks = new ArrayList<>(data.size() + 5);
-    // Copie pour maîtriser l'implémentation
+    // Copie pour maîtriser l'implémentation (et défensive)
     for (Block block : data) {
       blocks.add(block);
     }
   }
 
   /**
-   * 
    * @param x La position en x de la case dans le bloc.
    * @param y La position en y de la case dans le bloc.
    * @param type Le type de terrain en la case spécifiée.
@@ -43,7 +44,6 @@ public final class Chunk {
   }
 
   /**
-   * 
    * @param block La case à ajouter au bloc de cases.
    */
   public void putBlock(Block block) {

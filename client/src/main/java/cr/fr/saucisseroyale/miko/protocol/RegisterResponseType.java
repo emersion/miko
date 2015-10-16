@@ -1,6 +1,3 @@
-/**
- * 
- */
 package cr.fr.saucisseroyale.miko.protocol;
 
 import cr.fr.saucisseroyale.miko.util.IdSaver;
@@ -22,7 +19,7 @@ public enum RegisterResponseType implements UniquelyIdentifiable {
   // @formatting
 
   static {
-    IdSaver.register(RegisterResponseType.class, 1 << 8);
+    IdSaver.register(RegisterResponseType.class);
   }
 
   private final int id;

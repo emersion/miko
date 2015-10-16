@@ -16,7 +16,7 @@ An experimental minimalist multiplayer top-down adventure game (en français)
 * go
 * non fonctionnel
 
-## Protocole
+## Protocole v1
 
 ### Généralités
 
@@ -53,6 +53,7 @@ S | 14 | entity_create | uint2 entityid + bytes entity_create
 S | 15 | entity_destroy | uint2 entityid + bytes entity_destroy
 C | 16 | chat_send | str message
 S | 17 | chat_receive | uint2 entityid + str message
+C | 18 | version | uint2 versionid
 
 #### exitcode
 
@@ -64,6 +65,8 @@ Valeur | Signification
 3 | ping_timeout
 4 | client_kicked
 5 | client_banned
+6 | client_outdated
+7 | server_outdated
 
 #### loginresponsecode
 
@@ -93,6 +96,10 @@ Valeur | Signification | Contenu
 --- | --- | ---
 0 | player_joined | str pseudo
 1 | player_left
+
+#### versionid
+
+* identifiant unique de la version du protocole utilisé par le client
 
 ### Terrain
 
@@ -192,6 +199,7 @@ Valeur | Signification | Détail
 #### Description
 
 * action caractérisée par id et a paramètres optionnels
+* entityid envoyée que par le serveur/avec actions car toutes les actions envoyées par le client sont forcément avec son entityid
 * paramètres spécifiés par type de action, type de action<==>type de params
 * on n'envoit pas l'actiontype parce que le peer sait le type de chaque action (fixée)
 * spells à channel: envoyer un action pour début channel et un pour fin channel
@@ -208,6 +216,7 @@ bytes params
 ```
 uint2 size
 size times:
+	uint2 entityid
 	uint2 actionid
 	bytes params
 ```
@@ -221,12 +230,12 @@ Valeur | Signification | actiontype
 
 #### actiontype
 
-Valeur | Signification | Types de params
---- | --- | ---
-0 | paramless |
-1 | onefloat | float value
-2 | entitytarget | uint2 targetentityid
-3 | terraintarget | sint2 bx sint2 by uint1 x uint1 y
+Signification | Types de params
+--- | ---
+paramless |
+onefloat | float value
+entitytarget | uint2 targetentityid
+terraintarget | sint2 bx sint2 by uint1 x uint1 y
 
 ### Session exemple
 

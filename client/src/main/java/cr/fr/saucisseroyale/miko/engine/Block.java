@@ -1,6 +1,3 @@
-/**
- * 
- */
 package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.protocol.TerrainType;
