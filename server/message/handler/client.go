@@ -118,10 +118,11 @@ var clientHandlers = &map[message.Type]TypeHandler{
 
 		for i := 0; i < int(size); i++ {
 			action := &message.Action{}
+			read(io.Reader, &action.Initiator)
 			read(io.Reader, &action.Id)
 			// TODO: action params
 			// TODO: do something with this action
-			log.Println("Received action with ID:", action.Id)
+			log.Println("Received action with ID", action.Id, "from", action.Initiator)
 		}
 
 		return nil

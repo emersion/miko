@@ -101,7 +101,16 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["action"]: func(ctx *message.Context, io *message.IO) error {
-		action := &message.Action{}
+		if !ctx.Auth.HasSession(io.Id) {
+			// TODO: trigger an error
+			return nil
+		}
+
+		session := ctx.Auth.GetSession(io.Id)
+
+		action := &message.Action{
+			Initiator: session.Entity.Id,
+		}
 		read(io.Reader, &action.Id)
 		// TODO: action params
 

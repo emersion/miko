@@ -179,6 +179,10 @@ func SendActions(w io.Writer, actions []*message.Action) error {
 	}
 
 	for _, action := range actions {
+		if err := write(w, action.Initiator); err != nil {
+			return err
+		}
+
 		if err := write(w, action.Id); err != nil {
 			return err
 		}
