@@ -25,7 +25,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return err
 			}
 		} else {
-			// TODO: store client version somewhere
+			io.Version = version
 		}
 
 		return nil

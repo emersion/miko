@@ -10,4 +10,5 @@ type IO struct {
 	Writer io.WriteCloser
 	BroadcastWriter io.Writer
 	Id int
+	Version ProtocolVersion
 }

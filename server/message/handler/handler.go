@@ -59,6 +59,10 @@ func (h *Handler) flushEntitiesDiff(w io.Writer) error {
 
 // Handle a message of the specified type
 func (h *Handler) Handle(t message.Type, io *message.IO) error {
+	if h.ctx.Type == message.ServerContext {
+		// TODO: Check that the client sent his version
+	}
+
 	if val, ok := h.handlers[t]; ok {
 		err := val(h.ctx, io)
 		if err != nil {
