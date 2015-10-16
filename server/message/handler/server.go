@@ -7,6 +7,29 @@ import (
 )
 
 var serverHandlers = &map[message.Type]TypeHandler{
+	message.Types["version"]: func(ctx *message.Context, io *message.IO) error {
+		var version message.ProtocolVersion
+		read(io.Reader, &version)
+
+		if version != message.CURRENT_VERSION {
+			exitCode := message.ExitCodes["client_outdated"]
+			if version > message.CURRENT_VERSION {
+				exitCode = message.ExitCodes["server_outdated"]
+			}
+
+			if err := builder.SendExit(io.Writer, exitCode); err != nil {
+				return err
+			}
+
+			if err := io.Writer.Close(); err != nil {
+				return err
+			}
+		} else {
+			// TODO: store client version somewhere
+		}
+
+		return nil
+	},
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
 		// TODO: read exit code
 

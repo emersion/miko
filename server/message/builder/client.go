@@ -5,6 +5,13 @@ import (
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 )
 
+func SendVersion(w io.Writer) error {
+	return writeAll(w, []interface{}{
+		message.Types["version"],
+		message.CURRENT_VERSION,
+	})
+}
+
 func SendLogin(w io.Writer, username string, password string) error {
 	return writeAll(w, []interface{}{
 		message.Types["login"],

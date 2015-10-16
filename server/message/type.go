@@ -1,5 +1,8 @@
 package message
 
+type ProtocolVersion uint16
+const CURRENT_VERSION ProtocolVersion = 1
+
 type Type uint8
 type ExitCode uint8
 type LoginResponseCode uint8
@@ -26,6 +29,7 @@ var Types = map[string]Type{
 	"entitiy_destroy": 15,
 	"chat_send": 16,
 	"chat_receive": 17,
+	"version": 18,
 }
 
 var ExitCodes = map[string]ExitCode{
@@ -35,6 +39,8 @@ var ExitCodes = map[string]ExitCode{
 	"ping_timeout": 3,
 	"client_kicked": 4,
 	"client_banned": 5,
+	"client_outdated": 6,
+	"server_outdated": 7,
 }
 
 var LoginResponseCodes = map[string]LoginResponseCode{
