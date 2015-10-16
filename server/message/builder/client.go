@@ -21,6 +21,19 @@ func SendRegister(w io.Writer, username string, password string) error {
 	})
 }
 
+func SendAction(w io.Writer, action *message.Action) error {
+	if err := write(w, message.Types["action"]); err != nil {
+		return err
+	}
+
+	if err := write(w, action.Id); err != nil {
+		return err
+	}
+
+	// TODO: action params
+
+	return nil
+}
 
 func SendChatSend(w io.Writer, msg string) error {
 	if err := write(w, message.Types["chat_send"]); err != nil {

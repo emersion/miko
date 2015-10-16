@@ -77,6 +77,15 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		return nil
 	},
+	message.Types["action"]: func(ctx *message.Context, io *message.IO) error {
+		action := &message.Action{}
+		read(io.Reader, &action.Id)
+		// TODO: action params
+
+		log.Println("Client triggered action:", action.Id)
+
+		return builder.SendActions(io.BroadcastWriter, []*message.Action{action})
+	},
 	message.Types["chat_send"]: func(ctx *message.Context, io *message.IO) error {
 		msg := readString(io.Reader)
 

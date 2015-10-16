@@ -107,9 +107,23 @@ var clientHandlers = &map[message.Type]TypeHandler{
 
 		// TODO: entity.Data
 
-		// TODO: do something with entity
+		// TODO: do something with this entity
 
 		log.Println("Received new entity with ID:", entity.Id)
+		return nil
+	},
+	message.Types["actions"]: func(ctx *message.Context, io *message.IO) error {
+		var size uint16
+		read(io.Reader, &size)
+
+		for i := 0; i < int(size); i++ {
+			action := &message.Action{}
+			read(io.Reader, &action.Id)
+			// TODO: action params
+			// TODO: do something with this action
+			log.Println("Received action with ID:", action.Id)
+		}
+
 		return nil
 	},
 	message.Types["chat_receive"]: func(ctx *message.Context, io *message.IO) error {

@@ -169,6 +169,26 @@ func SendEntityDestroy(w io.Writer, id message.EntityId) error {
 	return nil
 }
 
+func SendActions(w io.Writer, actions []*message.Action) error {
+	if err := write(w, message.Types["actions"]); err != nil {
+		return err
+	}
+
+	if err := write(w, uint16(len(actions))); err != nil {
+		return err
+	}
+
+	for _, action := range actions {
+		if err := write(w, action.Id); err != nil {
+			return err
+		}
+
+		// TODO: action params
+	}
+
+	return nil
+}
+
 func SendChatReceive(w io.Writer, username string, msg string) error {
 	if err := write(w, message.Types["chat_receive"]); err != nil {
 		return err
