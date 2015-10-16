@@ -23,12 +23,12 @@ An experimental minimalist multiplayer top-down adventure game (en français)
 * Binaire
 * TCP + SSL
 * Bigendian
-* uint(n) : entier non signé de n bytes
-* sint(n) : entier signé de n bytes
+* uint(n) : entier non signé de n bits
+* sint(n) : entier signé de n bits
 * float : nombre décimal sur 4 bytes
-* str : chaine de caractères, uint2 contentlength + utf-8 bytes
+* str : chaine de caractères, uint16 contentlength + utf-8 bytes
 * messsage : headers + contenu
-* header : uint1, type du message
+* header : uint8, type du message
 * le stream est fermé après réception ou envoi d'un exit
 
 ### Messages
@@ -37,23 +37,23 @@ Envoyeur | Valeur | Nom | Contenu
 --- | --- | --- | ---
 SC | 0 | ping |
 SC | 1 | pong |
-SC | 2 | exit | uint1 exitcode
+SC | 2 | exit | uint8 exitcode
 C | 3 | login | str pseudo + str password
-S | 4 | login_response | uint1 loginresponsecode
+S | 4 | login_response | uint8 loginresponsecode
 C | 5 | register | str pseudo + str password
-S | 6 | register_response | uint1 registerresponsecode
-S | 7 | meta_action | uint2 entityid + uint1 metaactioncode + bytes metaactionbody
+S | 6 | register_response | uint8 registerresponsecode
+S | 7 | meta_action | uint16 entityid + uint8 metaactioncode + bytes metaactionbody
 S | 8 | terrain_update | bytes terrain
 C | 9 | terrain_request | bytes terrainhint
 S | 10 | entities_update | bytes entities
 C | 11 | entity_update | bytes entity
 S | 12 | actions | bytes actions
 C | 13 | action | bytes action
-S | 14 | entity_create | uint2 entityid + bytes entity_create
-S | 15 | entity_destroy | uint2 entityid + bytes entity_destroy
+S | 14 | entity_create | uint16 entityid + bytes entity_create
+S | 15 | entity_destroy | uint16 entityid + bytes entity_destroy
 C | 16 | chat_send | str message
-S | 17 | chat_receive | uint2 entityid + str message
-C | 18 | version | uint2 versionid
+S | 17 | chat_receive | uint16 entityid + str message
+C | 18 | version | uint16 versionid
 
 #### exitcode
 
@@ -107,7 +107,7 @@ Valeur | Signification | Contenu
 
 * blocs de 256x256 : x dans [k;256+k[ ; y dans [l;256+l[
 * x vers la droite; y vers le haut
-* un uint1 par case pour décrire caractéristiques
+* un uint8 par case pour décrire caractéristiques
 * chaque point est décrit par (bx;by;x;y) avec bx et by coordonnées du bloc, x;y coordonnées de la case dans le bloc
 * coordonnées d'un bloc: multiple de 256 de ses coordonnées en x et y
 * coordonnées d'une case dans un bloc: différence de ses coordonnées par rapport à la case en bas à gauche du bloc
@@ -115,12 +115,12 @@ Valeur | Signification | Contenu
 #### terrain
 
 ```
-sint2 bx + sint2 by
-uint1 defaultvalue
-uint2 size
+sint16 bx + sint16 by
+uint8 defaultvalue
+uint16 size
 size times:
-	uint1 x + uint1 y
-    uint1 value
+	uint8 x + uint8 y
+    uint8 value
 ```
 
 * bx, by : coordonnées du bloc
@@ -134,9 +134,9 @@ size times:
 * le client envoit une liste de blocs dont il veut recevoir le terrain
 
 ```
-uint1 size
+uint8 size
 size times:
-	sint2 bx + sint2 by
+	sint16 bx + sint16 by
 ```
 
 * bx, by : coordonnées du bloc
@@ -148,8 +148,8 @@ size times:
 #### entity_update
 
 ```
-uint2 entityid
-uint1 bitfield
+uint16 entityid
+uint8 bitfield
 for bit in bitfield:
 	bytes data
 ```
@@ -157,10 +157,10 @@ for bit in bitfield:
 #### entities_update
 
 ```
-uint2 size
+uint16 size
 size times:
-	uint2 entityid
-	uint1 bitfield
+	uint16 entityid
+	uint8 bitfield
 	for bit in bitfield:
 		bytes data
 ```
@@ -171,18 +171,18 @@ size times:
 
 Bit | Signification | Contenu
 --- | --- | ---
-0 | position | sint2 bx + sint2 by + uint1 x + uint1 y
+0 | position | sint16 bx + sint16 by + uint8 x + uint8 y
 1 | speedangle | float angle
 2 | speednorm | float norm
 3 |
 4 |
 5 |
 6 |
-7 | object | uint1 size + uint1...objectattributes
+7 | object | uint8 size + uint8...objectattributes
 
 #### objectattribute
 
-* liste de uint1 indépendants entre eux
+* liste de uint8 indépendants entre eux
 * pas de paramètres supplémentaires associés aux bytes
 
 Valeur | Signification | Détail
@@ -207,17 +207,17 @@ Valeur | Signification | Détail
 #### action
 
 ```
-uint2 actionid
+uint16 actionid
 bytes params
 ```
 
 #### actions
 
 ```
-uint2 size
+uint16 size
 size times:
-	uint2 entityid
-	uint2 actionid
+	uint16 entityid
+	uint16 actionid
 	bytes params
 ```
 
@@ -234,8 +234,8 @@ Signification | Types de params
 --- | ---
 paramless |
 onefloat | float value
-entitytarget | uint2 targetentityid
-terraintarget | sint2 bx sint2 by uint1 x uint1 y
+entitytarget | uint16 targetentityid
+terraintarget | sint16 bx sint16 by uint8 x uint8 y
 
 ### Session exemple
 
