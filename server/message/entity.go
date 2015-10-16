@@ -1,5 +1,7 @@
 package message
 
+import "math/cmplx"
+
 type EntityId uint16
 
 // A position contains a block coordinates and a point coordinates with that block.
@@ -10,10 +12,45 @@ type Position struct {
 	Y PointCoord
 }
 
+// Get absolute coordinates of this position.
+func (p *Position) AbsoluteCoords() (x, y int) {
+	x = int(p.BX) * BLOCK_LEN + int(p.X)
+	y = int(p.BY) * BLOCK_LEN + int(p.Y)
+	return
+}
+
+// Create a new position from absolute coordinates.
+// A @delthas powered function name.
+func NewPositionFromAbsoluteCoords(x, y int) *Position {
+	pos := &Position{}
+
+	pos.X = PointCoord(x % BLOCK_LEN)
+	pos.Y = PointCoord(y % BLOCK_LEN)
+	pos.BX = BlockCoord((x - int(pos.X)) / BLOCK_LEN)
+	pos.BY = BlockCoord((y - int(pos.Y)) / BLOCK_LEN)
+
+	return pos
+}
+
 // A speed contains an angle and a norm.
 type Speed struct {
 	Angle float32
 	Norm float32
+}
+
+// Get the position reached by an object at t+dt if it has this speed during dt.
+func (s *Speed) GetNextPosition(current *Position, dt float64) *Position {
+	if s.Norm == 0 {
+		return nil
+	}
+
+	speed := cmplx.Rect(float64(s.Norm), float64(s.Angle))
+	x, y := current.AbsoluteCoords()
+	pos := complex(float64(x), float64(y))
+
+	pos += speed * complex(dt, 0)
+
+	return NewPositionFromAbsoluteCoords(int(real(pos)), int(imag(pos)))
 }
 
 // An entity
