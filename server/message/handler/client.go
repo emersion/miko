@@ -6,7 +6,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 )
 
-func readEntityUpdateBody(r io.Reader) *message.Entity {
+func ReadEntity(r io.Reader) *message.Entity {
 	entity := message.NewEntity()
 
 	var bitfield uint8
@@ -28,11 +28,14 @@ func readEntityUpdateBody(r io.Reader) *message.Entity {
 		read(r, &entity.Speed.Norm)
 	}
 
+	// TODO: entity.Data
+
 	return entity
 }
 
 func ReadBlock(r io.Reader) *message.Block {
 	blk := &message.Block{}
+
 	var defaultType message.PointType
 	var size uint16
 	read(r, &blk.X)
@@ -59,17 +62,27 @@ func ReadBlock(r io.Reader) *message.Block {
 	return blk
 }
 
+func ReadActionDone(r io.Reader) (action *message.Action) {
+	read(r, &action.Initiator)
+	read(r, &action.Id)
+	// TODO: action params
+	return
+}
+
+func ReadLoginResponse(r io.Reader) (code message.LoginResponseCode) {
+	read(r, &code)
+	return
+}
+
 var clientHandlers = &map[message.Type]TypeHandler{
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
-		var code message.ExitCode
-		read(io.Reader, &code)
+		code := ReadExit(io.Reader)
 		log.Println("Server closed connection, reason:", code)
 
 		return io.Writer.Close()
 	},
 	message.Types["login_response"]: func(ctx *message.Context, io *message.IO) error {
-		var code message.LoginResponseCode
-		read(io.Reader, &code)
+		code := ReadLoginResponse(io.Reader)
 		log.Println("Login response:", code)
 		return nil
 	},
@@ -78,9 +91,15 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		var entityId message.EntityId
 		read(io.Reader, &code)
 		read(io.Reader, &entityId)
-		username := readString(io.Reader)
 
-		log.Println("Player joined/left:", code, entityId, username)
+		if code == message.MetaActionCodes["player_joined"] {
+			username := readString(io.Reader)
+			log.Println("Player joined:", entityId, username)
+		}
+		if code == message.MetaActionCodes["player_left"] {
+			log.Println("Player left:", entityId)
+		}
+
 		// TODO
 
 		return nil
@@ -95,7 +114,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		read(io.Reader, &size)
 
 		for i := 0; i < int(size); i++ {
-			entity := readEntityUpdateBody(io.Reader)
+			entity := ReadEntity(io.Reader)
 			// TODO: do something with entity
 			log.Println("Received entity update with ID:", entity.Id)
 		}
@@ -103,9 +122,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["entity_create"]: func(ctx *message.Context, io *message.IO) error {
-		entity := readEntityUpdateBody(io.Reader)
-
-		// TODO: entity.Data
+		entity := ReadEntity(io.Reader)
 
 		// TODO: do something with this entity
 
@@ -117,10 +134,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		read(io.Reader, &size)
 
 		for i := 0; i < int(size); i++ {
-			action := &message.Action{}
-			read(io.Reader, &action.Initiator)
-			read(io.Reader, &action.Id)
-			// TODO: action params
+			action := ReadActionDone(io.Reader)
 			// TODO: do something with this action
 			log.Println("Received action with ID", action.Id, "from", action.Initiator)
 		}

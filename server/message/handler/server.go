@@ -31,7 +31,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
-		// TODO: read exit code
+		code := ReadExit(io.Reader)
+		log.Println("Client disconnected with code:", code)
 
 		session := ctx.Auth.GetSession(io.Id)
 		if session != nil {
