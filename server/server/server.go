@@ -4,9 +4,11 @@ import (
 	"bufio"
 	"log"
 	"net"
+	"crypto/tls"
 
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
+	"git.emersion.fr/saucisse-royale/miko/server/crypto"
 )
 
 // Client holds info about connection
@@ -64,7 +66,18 @@ func (s *server) listenChannels() {
 func (s *server) Listen() {
 	go s.listenChannels()
 
-	listener, err := net.Listen("tcp", s.address)
+	tlsConfig, err := crypto.GetServerTlsConfig()
+	if err != nil {
+		log.Println("WARN: could not get TLS config")
+	}
+
+	var listener net.Listener
+	if tlsConfig != nil {
+		listener, err = tls.Listen("tcp", s.address, tlsConfig)
+	} else {
+		listener, err = net.Listen("tcp", s.address)
+	}
+
 	if err != nil {
 		log.Fatal("Error starting TCP server.")
 	}
