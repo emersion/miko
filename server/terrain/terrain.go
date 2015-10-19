@@ -44,6 +44,12 @@ func (t *Terrain) Reset(blkNbr int) {
 	}
 }
 
+// Check if it's possible for an entity to move from its current position to
+// another one.
+func (t *Terrain) CanMove(entity *message.Entity, to *message.Position) bool {
+	return true // TODO
+}
+
 func (t *Terrain) Generate() {
 	t.Points[100][100] = message.PointType(1)
 }

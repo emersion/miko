@@ -26,8 +26,12 @@ func invertPoint(pt message.PointType) message.PointType {
 }
 
 func NewTerrain(el *js.Object) *client.Terrain {
+	size := 1
+
 	t := client.NewTerrain(el)
-	t.Reset(1)
+	t.Reset(size)
+	el.Set("width", size * message.BLOCK_LEN * res)
+	el.Set("height", size * message.BLOCK_LEN * res)
 
 	var pressing bool
 	var fromX, fromY, lastX, lastY int

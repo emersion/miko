@@ -14,6 +14,10 @@ type Service struct {
 	Mover *Mover
 }
 
+func (s *Service) List() []*message.Entity {
+	return s.entities
+}
+
 func (s *Service) Get(id message.EntityId) *message.Entity {
 	if int(id) >= len(s.entities) {
 		return nil

@@ -123,8 +123,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 	},
 	message.Types["entity_create"]: func(ctx *message.Context, io *message.IO) error {
 		entity := ReadEntity(io.Reader)
-
-		// TODO: do something with this entity
+		ctx.Entity.Add(entity)
 
 		log.Println("Received new entity with ID:", entity.Id)
 		return nil

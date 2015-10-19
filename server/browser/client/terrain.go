@@ -59,14 +59,8 @@ func (t *Terrain) SetBlock(blk *message.Block) {
 	t.Draw()
 }
 
-func (t *Terrain) Reset(size int) {
-	t.Terrain.Reset(size)
-	t.Canvas.Element.Set("width", size * message.BLOCK_LEN * res)
-	t.Canvas.Element.Set("height", size * message.BLOCK_LEN * res)
-}
-
 func NewTerrain(el *js.Object) *Terrain {
 	t := &Terrain{*terrain.New(),canvas.New(el)}
-	t.Reset(2)
+	t.Reset(1)
 	return t
 }

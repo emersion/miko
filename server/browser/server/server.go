@@ -31,6 +31,10 @@ func (c *Client) listen() {
 
 	reader := bufio.NewReader(c.conn)
 
+	// Send binary frames
+	// See http://grokbase.com/t/gg/golang-nuts/1314ee50mh/go-nuts-sending-binary-websocket-frames#20130104bmvbvtymkitzju2nhnaytrrzs4
+	c.conn.PayloadType = 0x2
+
 	clientIO := &message.IO{
 		Reader: reader,
 		Writer: c.conn,

@@ -9,14 +9,16 @@ import(
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
 	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
-	"git.emersion.fr/saucisse-royale/miko/server/terrain"
+	"git.emersion.fr/saucisse-royale/miko/server/browser/client"
 )
 
 func main() {
-	trn := terrain.New()
+	trn := client.NewTerrain(js.Global.Get("document").Call("getElementById", "terrain"))
+	ent := client.NewEntityService(js.Global.Get("document").Call("getElementById", "entities"))
 	ctx := &message.Context{
 		Type: message.ClientContext,
 		Terrain: trn,
+		Entity: ent,
 	}
 	hdlr := handler.New(ctx)
 
