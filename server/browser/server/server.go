@@ -42,7 +42,15 @@ func (c *Client) listen() {
 		Id: c.id,
 	}
 
+	defer c.Close()
+
 	c.Server.handler.Listen(clientIO)
+}
+
+func (c *Client) Close() error {
+	c.conn.Close()
+	c.Server.clients[c.id] = nil
+	return nil
 }
 
 func (s *server) newClient(conn *websocket.Conn) {
@@ -70,10 +78,15 @@ func (s *server) Listen() {
 func (s *server) Write(msg []byte) (n int, err error) {
 	N := 0
 	for _, c := range s.clients {
+		if c == nil {
+			continue
+		}
+
 		n, err = c.conn.Write(msg)
 		if err != nil {
 			log.Println("Error broadcasting message:", err)
 		}
+
 		N += n
 	}
 	return N, nil

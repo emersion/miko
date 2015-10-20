@@ -24,11 +24,26 @@ func (a *AuthService) GetSession(id int) *message.Session {
 	return a.sessions[id]
 }
 
+func (a *AuthService) getSessionByUsername(username string) *message.Session {
+	for _, session := range a.sessions {
+		if session.Username != username {
+			return session
+		}
+	}
+	return nil
+}
+
 func (a *AuthService) Login(id int, username string, password string) message.LoginResponseCode {
-	var code string
+	code := "unknown_pseudo"
 	for _, user := range a.users {
 		if username != user.Username {
 			continue
+		}
+
+		session := a.getSessionByUsername(username)
+		if session != nil {
+			code = "already_connected"
+			break
 		}
 
 		if user.VerifyPassword(password) {
@@ -36,6 +51,7 @@ func (a *AuthService) Login(id int, username string, password string) message.Lo
 		} else {
 			code = "wrong_password"
 		}
+		break
 	}
 
 	if code == "ok" {
@@ -46,8 +62,6 @@ func (a *AuthService) Login(id int, username string, password string) message.Lo
 			Entity: entity,
 		}
 		a.sessions = append(a.sessions, session)
-	} else if code == "" {
-		code = "unknown_pseudo"
 	}
 
 	return message.LoginResponseCodes[code]
