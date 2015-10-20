@@ -1,17 +1,36 @@
 package message
 
-// A context type is either client or server
-type ContextType int
-
+type contextType int
 const (
-	ServerContext ContextType = 1
-	ClientContext ContextType = 2
+	serverContext contextType = iota
+	clientContext
 )
 
 // A context contains all services that handles backend functionalities
+// TODO: properly separate ClientContext and ServerContext
 type Context struct {
-	Type ContextType
-	Auth AuthService
+	contextType
+
 	Entity EntityService
 	Terrain Terrain
+
+	// Server
+	Auth AuthService
+
+	// Client
+	Me *Session
+}
+
+func (c *Context) IsServer() bool {
+	return c.contextType == serverContext
+}
+func (c *Context) IsClient() bool {
+	return c.contextType == clientContext
+}
+
+func NewServerContext() *Context {
+	return &Context{contextType: serverContext}
+}
+func NewClientContext() *Context {
+	return &Context{contextType: clientContext}
 }

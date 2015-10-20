@@ -15,11 +15,12 @@ import(
 func main() {
 	trn := client.NewTerrain(js.Global.Get("document").Call("getElementById", "terrain"))
 	ent := client.NewEntityService(js.Global.Get("document").Call("getElementById", "entities"))
-	ctx := &message.Context{
-		Type: message.ClientContext,
-		Terrain: trn,
-		Entity: ent,
-	}
+
+	ctx := message.NewClientContext()
+	ctx.Terrain = trn
+	ctx.Entity = ent
+	ctx.Me = &message.Session{Username: "root"}
+
 	hdlr := handler.New(ctx)
 
 	host := js.Global.Get("window").Get("location").Get("host").String()
@@ -36,6 +37,8 @@ func main() {
 
 	go hdlr.Listen(clientIO)
 
+	engine := client.NewEngine(ctx, c)
+
 	/*err = builder.SendPing(clientIO.Writer)
 	if err != nil {
 		panic("SendPing: " + err.Error())
@@ -45,6 +48,8 @@ func main() {
 	if err != nil {
 		panic("SendLogin: " + err.Error())
 	}
+
+	engine.Start()
 
 	/*err = builder.SendChatSend(clientIO.Writer, "Hello World!")
 	if err != nil {

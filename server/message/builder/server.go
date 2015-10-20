@@ -100,34 +100,6 @@ func SendTerrainUpdate(w io.Writer, blk *message.Block) error {
 	return nil
 }
 
-func sendEntityUpdateBody(w io.Writer, entity *message.Entity, diff *message.EntityDiff) error {
-	if err := write(w, entity.Id); err != nil {
-		return err
-	}
-	if err := write(w, diff.GetBitfield()); err != nil {
-		return err
-	}
-
-	var data []interface{}
-	if diff.Position {
-		data = append(data, entity.Position.BX, entity.Position.BY, entity.Position.X, entity.Position.Y)
-	}
-	if diff.SpeedAngle {
-		data = append(data, entity.Speed.Angle)
-	}
-	if diff.SpeedNorm {
-		data = append(data, entity.Speed.Norm)
-	}
-
-	// TODO: entity.Data
-
-	if err := writeAll(w, data); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 // TODO: check proto
 func SendEntityCreate(w io.Writer, entity *message.Entity) error {
 	if err := write(w, message.Types["entity_create"]); err != nil {
@@ -201,4 +173,41 @@ func SendChatReceive(w io.Writer, username string, msg string) error {
 		return err
 	}
 	return writeString(w, msg)
+}
+
+func SendEntitiesDiffToClients(w io.Writer, pool *message.EntityDiffPool) error {
+	// TODO: broadcast only to clients who need it
+
+	// Created entities
+	for _, entity := range pool.Created {
+		err := SendEntityCreate(w, entity)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Updated entities
+	entities := make([]*message.Entity, len(pool.Updated))
+	diffs := make([]*message.EntityDiff, len(pool.Updated))
+	i := 0
+	for entity, diff := range pool.Updated {
+		entities[i] = entity
+		diffs[i] = diff
+		i++
+	}
+
+	err := SendEntitiesUpdate(w, entities, diffs)
+	if err != nil {
+		return err
+	}
+
+	// Deleted entities
+	for _, entityId := range pool.Deleted {
+		err := SendEntityDestroy(w, entityId)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

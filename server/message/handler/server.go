@@ -72,6 +72,11 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return err
 			}
 
+			err = builder.SendEntitiesDiffToClients(io.BroadcastWriter, ctx.Entity.Flush())
+			if err != nil {
+				return err
+			}
+
 			return builder.SendPlayerJoined(io.BroadcastWriter, session.Entity.Id, username)
 		} else {
 			return nil
@@ -98,6 +103,14 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return err
 			}
 		}
+
+		return nil
+	},
+	message.Types["entity_update"]: func(ctx *message.Context, io *message.IO) error {
+		// TODO: security checks
+
+		entity, diff := ReadEntity(io.Reader)
+		ctx.Entity.Update(entity, diff)
 
 		return nil
 	},

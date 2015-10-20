@@ -6,7 +6,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 )
 
-func ReadEntity(r io.Reader) *message.Entity {
+func ReadEntity(r io.Reader) (*message.Entity, *message.EntityDiff) {
 	entity := message.NewEntity()
 
 	var bitfield uint8
@@ -30,7 +30,7 @@ func ReadEntity(r io.Reader) *message.Entity {
 
 	// TODO: entity.Data
 
-	return entity
+	return entity, diff
 }
 
 func ReadBlock(r io.Reader) *message.Block {
@@ -95,6 +95,11 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		if code == message.MetaActionCodes["player_joined"] {
 			username := readString(io.Reader)
 			log.Println("Player joined:", entityId, username)
+
+			if username == ctx.Me.Username {
+				log.Println("My entity ID:", entityId)
+				ctx.Me.Entity = ctx.Entity.Get(entityId)
+			}
 		}
 		if code == message.MetaActionCodes["player_left"] {
 			log.Println("Player left:", entityId)
@@ -114,16 +119,21 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		read(io.Reader, &size)
 
 		for i := 0; i < int(size); i++ {
-			entity := ReadEntity(io.Reader)
+			entity, diff := ReadEntity(io.Reader)
 			// TODO: do something with entity
 			log.Println("Received entity update with ID:", entity.Id)
+
+			ctx.Entity.Update(entity, diff)
 		}
+
+		ctx.Entity.Flush()
 
 		return nil
 	},
 	message.Types["entity_create"]: func(ctx *message.Context, io *message.IO) error {
-		entity := ReadEntity(io.Reader)
+		entity, _ := ReadEntity(io.Reader)
 		ctx.Entity.Add(entity)
+		ctx.Entity.Flush()
 
 		log.Println("Received new entity with ID:", entity.Id)
 		return nil

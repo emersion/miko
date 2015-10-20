@@ -19,3 +19,7 @@ func (m *Mover) UpdateEntity(entity *message.Entity) *message.Position {
 	dt := float64(now - last) / 1000 / 1000 // Convert to seconds
 	return entity.Speed.GetNextPosition(entity.Position, dt)
 }
+
+func NewMover() message.EntityMover {
+	return &Mover{lastUpdates: map[message.EntityId]int64{}}
+}

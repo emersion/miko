@@ -95,6 +95,18 @@ func (d *EntityDiff) Merge(other *EntityDiff) {
 	d.SpeedNorm = d.SpeedNorm || other.SpeedNorm
 }
 
+func (d *EntityDiff) Apply(src *Entity, dst *Entity) {
+	if d.Position {
+		dst.Position = src.Position
+	}
+	if d.SpeedNorm {
+		dst.Speed.Norm = src.Speed.Norm
+	}
+	if d.SpeedAngle {
+		dst.Speed.Angle = src.Speed.Angle
+	}
+}
+
 func NewEntityDiffFromBitfield(bitfield uint8) *EntityDiff {
 	return &EntityDiff{
 		bitfield & (1 << 7) > 0,
@@ -107,16 +119,26 @@ func NewEntityDiffFromBitfield(bitfield uint8) *EntityDiff {
 // Contains three lists for created, updated and deleted entities.
 type EntityDiffPool struct {
 	Created []*Entity
-	Updated map[EntityId]*EntityDiff
+	Updated map[*Entity]*EntityDiff
 	Deleted []EntityId
+}
+
+func NewEntityDiffPool() *EntityDiffPool {
+	return &EntityDiffPool{Updated: map[*Entity]*EntityDiff{}}
+}
+
+type EntityMover interface {
+	UpdateEntity(entity *Entity) *Position
 }
 
 // An entity service
 type EntityService interface {
+	List() []*Entity
 	Get(id EntityId) *Entity
 	Add(entity *Entity)
 	Update(entity *Entity, diff *EntityDiff)
 	Delete(id EntityId)
 	IsDirty() bool
 	Flush() *EntityDiffPool
+	Mover() EntityMover
 }

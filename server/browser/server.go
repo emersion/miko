@@ -14,12 +14,10 @@ func main() {
 	trn := terrain.New()
 	trn.Generate()
 
-	ctx := &message.Context{
-		Type: message.ServerContext,
-		Auth: auth.NewService(),
-		Entity: entity.NewService(),
-		Terrain: trn,
-	}
+	ctx := message.NewServerContext()
+	ctx.Auth = auth.NewService()
+	ctx.Entity = entity.NewService()
+	ctx.Terrain = trn
 
 	srv := server.New(address, ctx)
 	srv.Listen()

@@ -15,8 +15,7 @@ func main() {
 	trn.Generate()
 
 	// Create a new context, with corresponding services
-	ctx := &message.Context{
-		Type: message.ServerContext,
+	ctx := &message.ServerContext{
 		Auth: auth.NewService(),
 		Entity: entity.NewService(),
 		Terrain: trn,

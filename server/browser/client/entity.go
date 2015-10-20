@@ -9,7 +9,7 @@ import (
 )
 
 type EntityService struct {
-	entity.Service
+	message.EntityService
 	Canvas *canvas.Canvas
 }
 
@@ -26,10 +26,15 @@ func (s *EntityService) Draw() {
 }
 
 func (s *EntityService) Add(entity *message.Entity) {
-	s.Service.Add(entity)
+	s.EntityService.Add(entity)
 	s.DrawEntity(entity)
 }
 
+func (s *EntityService) Update(entity *message.Entity, diff *message.EntityDiff) {
+	s.EntityService.Update(entity, diff)
+	s.Draw()
+}
+
 func NewEntityService(el *js.Object) *EntityService {
-	return &EntityService{*entity.NewService(),canvas.New(el)}
+	return &EntityService{entity.NewService(),canvas.New(el)}
 }

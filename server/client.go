@@ -16,8 +16,7 @@ import(
 // A very basic TCP client, for testing purposes
 func main() {
 	trn := terrain.New()
-	ctx := &message.Context{
-		Type: message.ClientContext,
+	ctx := &message.ClientContext{
 		Terrain: trn,
 	}
 	hdlr := handler.New(ctx)

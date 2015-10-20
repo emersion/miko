@@ -17,49 +17,9 @@ type Handler struct {
 	handlers map[message.Type]TypeHandler
 }
 
-// Send entities updates to all clients that need it
-func (h *Handler) flushEntitiesDiff(w io.Writer) error {
-	pool := h.ctx.Entity.Flush()
-
-	// TODO: broadcast only to clients who need it
-
-	// Created entities
-	for _, entity := range pool.Created {
-		err := builder.SendEntityCreate(w, entity)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Updated entities
-	entities := make([]*message.Entity, len(pool.Updated))
-	diffs := make([]*message.EntityDiff, len(pool.Updated))
-	i := 0
-	for entityId, diff := range pool.Updated {
-		entities[i] = h.ctx.Entity.Get(entityId)
-		diffs[i] = diff
-		i++
-	}
-
-	err := builder.SendEntitiesUpdate(w, entities, diffs)
-	if err != nil {
-		return err
-	}
-
-	// Deleted entities
-	for _, entityId := range pool.Deleted {
-		err := builder.SendEntityDestroy(w, entityId)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // Handle a message of the specified type
 func (h *Handler) Handle(t message.Type, io *message.IO) error {
-	if h.ctx.Type == message.ServerContext {
+	if h.ctx.IsServer() {
 		// TODO: Check that the client sent his version
 	}
 
@@ -72,10 +32,10 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 		return fmt.Errorf("Unknown message type: %d", t)
 	}
 
-	if h.ctx.Type == message.ServerContext {
+	if h.ctx.IsServer() {
 		// No errors, send updates
 		if h.ctx.Entity.IsDirty() {
-			err := h.flushEntitiesDiff(io.BroadcastWriter)
+			err := builder.SendEntitiesDiffToClients(io.BroadcastWriter, h.ctx.Entity.Flush())
 			if err != nil {
 				return err
 			}
@@ -121,9 +81,10 @@ func mergeHandlers(handlersList ...*map[message.Type]TypeHandler) map[message.Ty
 
 func New(ctx *message.Context) *Handler {
 	var handlers map[message.Type]TypeHandler
-	if ctx.Type == message.ServerContext {
+
+	if ctx.IsServer() {
 		handlers = mergeHandlers(commonHandlers, serverHandlers)
-	} else if ctx.Type == message.ClientContext {
+	} else if ctx.IsClient() {
 		handlers = mergeHandlers(commonHandlers, clientHandlers)
 	} else {
 		handlers = *commonHandlers

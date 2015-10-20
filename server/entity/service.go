@@ -11,7 +11,7 @@ import(
 type Service struct {
 	entities []*message.Entity
 	diff *message.EntityDiffPool
-	Mover *Mover
+	mover message.EntityMover
 }
 
 func (s *Service) List() []*message.Entity {
@@ -33,12 +33,13 @@ func (s *Service) Add(entity *message.Entity) {
 }
 
 func (s *Service) Update(entity *message.Entity, diff *message.EntityDiff) {
-	s.entities[entity.Id] = entity
+	diff.Apply(entity, s.entities[entity.Id])
+	entity = s.entities[entity.Id]
 
-	if _, ok := s.diff.Updated[entity.Id]; ok {
-		s.diff.Updated[entity.Id].Merge(diff)
+	if _, ok := s.diff.Updated[entity]; ok {
+		s.diff.Updated[entity].Merge(diff)
 	} else {
-		s.diff.Updated[entity.Id] = diff
+		s.diff.Updated[entity] = diff
 	}
 }
 
@@ -57,13 +58,17 @@ func (s *Service) IsDirty() bool {
 // Flush the diff pool. This returns the current one and replace it by a new one.
 func (s *Service) Flush() *message.EntityDiffPool {
 	diff := s.diff
-	s.diff = &message.EntityDiffPool{}
+	s.diff = message.NewEntityDiffPool()
 	return diff
 }
 
-func NewService() *Service {
+func (s *Service) Mover() message.EntityMover {
+	return s.mover
+}
+
+func NewService() message.EntityService {
 	return &Service{
-		diff: &message.EntityDiffPool{},
-		Mover: &Mover{},
+		diff: message.NewEntityDiffPool(),
+		mover: NewMover(),
 	}
 }
