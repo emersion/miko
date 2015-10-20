@@ -51,7 +51,8 @@ func (t *Terrain) CanMove(entity *message.Entity, to *message.Position) bool {
 }
 
 func (t *Terrain) Generate() {
-	t.Points[100][100] = message.PointType(1)
+	t.Points[10][10] = message.PointType(1)
+	t.Points[20][10] = message.PointType(1)
 }
 
 func New() *Terrain {
