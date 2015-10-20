@@ -72,7 +72,7 @@ func (s *server) Write(msg []byte) (n int, err error) {
 	for _, c := range s.clients {
 		n, err = c.conn.Write(msg)
 		if err != nil {
-			return N, err
+			log.Println("Error broadcasting message:", err)
 		}
 		N += n
 	}
