@@ -48,6 +48,8 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 // Listen to a remote stream
 func (h *Handler) Listen(clientIO *message.IO) {
 	defer (func() {
+		// Will be executed when the connection is closed
+
 		session := h.ctx.Auth.GetSession(clientIO.Id)
 		if session != nil {
 			h.ctx.Entity.Delete(session.Entity.Id) // TODO: move this elsewhere
