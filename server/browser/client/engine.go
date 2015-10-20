@@ -35,7 +35,22 @@ func (i *EngineInput) HandleKeyboardEvent(event *js.Object) {
 		value = false
 	}
 
-	i.SetKey(event.Get("key").String(), value)
+	key := event.Get("key").String()
+	if key == "undefined" {
+		// See https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyCode
+		switch event.Get("keyCode").Int() {
+		case 40:
+			key = "ArrowDown"
+		case 37:
+			key = "ArrowLeft"
+		case 39:
+			key = "ArrowRight"
+		case 38:
+			key = "ArrowUp"
+		}
+	}
+
+	i.SetKey(key, value)
 }
 
 func (i *EngineInput) GetSpeedNorm() float32 {
@@ -114,7 +129,6 @@ func (e *Engine) Start() {
 
 		js.Global.Call("requestAnimationFrame", step)
 	}
-	js.Global.Call("requestAnimationFrame", step)
 
 	js.Global.Get("document").Call("addEventListener", "keydown", func(event *js.Object) {
 		event.Call("preventDefault")
@@ -124,6 +138,8 @@ func (e *Engine) Start() {
 		event.Call("preventDefault")
 		e.Input.HandleKeyboardEvent(event)
 	})
+
+	js.Global.Call("requestAnimationFrame", step)
 }
 
 func NewEngine(ctx *message.Context, w io.Writer) *Engine {

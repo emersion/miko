@@ -34,21 +34,11 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		code := ReadExit(io.Reader)
 		log.Println("Client disconnected with code:", code)
 
-		session := ctx.Auth.GetSession(io.Id)
-		if session != nil {
-			ctx.Entity.Delete(session.Entity.Id) // TODO: move this elsewhere
-			ctx.Auth.Logout(io.Id)
-		}
-
 		if err := io.Writer.Close(); err != nil {
 			return err
 		}
 
-		if session != nil {
-			return builder.SendPlayerLeft(io.BroadcastWriter, session.Entity.Id)
-		} else {
-			return nil
-		}
+		return nil
 	},
 	message.Types["login"]: func(ctx *message.Context, io *message.IO) error {
 		username := readString(io.Reader)

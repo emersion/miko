@@ -26,7 +26,7 @@ func (a *AuthService) GetSession(id int) *message.Session {
 
 func (a *AuthService) getSessionByUsername(username string) *message.Session {
 	for _, session := range a.sessions {
-		if session.Username != username {
+		if session != nil && session.Username == username {
 			return session
 		}
 	}

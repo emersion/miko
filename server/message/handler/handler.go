@@ -47,6 +47,18 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 
 // Listen to a remote stream
 func (h *Handler) Listen(clientIO *message.IO) {
+	defer (func() {
+		session := h.ctx.Auth.GetSession(clientIO.Id)
+		if session != nil {
+			h.ctx.Entity.Delete(session.Entity.Id) // TODO: move this elsewhere
+
+			if h.ctx.IsServer() {
+				h.ctx.Auth.Logout(clientIO.Id)
+				builder.SendPlayerLeft(clientIO.BroadcastWriter, session.Entity.Id)
+			}
+		}
+	})()
+
 	var msg_type message.Type
 	for {
 		err := read(clientIO.Reader, &msg_type)

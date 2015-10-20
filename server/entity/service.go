@@ -9,25 +9,35 @@ import(
 // diff pool keeps track of created, updated and deleted entities to send
 // appropriate messages to clients.
 type Service struct {
-	entities []*message.Entity
+	entities map[message.EntityId]*message.Entity
 	diff *message.EntityDiffPool
 	mover message.EntityMover
 }
 
-func (s *Service) List() []*message.Entity {
-	return s.entities
+func (s *Service) List() (entities []*message.Entity) {
+	for _, entity := range s.entities {
+		entities = append(entities, entity)
+	}
+	return
 }
 
 func (s *Service) Get(id message.EntityId) *message.Entity {
-	if int(id) >= len(s.entities) {
-		return nil
+	if entity, ok := s.entities[id]; ok {
+		return entity
 	}
-	return s.entities[id]
+	return nil
 }
 
 func (s *Service) Add(entity *message.Entity) {
-	entity.Id = message.EntityId(len(s.entities))
-	s.entities = append(s.entities, entity)
+	if int(entity.Id) == 0 {
+		nextId := len(s.entities)
+		if nextId == 0 {
+			nextId = 1
+		}
+		entity.Id = message.EntityId(nextId)
+	}
+
+	s.entities[entity.Id] = entity
 
 	s.diff.Created = append(s.diff.Created, entity)
 }
@@ -68,6 +78,7 @@ func (s *Service) Mover() message.EntityMover {
 
 func NewService() message.EntityService {
 	return &Service{
+		entities: map[message.EntityId]*message.Entity{},
 		diff: message.NewEntityDiffPool(),
 		mover: NewMover(),
 	}
