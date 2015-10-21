@@ -1,6 +1,6 @@
 package message
 
-import "math/cmplx"
+import "math"
 
 type EntityId uint16
 
@@ -38,19 +38,22 @@ type Speed struct {
 	Norm float32
 }
 
+func round(f float64) int {
+	return int(math.Floor(f + .5))
+}
+
 // Get the position reached by an object at t+dt if it has this speed during dt.
 func (s *Speed) GetNextPosition(current *Position, dt float64) *Position {
 	if s.Norm == 0 {
 		return nil
 	}
 
-	speed := cmplx.Rect(float64(s.Norm), float64(s.Angle))
-	x, y := current.AbsoluteCoords()
-	pos := complex(float64(x), float64(y))
+	sx, sy := float64(s.Norm) * math.Cos(float64(s.Angle)), float64(s.Norm) * math.Sin(float64(s.Angle))
+	px, py := current.AbsoluteCoords()
 
-	pos += speed * complex(dt, 0)
+	x, y := float64(px) + sx * dt, float64(py) +sy * dt
 
-	return NewPositionFromAbsoluteCoords(int(real(pos)), int(imag(pos)))
+	return NewPositionFromAbsoluteCoords(round(x), round(y))
 }
 
 // An entity

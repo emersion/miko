@@ -67,11 +67,11 @@ func (i *EngineInput) GetSpeedAngle() float32 {
 	switch {
 	case i.IsKeyActive("ArrowRight"):
 		return 0
-	case i.IsKeyActive("ArrowUp"):
+	case i.IsKeyActive("ArrowDown"):
 		return math.Pi / 2
 	case i.IsKeyActive("ArrowLeft"):
 		return math.Pi
-	case i.IsKeyActive("ArrowDown"):
+	case i.IsKeyActive("ArrowUp"):
 		return 3 * math.Pi / 2
 	}
 	return 0
