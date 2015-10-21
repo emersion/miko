@@ -10,7 +10,7 @@ func write(w io.Writer, data interface{}) error {
 }
 
 func writeString(w io.Writer, data string) error {
-	if err := write(w, uint8(len(data))); err != nil {
+	if err := write(w, uint16(len(data))); err != nil {
 		return err;
 	}
 

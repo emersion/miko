@@ -11,7 +11,7 @@ func read(r io.Reader, data interface{}) error {
 }
 
 func readString(r io.Reader) string {
-	var len uint8
+	var len uint16
 	err := read(r, &len)
 	if err != nil {
 		log.Println("WARN: cannot read string length")
