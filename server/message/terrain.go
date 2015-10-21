@@ -4,7 +4,7 @@ package message
 const BLOCK_LEN = 256
 
 type BlockCoord int16
-type PointCoord uint16
+type PointCoord uint8
 type BlockPoints [BLOCK_LEN][BLOCK_LEN]PointType
 
 // A terrain
