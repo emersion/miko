@@ -29,6 +29,8 @@ type server struct {
 
 // Read client data from channel
 func (c *Client) listen() {
+	log.Println("New client:", c.id)
+
 	reader := bufio.NewReader(c.conn)
 
 	clientIO := &message.IO{
