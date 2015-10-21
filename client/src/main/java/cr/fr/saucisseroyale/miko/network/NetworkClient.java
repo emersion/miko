@@ -90,7 +90,7 @@ public class NetworkClient {
       NoSuchAlgorithmException, CertificateException, KeyManagementException {
     KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
     try (InputStream keyStoreStream = NetworkClient.class.getResourceAsStream("/keystore")) {
-      keyStore.load(keyStoreStream, null);
+      keyStore.load(keyStoreStream, "keypass".toCharArray());
     }
     TrustManagerFactory tmf =
         TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());

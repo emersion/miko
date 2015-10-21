@@ -31,3 +31,7 @@ local.properties
 *.launch
 .classpath
 .target
+
+# miko-specific files
+
+src/main/resources/keystore
