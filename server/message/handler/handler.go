@@ -50,14 +50,20 @@ func (h *Handler) Listen(clientIO *message.IO) {
 	defer (func() {
 		// Will be executed when the connection is closed
 
-		session := h.ctx.Auth.GetSession(clientIO.Id)
-		if session != nil {
-			h.ctx.Entity.Delete(session.Entity.Id) // TODO: move this elsewhere
-
-			if h.ctx.IsServer() {
+		var session *message.Session
+		if h.ctx.IsServer() {
+			session = h.ctx.Auth.GetSession(clientIO.Id)
+			if session != nil {
 				h.ctx.Auth.Logout(clientIO.Id)
 				builder.SendPlayerLeft(clientIO.BroadcastWriter, session.Entity.Id)
 			}
+		}
+		if h.ctx.IsClient() {
+			session = h.ctx.Me
+		}
+
+		if session != nil && session.Entity != nil {
+			h.ctx.Entity.Delete(session.Entity.Id) // TODO: move this elsewhere
 		}
 	})()
 
