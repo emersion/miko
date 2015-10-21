@@ -7,21 +7,20 @@ import(
 // The authentication service
 // It aims to manage users: login, register, sessions
 type AuthService struct {
-	sessions []*message.Session
+	sessions map[int]*message.Session
 	users []*User
 }
 
 func (a *AuthService) HasSession(id int) bool {
-	session := a.GetSession(id)
-	return (session != nil)
+	_, ok := a.sessions[id]
+	return ok
 }
 
 func (a *AuthService) GetSession(id int) *message.Session {
-	// TODO: make sure session ID is io ID
-	if id >= len(a.sessions) {
-		return nil
+	if session, ok := a.sessions[id]; ok {
+		return session
 	}
-	return a.sessions[id]
+	return nil
 }
 
 func (a *AuthService) getSessionByUsername(username string) *message.Session {
@@ -56,12 +55,11 @@ func (a *AuthService) Login(id int, username string, password string) message.Lo
 
 	if code == "ok" {
 		entity := message.NewEntity()
-		session := &message.Session{
+		a.sessions[id] = &message.Session{
 			Id: id,
 			Username: username,
 			Entity: entity,
 		}
-		a.sessions = append(a.sessions, session)
 	}
 
 	return message.LoginResponseCodes[code]
@@ -72,7 +70,7 @@ func (a *AuthService) Logout(id int) {
 		return
 	}
 
-	a.sessions[id] = nil
+	delete(a.sessions, id)
 }
 
 func (a *AuthService) Register(id int, username string, password string) message.RegisterResponseCode {

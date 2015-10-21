@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log"
+	"errors"
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
 )
@@ -53,6 +54,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			log.Println("Client logged in:", username)
 
 			session := ctx.Auth.GetSession(io.Id)
+			if session == nil {
+				return errors.New("Cannot get newly logged in user's session")
+			}
 			ctx.Entity.Add(session.Entity) // TODO: move this elsewhere
 
 			// Send initial terrain
