@@ -108,6 +108,10 @@ func (s *server) Listen() {
 func (s *server) Write(msg []byte) (n int, err error) {
 	N := 0
 	for _, c := range s.clients {
+		if c == nil {
+			continue
+		}
+
 		n, err = c.conn.Write(msg)
 		if err != nil {
 			log.Println("Error broadcasting message:", err)
