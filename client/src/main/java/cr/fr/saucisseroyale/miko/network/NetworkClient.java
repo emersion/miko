@@ -1,13 +1,21 @@
 package cr.fr.saucisseroyale.miko.network;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 /**
  * Client de connexion à un serveur Miko fonctionnant sur la couche des messages.
@@ -33,7 +41,14 @@ public class NetworkClient {
    */
   public void connect(String address, int port) throws IOException {
     // TODO accepter seulement un certain certificat ?
-    socket = SSLSocketFactory.getDefault().createSocket(address, port);
+    SSLSocketFactory socketFactory;
+    try {
+      socketFactory = createSocketFactory();
+    } catch (Exception e) {
+      // TODO log cette erreur
+      throw new RuntimeException(e);
+    }
+    socket = socketFactory.createSocket(address, port);
     socket.setTcpNoDelay(true);
     socket.setTrafficClass(0x10); // LOWDELAY
     receiverThread = new ReceiverThread(socket.getInputStream(), inputMessages);
@@ -69,6 +84,20 @@ public class NetworkClient {
    */
   public void putMessage(FutureOutputMessage fom) {
     outputMessages.add(fom);
+  }
+
+  private static SSLSocketFactory createSocketFactory() throws KeyStoreException, IOException,
+      NoSuchAlgorithmException, CertificateException, KeyManagementException {
+    KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+    try (InputStream keyStoreStream = NetworkClient.class.getResourceAsStream("/keystore")) {
+      keyStore.load(keyStoreStream, null);
+    }
+    TrustManagerFactory tmf =
+        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    tmf.init(keyStore);
+    SSLContext context = SSLContext.getInstance("TLS");
+    context.init(null, tmf.getTrustManagers(), null);
+    return context.getSocketFactory();
   }
 
 }

@@ -1,6 +1,32 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>cr.fr.saucisseroyale</groupId>
-  <artifactId>miko</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>cr.fr.saucisseroyale</groupId>
+	<artifactId>miko</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>keytool-maven-plugin</artifactId>
+					<version>1.6-SNAPSHOT</version>
+					<executions>
+						<execution>
+							<goals>
+								<goal>importCertificate</goal>
+							</goals>
+							<phase>generate-resources</phase>
+						</execution>
+					</executions>
+					<configuration>
+						<keystore>/client/src/main/resources/keystore</keystore>
+						<alias>server</alias>
+						<file>/server/crypto/server.pem</file>
+						<trustcacerts>true</trustcacerts>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
 </project>
