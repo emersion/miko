@@ -15,11 +15,10 @@ func main() {
 	trn.Generate()
 
 	// Create a new context, with corresponding services
-	ctx := &message.ServerContext{
-		Auth: auth.NewService(),
-		Entity: entity.NewService(),
-		Terrain: trn,
-	}
+	ctx := message.NewServerContext()
+	ctx.Auth = auth.NewService()
+	ctx.Entity = entity.NewService()
+	ctx.Terrain = trn
 
 	// Start the server
 	srv := server.New(":9999", ctx)
