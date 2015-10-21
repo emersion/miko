@@ -85,7 +85,7 @@ func (a *AuthService) Register(id int, username string, password string) message
 	hash, _ := hashPassword(password)
 	a.users = append(a.users, &User{username, hash})
 
-	return message.RegisterResponseCodes["used_pseudo"]
+	return message.RegisterResponseCodes["ok"]
 }
 
 func NewService() *AuthService {
