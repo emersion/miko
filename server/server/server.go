@@ -40,7 +40,20 @@ func (c *Client) listen() {
 		Id: c.id,
 	}
 
+	defer c.Close()
+
 	c.Server.handler.Listen(clientIO)
+}
+
+func (c *Client) Close() error {
+	err := c.conn.Close()
+	if err != nil {
+		return err
+	}
+
+	c.Server.clients[c.id] = nil
+
+	return nil
 }
 
 // Creates new Client instance and starts listening

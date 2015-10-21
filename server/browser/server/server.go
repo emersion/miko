@@ -48,8 +48,13 @@ func (c *Client) listen() {
 }
 
 func (c *Client) Close() error {
-	c.conn.Close()
+	err := c.conn.Close()
+	if err != nil {
+		return err
+	}
+
 	c.Server.clients[c.id] = nil
+
 	return nil
 }
 
