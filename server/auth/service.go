@@ -88,6 +88,7 @@ func (a *AuthService) Register(id int, username string, password string) message
 
 func NewService() *AuthService {
 	return &AuthService{
+		sessions: map[int]*message.Session{},
 		users: LoadUserDb(),
 	}
 }
