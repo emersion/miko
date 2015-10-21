@@ -54,8 +54,7 @@ func (s *Service) Update(entity *message.Entity, diff *message.EntityDiff) {
 }
 
 func (s *Service) Delete(id message.EntityId) {
-	s.entities[id] = nil
-
+	delete(s.entities, id)
 	s.diff.Deleted = append(s.diff.Deleted, id)
 }
 
