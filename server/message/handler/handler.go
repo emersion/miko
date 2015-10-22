@@ -20,7 +20,13 @@ type Handler struct {
 // Handle a message of the specified type
 func (h *Handler) Handle(t message.Type, io *message.IO) error {
 	if h.ctx.IsServer() {
-		// TODO: Check that the client sent his version
+		if t != message.Types["version"] && io.Version == 0 {
+			// Client didn't send his version number
+			if err := builder.SendExit(io.Writer, message.ExitCodes["client_outdated"]); err != nil {
+				return err
+			}
+			return io.Writer.Close()
+		}
 	}
 
 	if val, ok := h.handlers[t]; ok {
