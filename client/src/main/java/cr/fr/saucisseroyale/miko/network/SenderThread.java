@@ -32,10 +32,13 @@ class SenderThread extends Thread {
         fom = outputMessages.take();
       } catch (InterruptedException e) {
         // On a demandé notre interruption, quitter
+        // TODO enlever le stack trace
+        e.printStackTrace();
         break;
       }
       try {
         fom.writeTo(dos);
+        dos.flush();
       } catch (IOException e) {
         // TODO log cet évènement/notifier le networking
         e.printStackTrace();

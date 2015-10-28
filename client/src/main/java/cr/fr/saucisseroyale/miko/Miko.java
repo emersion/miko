@@ -3,56 +3,51 @@ package cr.fr.saucisseroyale.miko;
 import cr.fr.saucisseroyale.miko.network.FutureInputMessage;
 import cr.fr.saucisseroyale.miko.network.NetworkClient;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.image.BufferStrategy;
+import java.awt.Toolkit;
 import java.io.IOException;
 
-import javax.swing.JFrame;
+import javax.swing.plaf.synth.SynthLookAndFeel;
 
 public class Miko {
 
   public static final String GAME_NAME = "Miko";
   public static final int PROTOCOL_VERSION = 1;
-  private static final String SERVER_ADDRESS = "localhost";
-  private static final int SERVER_PORT = 9997;
-  private static final int TICK_TIME = 10;
-  private JFrame frame;
-  private BufferStrategy strategy;
+  private static final String SERVER_ADDRESS = "miko.emersion.fr";
+  private static final int SERVER_PORT = 9999;
+  private static final int TICK_TIME = 10; // milliseconds
+  private UiWindow window;
   private boolean closeRequested = false;
-  private NetworkClient networkClient = new NetworkClient();
-  private MessageHandler messageHandler = new MessageHandler(networkClient);
+  private NetworkClient networkClient;
+  private MessageHandler messageHandler;
+  private float alpha; // for drawing, updated each loop
 
   private void connect() {
     // TODO
   }
 
   private void exit() {
-    frame.setVisible(false);
-    frame.dispose();
+    window.close();
     System.exit(0);
   }
 
   private void initFrame() {
-    frame = new JFrame(GAME_NAME);
-    frame.setUndecorated(true);
-    frame.setResizable(false);
-    frame.setIgnoreRepaint(true);
-    // TODO visible
-    // frame.setVisible(true);
-    GraphicsDevice device =
-        GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-    device.setFullScreenWindow(frame);
-    frame.createBufferStrategy(2);
-    strategy = frame.getBufferStrategy();
-    // TODO mettre ratio de rendu
-    // TODO ajouter key listener
+    SynthLookAndFeel lookAndFeel = new SynthLookAndFeel();
+    try {
+      lookAndFeel.load(Miko.class.getResourceAsStream("/style.xml"), Miko.class);
+      // UIManager.setLookAndFeel(lookAndFeel);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    window = new UiWindow();
+    window.setRenderable((graphics) -> render(graphics));
+    // TODO add ui panels
   }
 
   private void initNetwork() throws IOException {
+    networkClient = new NetworkClient();
     networkClient.connect(SERVER_ADDRESS, SERVER_PORT);
+    messageHandler = new DebugMessageHandler(networkClient); // TODO MikoMessageHandler
   }
 
   private void logic() {
@@ -72,9 +67,9 @@ public class Miko {
         logic();
         accumulator -= TICK_TIME * 1000000;
       }
-      float alpha = (float) accumulator / (TICK_TIME * 1000000);
-      render(alpha);
-      frame.getToolkit().sync();
+      alpha = (float) accumulator / (TICK_TIME * 1000000);
+      window.render(); // calls render(graphics)
+      Toolkit.getDefaultToolkit().sync();
     }
     exit();
   }
@@ -87,17 +82,12 @@ public class Miko {
     }
   }
 
-  private void render(float alpha) {
-    Graphics2D g = (Graphics2D) strategy.getDrawGraphics();
-    g.setBackground(Color.BLACK);
-    g.setColor(Color.WHITE);
-    // TODO
-    g.dispose();
-    strategy.show();
+  private void render(Graphics2D graphics) {
+    // TODO render w/ alpha
   }
 
-  private void start() throws IOException {
-    initNetwork();
+  private void run() throws IOException {
+    initNetwork(); // TODO handle better than throws IOE
     initFrame();
     connect();
     loop();
@@ -105,6 +95,6 @@ public class Miko {
 
   public static void main(String... args) throws IOException {
     Miko miko = new Miko();
-    miko.start();
+    miko.run();
   }
 }

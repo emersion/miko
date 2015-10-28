@@ -53,6 +53,8 @@ public class NetworkClient {
     socket.setTrafficClass(0x10); // LOWDELAY
     receiverThread = new ReceiverThread(socket.getInputStream(), inputMessages);
     senderThread = new SenderThread(socket.getOutputStream(), outputMessages);
+    receiverThread.start();
+    senderThread.start();
   }
 
 

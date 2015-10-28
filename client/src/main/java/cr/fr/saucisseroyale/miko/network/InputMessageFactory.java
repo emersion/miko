@@ -124,14 +124,17 @@ class InputMessageFactory {
         return (handler) -> handler.actions(actions);
       case ENTITY_CREATE:
         int entityIdCreate = dis.readUnsignedShort();
+        EntityDataUpdate entityCreateUpdate = readEntityDataUpdate(dis);
         // TODO entitycreate
         return (handler) -> {
+          handler.entityCreate(entityIdCreate, entityCreateUpdate);
         };
       case ENTITY_DESTROY:
         int entityIdDestroy = dis.readUnsignedShort();
-        // TODO entitydestroy
         return (handler) -> {
+          handler.entityDestroy(entityIdDestroy);
         };
+        // TODO entitydestroy
       case CHAT_RECEIVE:
         int entityIdChat = dis.readUnsignedShort();
         String chatMessage = readString(dis);
