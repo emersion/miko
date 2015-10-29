@@ -20,6 +20,8 @@ func main() {
 	ctx.Entity = entity.NewService()
 	ctx.Terrain = trn
 
+	go ctx.Entity.Animate(trn)
+
 	// Start the server
 	srv := server.New(":9999", ctx)
 	srv.Listen()
