@@ -8,6 +8,7 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 	"git.emersion.fr/saucisse-royale/miko/server/message"
 	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
+	"git.emersion.fr/saucisse-royale/miko/server/entity"
 )
 
 type EngineInput struct {
@@ -88,6 +89,8 @@ type Engine struct {
 }
 
 func (e *Engine) Start() {
+	mover := entity.NewMover(e.ctx.Terrain)
+
 	var step func(timestampObj *js.Object)
 	step = func(timestampObj *js.Object) {
 		//timestamp := timestampObj.Int()
@@ -116,12 +119,9 @@ func (e *Engine) Start() {
 			}
 		}
 
-		mover := e.ctx.Entity.Mover()
 		for _, entity := range e.ctx.Entity.List() {
-			pos := mover.UpdateEntity(entity)
-			if pos != nil {
-				// TODO: check pos
-				entity.Position = pos
+			updated := mover.UpdateEntity(entity)
+			if updated {
 				e.ctx.Entity.Update(entity, &message.EntityDiff{Position: true})
 			}
 		}

@@ -19,6 +19,8 @@ func main() {
 	ctx.Entity = entity.NewService()
 	ctx.Terrain = trn
 
+	go ctx.Entity.Animate(trn)
+
 	srv := server.New(address, ctx)
 	srv.Listen()
 }
