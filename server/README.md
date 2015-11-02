@@ -3,11 +3,9 @@
 ## Installation
 
 ```bash
-mkdir -p $GOPATH/src/git.emersion.fr/saucisse-royale
-cd $GOPATH/src/git.emersion.fr/saucisse-royale
-git clone ssh://git@git.emersion.fr/saucisse-royale/miko.git
-cd miko/server
-go get ./...
+go get -u git.emersion.fr/saucisse-royale/miko.git/server
+cd $GOPATH/src/git.emersion.fr/saucisse-royale/miko.git/server
+make
 ```
 
 ## Utilisation
