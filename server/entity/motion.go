@@ -1,8 +1,8 @@
 package entity
 
 import (
-	"math"
 	"git.emersion.fr/saucisse-royale/miko/server/message"
+	"math"
 )
 
 func round(f float64) int {
@@ -23,21 +23,21 @@ func (p *Position) ToMessage() *message.Position {
 	return &message.Position{
 		BX: message.BlockCoord(bx),
 		BY: message.BlockCoord(by),
-		X: message.PointCoord(x),
-		Y: message.PointCoord(y),
+		X:  message.PointCoord(x),
+		Y:  message.PointCoord(y),
 	}
 }
 
 func NewPositionFromMessage(coords *message.Position) *Position {
 	return &Position{
-		X: float64(int(coords.BX) * message.BLOCK_LEN + int(coords.X)),
-		Y: float64(int(coords.BY) * message.BLOCK_LEN + int(coords.Y)),
+		X: float64(int(coords.BX)*message.BLOCK_LEN + int(coords.X)),
+		Y: float64(int(coords.BY)*message.BLOCK_LEN + int(coords.Y)),
 	}
 }
 
 type Speed struct {
 	Angle float64
-	Norm float64
+	Norm  float64
 }
 
 // Get the position reached by an object at t+dt if it has this speed during dt.
@@ -50,21 +50,62 @@ func (s *Speed) GetNextPosition(current *Position, dt float64) *Position {
 	sx, sy := s.Norm*math.Cos(s.Angle), s.Norm*math.Sin(s.Angle)
 
 	return &Position{
-		X: current.X + sx * dt,
-		Y: current.Y + sy * dt,
+		X: current.X + sx*dt,
+		Y: current.Y + sy*dt,
 	}
 }
 
 func (s *Speed) ToMessage() *message.Speed {
 	return &message.Speed{
 		Angle: float32(s.Angle),
-		Norm: float32(s.Norm),
+		Norm:  float32(s.Norm),
 	}
 }
 
 func NewSpeedFromMessage(speed *message.Speed) *Speed {
 	return &Speed{
 		Angle: float64(speed.Angle),
-		Norm: float64(speed.Norm),
+		Norm:  float64(speed.Norm),
 	}
+}
+
+func GetRouteBetween(from, to *Position) (route [][2]int) {
+	// Distance between points
+	dx := math.Abs(to.X - from.X)
+	dy := math.Abs(to.Y - from.Y)
+
+	// Direction of x & y
+	xSign := 1
+	ySign := 1
+	if to.X < from.X {
+		xSign = -1
+	}
+	if to.Y < from.Y {
+		ySign = -1
+	}
+
+	// We will define a parameter t which will take all integer values between 0 and
+	// the greatest distance. One coordinate will evolve with t, the other has a
+	// shorter distance to go through. Thus, while one coordinate will increase with
+	// a speed of 1, the other will have a lower speed. kx and ky are these two
+	// speeds.
+
+	var kx, ky float64
+	if dx > dy {
+		kx = 1
+		ky = dy / dx
+	} else {
+		kx = dx / dy
+		ky = 1
+	}
+
+	for t := 0; t <= round(math.Max(dx, dy)); t++ {
+		// Calculate the two coordinates for this parameter
+		x := round(from.X + float64(xSign*t)*kx)
+		y := round(from.Y + float64(ySign*t)*ky)
+
+		route = append(route, [2]int{x, y})
+	}
+
+	return
 }

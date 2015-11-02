@@ -1,8 +1,8 @@
 package entity
 
-import(
-	"time"
+import (
 	"git.emersion.fr/saucisse-royale/miko/server/message"
+	"time"
 )
 
 // The entity service
@@ -11,7 +11,7 @@ import(
 // appropriate messages to clients.
 type Service struct {
 	entities map[message.EntityId]*message.Entity
-	diff *message.EntityDiffPool
+	diff     *message.EntityDiffPool
 }
 
 func (s *Service) List() (entities []*message.Entity) {
@@ -77,9 +77,9 @@ func (s *Service) Animate(trn message.Terrain) {
 	for {
 		// TODO: substract time taken to compute new positions
 		for _, entity := range s.entities {
-			updated := mover.UpdateEntity(entity)
-			if updated {
-				s.Update(entity, &message.EntityDiff{Position: true})
+			diff := mover.UpdateEntity(entity)
+			if diff != nil {
+				s.Update(entity, diff)
 			}
 		}
 
@@ -90,6 +90,6 @@ func (s *Service) Animate(trn message.Terrain) {
 func NewService() message.EntityService {
 	return &Service{
 		entities: map[message.EntityId]*message.Entity{},
-		diff: message.NewEntityDiffPool(),
+		diff:     message.NewEntityDiffPool(),
 	}
 }

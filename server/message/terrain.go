@@ -10,19 +10,20 @@ type BlockPoints [BLOCK_LEN][BLOCK_LEN]PointType
 // A terrain
 type Terrain interface {
 	GetBlockAt(x, y BlockCoord) *Block
+	GetPointAt(x, y int) PointType
 	SetBlock(blk *Block)
 }
 
 // A block
 type Block struct {
-	X BlockCoord
-	Y BlockCoord
+	X      BlockCoord
+	Y      BlockCoord
 	Points *BlockPoints
 }
 
 // Get the number of points in this block
 func (b *Block) Size() int {
-	return BLOCK_LEN*BLOCK_LEN
+	return BLOCK_LEN * BLOCK_LEN
 }
 
 // Change all points in this block to a given type

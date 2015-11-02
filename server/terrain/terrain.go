@@ -17,37 +17,35 @@ func (t *Terrain) GetBlockAt(x, y message.BlockCoord) *message.Block {
 
 	for i := 0; i < message.BLOCK_LEN; i++ {
 		for j := 0; j < message.BLOCK_LEN; j++ {
-			pts[i][j] = t.Points[int(x) + i][int(y) + j]
+			pts[i][j] = t.Points[int(x)+i][int(y)+j]
 		}
 	}
 
 	return &message.Block{
-		X: x,
-		Y: y,
+		X:      x,
+		Y:      y,
 		Points: pts,
 	}
+}
+
+func (t *Terrain) GetPointAt(x, y int) message.PointType {
+	return t.Points[x][y]
 }
 
 // Update the map with a new block.
 func (t *Terrain) SetBlock(blk *message.Block) {
 	for i := range blk.Points {
 		for j := range blk.Points[i] {
-			t.Points[int(blk.X) + i][int(blk.Y) + j] = blk.Points[i][j]
+			t.Points[int(blk.X)+i][int(blk.Y)+j] = blk.Points[i][j]
 		}
 	}
 }
 
 func (t *Terrain) Reset(blkNbr int) {
-	t.Points = make([][]message.PointType, blkNbr * message.BLOCK_LEN)
+	t.Points = make([][]message.PointType, blkNbr*message.BLOCK_LEN)
 	for i := range t.Points {
-		t.Points[i] = make([]message.PointType, blkNbr * message.BLOCK_LEN)
+		t.Points[i] = make([]message.PointType, blkNbr*message.BLOCK_LEN)
 	}
-}
-
-// Check if it's possible for an entity to move from its current position to
-// another one.
-func (t *Terrain) CanMove(entity *message.Entity, to *message.Position) bool {
-	return true // TODO
 }
 
 func (t *Terrain) Generate() {
