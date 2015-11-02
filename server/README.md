@@ -5,7 +5,6 @@
 ```bash
 go get -u git.emersion.fr/saucisse-royale/miko.git/server
 cd $GOPATH/src/git.emersion.fr/saucisse-royale/miko.git/server
-make
 ```
 
 ## Utilisation
