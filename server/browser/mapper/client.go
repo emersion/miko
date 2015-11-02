@@ -3,7 +3,7 @@ package main
 import(
 	"github.com/gopherjs/gopherjs/js"
 
-	"git.emersion.fr/saucisse-royale/miko/server/browser/mapper/terrain"
+	"git.emersion.fr/saucisse-royale/miko.git/server/browser/mapper/terrain"
 )
 
 func main() {

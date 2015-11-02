@@ -1,11 +1,11 @@
 package client
 
 import (
-	"github.com/gopherjs/gopherjs/js"
 	"github.com/emersion/go-js-canvas"
+	"github.com/gopherjs/gopherjs/js"
 
-	"git.emersion.fr/saucisse-royale/miko/server/message"
-	"git.emersion.fr/saucisse-royale/miko/server/entity"
+	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 type EntityService struct {
@@ -15,7 +15,7 @@ type EntityService struct {
 
 func (s *EntityService) DrawEntity(entity *message.Entity) {
 	s.Canvas.SetFillStyle("red")
-	s.Canvas.FillRect(int(entity.Position.X) * res, int(entity.Position.Y) * res, res, res)
+	s.Canvas.FillRect(int(entity.Position.X)*res, int(entity.Position.Y)*res, res, res)
 }
 
 func (s *EntityService) Draw() {
@@ -36,5 +36,5 @@ func (s *EntityService) Update(entity *message.Entity, diff *message.EntityDiff)
 }
 
 func NewEntityService(el *js.Object) *EntityService {
-	return &EntityService{entity.NewService(),canvas.New(el)}
+	return &EntityService{entity.NewService(), canvas.New(el)}
 }

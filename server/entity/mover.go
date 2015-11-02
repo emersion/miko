@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"git.emersion.fr/saucisse-royale/miko/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"time"
 )
 

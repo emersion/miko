@@ -3,7 +3,7 @@ package handler
 import (
 	"io"
 	"log"
-	"git.emersion.fr/saucisse-royale/miko/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 func ReadEntity(r io.Reader) (*message.Entity, *message.EntityDiff) {

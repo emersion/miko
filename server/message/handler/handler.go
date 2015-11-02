@@ -4,8 +4,8 @@ import (
 	"io"
 	"fmt"
 	"log"
-	"git.emersion.fr/saucisse-royale/miko/server/message"
-	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 )
 
 // A handler for a specific message

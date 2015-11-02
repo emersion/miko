@@ -6,9 +6,9 @@ import (
 	"net"
 	"crypto/tls"
 
-	"git.emersion.fr/saucisse-royale/miko/server/message"
-	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
-	"git.emersion.fr/saucisse-royale/miko/server/crypto"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
+	"git.emersion.fr/saucisse-royale/miko.git/server/crypto"
 )
 
 // Client holds info about connection

@@ -3,10 +3,10 @@ package client
 import (
 	"github.com/gopherjs/gopherjs/js"
 
-	"git.emersion.fr/saucisse-royale/miko/server/message"
-	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
-	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
-	"git.emersion.fr/saucisse-royale/miko/server/browser/client"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
+	"git.emersion.fr/saucisse-royale/miko.git/server/browser/client"
 )
 
 const res = 5

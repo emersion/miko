@@ -2,7 +2,7 @@ package builder
 
 import (
 	"io"
-	"git.emersion.fr/saucisse-royale/miko/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 func SendLoginResp(w io.Writer, code message.LoginResponseCode) error {

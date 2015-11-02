@@ -1,11 +1,11 @@
 package main
 
-import(
-	"git.emersion.fr/saucisse-royale/miko/server/auth"
-	"git.emersion.fr/saucisse-royale/miko/server/entity"
-	"git.emersion.fr/saucisse-royale/miko/server/message"
-	"git.emersion.fr/saucisse-royale/miko/server/server"
-	"git.emersion.fr/saucisse-royale/miko/server/terrain"
+import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/auth"
+	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/server"
+	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 )
 
 // Miko server

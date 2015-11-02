@@ -3,8 +3,8 @@ package handler
 import (
 	"io"
 	"log"
-	"git.emersion.fr/saucisse-royale/miko/server/message"
-	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 )
 
 func ReadExit(r io.Reader) (code message.ExitCode) {

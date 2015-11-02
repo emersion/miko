@@ -1,21 +1,21 @@
 package server
 
 import (
-	"log"
 	"bufio"
-	"net/http"
 	"golang.org/x/net/websocket"
+	"log"
+	"net/http"
 
-	"git.emersion.fr/saucisse-royale/miko/server/message"
-	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
 )
 
 // Client holds info about connection
 type Client struct {
-	conn *websocket.Conn
-	Server *server
+	conn     *websocket.Conn
+	Server   *server
 	incoming chan string // Channel for incoming data from client
-	id int
+	id       int
 }
 
 // TCP server
@@ -36,10 +36,10 @@ func (c *Client) listen() {
 	c.conn.PayloadType = 0x2
 
 	clientIO := &message.IO{
-		Reader: reader,
-		Writer: c.conn,
+		Reader:          reader,
+		Writer:          c.conn,
 		BroadcastWriter: c.Server,
-		Id: c.id,
+		Id:              c.id,
 	}
 
 	defer c.Close()
@@ -60,9 +60,9 @@ func (c *Client) Close() error {
 
 func (s *server) newClient(conn *websocket.Conn) {
 	client := &Client{
-		conn: conn,
+		conn:   conn,
 		Server: s,
-		id: len(s.clients),
+		id:     len(s.clients),
 	}
 	s.clients = append(s.clients, client)
 	client.listen()

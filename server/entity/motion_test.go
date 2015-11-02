@@ -2,7 +2,7 @@ package entity_test
 
 import (
 	"fmt"
-	"git.emersion.fr/saucisse-royale/miko/server/entity"
+	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 )
 
 func ExampleGetRouteBetween_horizontal() {

@@ -1,26 +1,26 @@
 package entity
 
 import (
-	"git.emersion.fr/saucisse-royale/miko/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 type Entity struct {
-	Id message.EntityId
+	Id       message.EntityId
 	Position *Position
-	Speed *Speed
+	Speed    *Speed
 }
 
 func (e *Entity) ToMessage() *message.Entity {
 	return &message.Entity{
-		Id: e.Id,
+		Id:       e.Id,
 		Position: e.Position.ToMessage(),
-		Speed: e.Speed.ToMessage(),
+		Speed:    e.Speed.ToMessage(),
 	}
 }
 
 func New() *Entity {
 	return &Entity{
 		Position: &Position{},
-		Speed: &Speed{},
+		Speed:    &Speed{},
 	}
 }

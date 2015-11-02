@@ -4,8 +4,8 @@ import (
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/emersion/go-js-canvas"
 
-	"git.emersion.fr/saucisse-royale/miko/server/message"
-	"git.emersion.fr/saucisse-royale/miko/server/terrain"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 )
 
 const res = 5

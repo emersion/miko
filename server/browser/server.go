@@ -1,11 +1,11 @@
 package main
 
 import (
-	"git.emersion.fr/saucisse-royale/miko/server/auth"
-	"git.emersion.fr/saucisse-royale/miko/server/entity"
-	"git.emersion.fr/saucisse-royale/miko/server/message"
-	"git.emersion.fr/saucisse-royale/miko/server/terrain"
-	"git.emersion.fr/saucisse-royale/miko/server/browser/server"
+	"git.emersion.fr/saucisse-royale/miko.git/server/auth"
+	"git.emersion.fr/saucisse-royale/miko.git/server/browser/server"
+	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 )
 
 func main() {

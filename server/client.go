@@ -6,11 +6,11 @@ import(
 	"crypto/tls"
 	"log"
 
-	"git.emersion.fr/saucisse-royale/miko/server/crypto"
-	"git.emersion.fr/saucisse-royale/miko/server/message"
-	"git.emersion.fr/saucisse-royale/miko/server/message/handler"
-	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
-	"git.emersion.fr/saucisse-royale/miko/server/terrain"
+	"git.emersion.fr/saucisse-royale/miko.git/server/crypto"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
+	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 )
 
 // A very basic TCP client, for testing purposes

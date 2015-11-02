@@ -6,9 +6,9 @@ import (
 	"log"
 
 	"github.com/gopherjs/gopherjs/js"
-	"git.emersion.fr/saucisse-royale/miko/server/message"
-	"git.emersion.fr/saucisse-royale/miko/server/message/builder"
-	"git.emersion.fr/saucisse-royale/miko/server/entity"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
+	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 )
 
 type EngineInput struct {
