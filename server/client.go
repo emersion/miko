@@ -1,24 +1,25 @@
 package main
 
-import(
+import (
 	"bufio"
-	"net"
 	"crypto/tls"
 	"log"
+	"net"
 
 	"git.emersion.fr/saucisse-royale/miko.git/server/crypto"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
-	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 )
 
 // A very basic TCP client, for testing purposes
 func main() {
 	trn := terrain.New()
-	ctx := &message.ClientContext{
-		Terrain: trn,
-	}
+
+	ctx := message.NewClientContext()
+	ctx.Terrain = trn
+
 	hdlr := handler.New(ctx)
 
 	tlsConfig, err := crypto.GetClientTlsConfig()
@@ -55,7 +56,8 @@ func main() {
 		panic("SendLogin: " + err.Error())
 	}
 
-	for {}
+	for {
+	}
 
 	/*err = builder.SendChatSend(clientIO.Writer, "Hello World!")
 	if err != nil {
