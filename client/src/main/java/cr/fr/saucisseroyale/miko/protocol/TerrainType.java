@@ -11,7 +11,9 @@ public enum TerrainType implements UniquelyIdentifiable {
 
 
   // @noformatting
-  ;
+  // TODO
+  NORMAL(0),
+  ANORMAL(1);
   // @formatting
 
   static {

@@ -1,8 +1,6 @@
 package cr.fr.saucisseroyale.miko;
 
 import cr.fr.saucisseroyale.miko.engine.Chunk;
-import cr.fr.saucisseroyale.miko.network.NetworkClient;
-import cr.fr.saucisseroyale.miko.network.OutputMessageFactory;
 import cr.fr.saucisseroyale.miko.protocol.Action;
 import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
@@ -18,76 +16,32 @@ import java.util.List;
  * messages doivent être appelées une fois par chaque message entrant correspondant.
  *
  */
-public class MessageHandler {
+public interface MessageHandler {
 
-  private NetworkClient networkClient;
+  public void actions(List<Pair<Integer, Action>> actions);
 
-  public MessageHandler(NetworkClient networkClient) {
-    this.networkClient = networkClient;
-    // TODO il y aura évidemment d'autres paramètres
-  }
+  public void chatReceived(int entityIdChat, String chatMessage);
 
-  // TODO ajouter toutes les méthodes d'entrée
-  // TODO remplir les méthodes d'entrée
+  public void chunkUpdate(ChunkPoint chunkPoint, Chunk chunk);
 
-  public void actions(List<Pair<Integer, Action>> actions) {
-    messageReceived();
-  }
+  public void entityCreate(int entityId, EntityDataUpdate entityDataUpdate);
 
-  public void chatReceived(int entityIdChat, String chatMessage) {
-    messageReceived();
+  public void entityDestroy(int entityId);
 
-  }
+  public void entitiesUpdate(List<EntityDataUpdate> entitiesUpdateList);
 
-  public void chunkUpdate(ChunkPoint chunkPoint, Chunk chunk) {
-    messageReceived();
+  public void exit(ExitType exitType);
 
-  }
+  public void loginResponse(LoginResponseType loginResponseType);
 
-  public void entitiesUpdate(List<EntityDataUpdate> entitiesUpdateList) {
-    messageReceived();
+  public void ping();
 
-  }
+  public void playerJoined(int entityId, String pseudo);
 
-  public void exit(ExitType exitType) {
-    messageReceived();
+  public void playerLeft(int entityId);
 
-  }
+  public void pong();
 
-  public void loginResponse(LoginResponseType loginResponseType) {
-    messageReceived();
-
-  }
-
-  public void ping() {
-    messageReceived();
-    networkClient.putMessage(OutputMessageFactory.pong());
-  }
-
-  public void playerJoined(int entityId, String pseudo) {
-    messageReceived();
-
-  }
-
-  public void playerLeft(int entityId) {
-    messageReceived();
-
-  }
-
-  public void pong() {
-    messageReceived();
-  }
-
-  public void registerResponse(RegisterResponseType registerResponseType) {
-    messageReceived();
-
-  }
-
-  /**
-   * Hook appelé lors de la réception de n'importe quel message.
-   */
-  private void messageReceived() {
-    // Prévenir qu'on a reçu un message pour éviter le timeout
-  }
+  public void registerResponse(RegisterResponseType registerResponseType);
 
 }

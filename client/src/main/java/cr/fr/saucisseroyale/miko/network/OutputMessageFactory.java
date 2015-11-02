@@ -1,5 +1,6 @@
 package cr.fr.saucisseroyale.miko.network;
 
+import cr.fr.saucisseroyale.miko.Miko;
 import cr.fr.saucisseroyale.miko.protocol.Action;
 import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
@@ -139,8 +140,6 @@ public class OutputMessageFactory {
     };
   }
 
-
-
   public static FutureOutputMessage action(Action action) {
     return (dos) -> {
       dos.writeByte(MessageType.ACTION.getId());
@@ -152,6 +151,13 @@ public class OutputMessageFactory {
     return (dos) -> {
       dos.writeByte(MessageType.CHAT_SEND.getId());
       writeString(dos, message);
+    };
+  }
+
+  public static FutureOutputMessage version() {
+    return (dos) -> {
+      dos.writeByte(MessageType.VERSION.getId());
+      dos.writeShort(Miko.PROTOCOL_VERSION);
     };
   }
 
@@ -194,7 +200,7 @@ public class OutputMessageFactory {
 
   private static void writeString(DataOutputStream dos, String string) throws IOException {
     // check length by characters length first to avoid heavy data array creation
-    // (characters length >= length in bytes)
+    // (length in bytes >= characters length)
     if (string.length() >= 1 << 16)
       throw new IllegalArgumentException("The specified string is too long, max size: 65565 bytes");
     byte[] data = string.getBytes(StandardCharsets.UTF_8);
