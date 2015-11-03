@@ -21,7 +21,7 @@ class DebugMessageHandler implements MessageHandler {
     this.networkClient = networkClient;
   }
 
-  public void actions(List<Pair<Integer, Action>> actions) {
+  public void actions(int tick, List<Pair<Integer, Action>> actions) {
     System.out.println("actions reçues, taille : " + actions.size());
     for (Pair<Integer, Action> action : actions) {
       System.out.println("\tnuméro " + action.getFirst());
@@ -33,19 +33,19 @@ class DebugMessageHandler implements MessageHandler {
     System.out.println("chat received " + entityIdChat + " " + chatMessage);
   }
 
-  public void chunkUpdate(ChunkPoint chunkPoint, Chunk chunk) {
+  public void chunkUpdate(int tick, ChunkPoint chunkPoint, Chunk chunk) {
     System.out.println("chuinkupdate " + chunkPoint.getChunkX() + " " + chunkPoint.getChunkY());
   }
 
-  public void entityCreate(int entityId, EntityDataUpdate entityDataUpdate) {
+  public void entityCreate(int tick, int entityId, EntityDataUpdate entityDataUpdate) {
     System.out.println("entitycreate " + entityId);
   }
 
-  public void entityDestroy(int entityId) {
+  public void entityDestroy(int tick, int entityId) {
     System.out.println("entitydestroy " + entityId);
   }
 
-  public void entitiesUpdate(List<EntityDataUpdate> entitiesUpdateList) {
+  public void entitiesUpdate(int tick, List<EntityDataUpdate> entitiesUpdateList) {
     System.out.println("entitiesupdate " + entitiesUpdateList.size());
   }
 

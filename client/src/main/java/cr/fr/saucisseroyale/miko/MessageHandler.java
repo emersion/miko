@@ -18,17 +18,17 @@ import java.util.List;
  */
 public interface MessageHandler {
 
-  public void actions(List<Pair<Integer, Action>> actions);
+  public void actions(int tick, List<Pair<Integer, Action>> actions);
 
   public void chatReceived(int entityIdChat, String chatMessage);
 
-  public void chunkUpdate(ChunkPoint chunkPoint, Chunk chunk);
+  public void chunkUpdate(int tick, ChunkPoint chunkPoint, Chunk chunk);
 
-  public void entityCreate(int entityId, EntityDataUpdate entityDataUpdate);
+  public void entityCreate(int tick, int entityId, EntityDataUpdate entityDataUpdate);
 
-  public void entityDestroy(int entityId);
+  public void entityDestroy(int tick, int entityId);
 
-  public void entitiesUpdate(List<EntityDataUpdate> entitiesUpdateList);
+  public void entitiesUpdate(int tick, List<EntityDataUpdate> entitiesUpdateList);
 
   public void exit(ExitType exitType);
 

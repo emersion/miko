@@ -83,7 +83,7 @@ public class OutputMessageFactory {
     };
   }
 
-  public static FutureOutputMessage entityUpdate(EntityDataUpdate entityDataUpdate) {
+  public static FutureOutputMessage entityUpdate(int tick, EntityDataUpdate entityDataUpdate) {
     boolean[] updateTypes = new boolean[8];
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     DataOutputStream buffer = new DataOutputStream(baos);
@@ -134,15 +134,17 @@ public class OutputMessageFactory {
     int updateTypesByte = bitfieldToByte(updateTypes);
     return (dos) -> {
       dos.writeByte(MessageType.ENTITY_UPDATE.getId());
+      dos.writeShort(tick);
       dos.writeShort(entityDataUpdate.getEntityId());
       dos.writeByte(updateTypesByte);
       dos.write(baos.toByteArray());
     };
   }
 
-  public static FutureOutputMessage action(Action action) {
+  public static FutureOutputMessage action(int tick, Action action) {
     return (dos) -> {
       dos.writeByte(MessageType.ACTION.getId());
+      dos.writeShort(tick);
       writeAction(dos, action);
     };
   }

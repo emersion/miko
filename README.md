@@ -42,7 +42,7 @@ C | 3 | Non | login | str pseudo + str password
 S | 4 | Non(*) | login_response | uint8 loginresponsecode
 C | 5 | Non | register | str pseudo + str password
 S | 6 | Non | register_response | uint8 registerresponsecode
-S | 7 | Oui | meta_action | uint16 entityid + uint8 metaactioncode + bytes metaactionbody
+S | 7 | Non | meta_action | uint16 entityid + uint8 metaactioncode + bytes metaactionbody
 S | 8 | Oui | terrain_update | bytes terrain
 C | 9 | Non | terrain_request | bytes terrainhint
 S | 10 | Oui | entities_update | bytes entities
