@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"time"
 )
@@ -71,11 +72,13 @@ func (s *Service) Flush() *message.EntityDiffPool {
 	return diff
 }
 
-func (s *Service) Animate(trn message.Terrain) {
-	mover := NewMover(trn)
+func (s *Service) Animate(trn message.Terrain, clk message.ClockService) {
+	mover := NewMover(trn, clk)
 
 	for {
-		// TODO: substract time taken to compute new positions
+		start := time.Now().UnixNano()
+		clk.Tick()
+
 		for _, entity := range s.entities {
 			diff := mover.UpdateEntity(entity)
 			if diff != nil {
@@ -83,7 +86,8 @@ func (s *Service) Animate(trn message.Terrain) {
 			}
 		}
 
-		time.Sleep(time.Microsecond * 200)
+		end := time.Now().UnixNano()
+		time.Sleep(clock.TickDuration - time.Nanosecond*time.Duration(end-start))
 	}
 }
 

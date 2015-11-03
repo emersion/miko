@@ -6,36 +6,36 @@ type EntityId uint16
 type Position struct {
 	BX BlockCoord
 	BY BlockCoord
-	X PointCoord
-	Y PointCoord
+	X  PointCoord
+	Y  PointCoord
 }
 
 // A speed contains an angle and a norm.
 type Speed struct {
 	Angle float32
-	Norm float32
+	Norm  float32
 }
 
 // An entity
 // Can be a player, an object, a monster, and so on.
 type Entity struct {
-	Id EntityId
+	Id       EntityId
 	Position *Position
-	Speed *Speed
+	Speed    *Speed
 }
 
 func NewEntity() *Entity {
 	return &Entity{
 		Position: &Position{},
-		Speed: &Speed{},
+		Speed:    &Speed{},
 	}
 }
 
 // Contains a list of fields that have changed in an entity.
 type EntityDiff struct {
-	Position bool
+	Position   bool
 	SpeedAngle bool
-	SpeedNorm bool
+	SpeedNorm  bool
 }
 
 func (d *EntityDiff) GetBitfield() uint8 {
@@ -72,9 +72,9 @@ func (d *EntityDiff) Apply(src *Entity, dst *Entity) {
 
 func NewEntityDiffFromBitfield(bitfield uint8) *EntityDiff {
 	return &EntityDiff{
-		bitfield & (1 << 7) > 0,
-		bitfield & (1 << 6) > 0,
-		bitfield & (1 << 5) > 0,
+		bitfield&(1<<7) > 0,
+		bitfield&(1<<6) > 0,
+		bitfield&(1<<5) > 0,
 	}
 }
 
@@ -99,5 +99,5 @@ type EntityService interface {
 	Delete(id EntityId)
 	IsDirty() bool
 	Flush() *EntityDiffPool
-	Animate(trn Terrain)
+	Animate(trn Terrain, clk ClockService)
 }

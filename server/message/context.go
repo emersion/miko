@@ -1,6 +1,7 @@
 package message
 
 type contextType int
+
 const (
 	serverContext contextType = iota
 	clientContext
@@ -11,8 +12,9 @@ const (
 type Context struct {
 	contextType
 
-	Entity EntityService
+	Entity  EntityService
 	Terrain Terrain
+	Clock   ClockService
 
 	// Server
 	Auth AuthService

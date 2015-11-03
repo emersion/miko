@@ -3,6 +3,7 @@ package entity
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"math"
+	"time"
 )
 
 func round(f float64) int {
@@ -42,7 +43,7 @@ type Speed struct {
 
 // Get the position reached by an object at t+dt if it has this speed during dt.
 // Returns nil if it hasn't changed.
-func (s *Speed) GetNextPosition(current *Position, dt float64) *Position {
+func (s *Speed) GetNextPosition(current *Position, dt time.Duration) *Position {
 	if s.Norm == 0 {
 		return nil
 	}
@@ -50,8 +51,8 @@ func (s *Speed) GetNextPosition(current *Position, dt float64) *Position {
 	sx, sy := s.Norm*math.Cos(s.Angle), s.Norm*math.Sin(s.Angle)
 
 	return &Position{
-		X: current.X + sx*dt,
-		Y: current.Y + sy*dt,
+		X: current.X + sx*float64(dt/time.Second),
+		Y: current.Y + sy*float64(dt/time.Second),
 	}
 }
 

@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"time"
 )
@@ -8,6 +9,7 @@ import (
 // A service that moves entities
 type Mover struct {
 	terrain     message.Terrain
+	clock       message.ClockService
 	lastUpdates map[message.EntityId]int64
 	positions   map[message.EntityId]*Position
 }
@@ -16,9 +18,9 @@ type Mover struct {
 // Returns true if the position has changed, false otherwise
 func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
 	last := m.lastUpdates[entity.Id]
-	now := time.Now().UnixNano()
+	now := m.clock.GetTicks()
 	m.lastUpdates[entity.Id] = now
-	dt := float64(now-last) / 1000 / 1000 // Convert to seconds
+	dt := time.Duration(now-last) * clock.TickDuration // Convert to seconds
 
 	speed := NewSpeedFromMessage(entity.Speed) // TODO
 	var pos *Position
@@ -53,9 +55,10 @@ func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
 	return &message.EntityDiff{Position: true}
 }
 
-func NewMover(trn message.Terrain) *Mover {
+func NewMover(trn message.Terrain, clk message.ClockService) *Mover {
 	return &Mover{
 		terrain:     trn,
+		clock:       clk,
 		lastUpdates: map[message.EntityId]int64{},
 		positions:   map[message.EntityId]*Position{},
 	}
