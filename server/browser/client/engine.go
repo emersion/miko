@@ -97,7 +97,7 @@ func (e *Engine) Start() {
 	var last float64
 	step = func(timestampObj *js.Object) {
 		now := timestampObj.Float() // In ms, precision is 1 µs
-		ellapsed := time.Duration(now-last) * time.Millisecond
+		ellapsed := time.Duration((now-last)*1000) * time.Microsecond
 
 		// TODO: find something better
 		for t := time.Duration(0); t <= ellapsed; t += clock.TickDuration {
