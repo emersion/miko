@@ -94,10 +94,10 @@ func (e *Engine) Start() {
 	mover := entity.NewMover(e.ctx.Terrain, e.ctx.Clock)
 
 	var step func(timestampObj *js.Object)
-	var last int64
+	var last float64
 	step = func(timestampObj *js.Object) {
-		now := timestampObj.Int64() // In µs
-		ellapsed := time.Duration(now-last) * time.Microsecond
+		now := timestampObj.Float() // In ms, precision is 1 µs
+		ellapsed := time.Duration(now-last) * time.Millisecond
 
 		// TODO: find something better
 		for t := time.Duration(0); t <= ellapsed; t += clock.TickDuration {
