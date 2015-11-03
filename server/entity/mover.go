@@ -22,7 +22,7 @@ func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
 	m.lastUpdates[entity.Id] = now
 	dt := time.Duration(now-last) * clock.TickDuration // Convert to seconds
 
-	speed := NewSpeedFromMessage(entity.Speed) // TODO
+	speed := NewSpeedFromMessage(entity.Speed)
 	var pos *Position
 	var ok bool
 	if pos, ok = m.positions[entity.Id]; !ok {
