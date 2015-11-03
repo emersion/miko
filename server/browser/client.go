@@ -1,15 +1,15 @@
 package main
 
-import(
+import (
 	"bufio"
 
 	"github.com/gopherjs/gopherjs/js"
 	"github.com/gopherjs/websocket"
 
-	"git.emersion.fr/saucisse-royale/miko.git/server/message"
-	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
-	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"git.emersion.fr/saucisse-royale/miko.git/server/browser/client"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 	hdlr := handler.New(ctx)
 
 	host := js.Global.Get("window").Get("location").Get("host").String()
-	c, err := websocket.Dial("ws://"+host+"/socket")
+	c, err := websocket.Dial("ws://" + host + "/socket")
 	if err != nil {
 		panic("Dial: " + err.Error())
 	}
@@ -39,11 +39,17 @@ func main() {
 
 	engine := client.NewEngine(ctx, c)
 
+	err = builder.SendVersion(clientIO.Writer)
+	if err != nil {
+		panic("SendVersion: " + err.Error())
+	}
+
 	/*err = builder.SendPing(clientIO.Writer)
 	if err != nil {
 		panic("SendPing: " + err.Error())
 	}*/
 
+	// TODO: wait for login response
 	err = builder.SendLogin(clientIO.Writer, "root", "root")
 	if err != nil {
 		panic("SendLogin: " + err.Error())
