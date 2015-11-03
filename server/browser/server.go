@@ -21,7 +21,7 @@ func main() {
 	ctx.Terrain = trn
 	ctx.Clock = clock.NewService()
 
-	go ctx.Entity.Animate(trn)
+	go ctx.Entity.Animate(ctx.Terrain, ctx.Clock)
 
 	srv := server.New(address, ctx)
 	srv.Listen()

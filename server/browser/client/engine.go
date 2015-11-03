@@ -4,7 +4,9 @@ import (
 	"io"
 	"log"
 	"math"
+	"time"
 
+	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
@@ -89,11 +91,18 @@ type Engine struct {
 }
 
 func (e *Engine) Start() {
-	mover := entity.NewMover(e.ctx.Terrain)
+	mover := entity.NewMover(e.ctx.Terrain, e.ctx.Clock)
 
 	var step func(timestampObj *js.Object)
+	var last int64
 	step = func(timestampObj *js.Object) {
-		//timestamp := timestampObj.Int()
+		now := timestampObj.Int64() // In µs
+		ellapsed := time.Duration(now-last) * time.Microsecond
+
+		// TODO: find something better
+		for t := time.Duration(0); t <= ellapsed; t += clock.TickDuration {
+			e.ctx.Clock.Tick()
+		}
 
 		if e.ctx.Me.Entity != nil && e.Input.Dirty {
 			e.Input.Dirty = false
@@ -120,9 +129,9 @@ func (e *Engine) Start() {
 		}
 
 		for _, entity := range e.ctx.Entity.List() {
-			updated := mover.UpdateEntity(entity)
-			if updated {
-				e.ctx.Entity.Update(entity, &message.EntityDiff{Position: true})
+			diff := mover.UpdateEntity(entity)
+			if diff != nil {
+				e.ctx.Entity.Update(entity, diff)
 			}
 		}
 		e.ctx.Entity.Flush()
