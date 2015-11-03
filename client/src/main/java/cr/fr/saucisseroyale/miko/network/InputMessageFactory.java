@@ -52,6 +52,7 @@ class InputMessageFactory {
     MessageType messageType = MessageType.getType(messageCode);
     if (messageType == null)
       throw newParseException();
+    int tick;
     switch (messageType) {
       case PING:
         return (handler) -> handler.ping();
@@ -68,7 +69,12 @@ class InputMessageFactory {
         LoginResponseType loginResponseType = LoginResponseType.getType(loginResponseCode);
         if (loginResponseType == null)
           throw newParseException();
-        return (handler) -> handler.loginResponse(loginResponseType);
+        if (loginResponseType == LoginResponseType.OK) {
+          tick = dis.readUnsignedShort();
+          return (handler) -> handler.loginSuccess(tick);
+        } else {
+          return (handler) -> handler.loginFail(loginResponseType);
+        }
       case REGISTER_RESPONSE:
         int registerResponseCode = dis.readUnsignedByte();
         RegisterResponseType registerResponseType =
@@ -92,6 +98,7 @@ class InputMessageFactory {
             throw newParseException();
         }
       case TERRAIN_UPDATE:
+        tick = dis.readUnsignedShort();
         ChunkPoint chunkPoint = readChunkPoint(dis);
         int defaultCode = dis.readUnsignedByte();
         TerrainType defaultType = TerrainType.getType(defaultCode);
@@ -104,16 +111,18 @@ class InputMessageFactory {
           blocks[i] = block;
         }
         Chunk chunk = new Chunk(defaultType, Arrays.asList(blocks));
-        return (handler) -> handler.chunkUpdate(chunkPoint, chunk);
+        return (handler) -> handler.chunkUpdate(tick, chunkPoint, chunk);
       case ENTITIES_UPDATE:
+        tick = dis.readUnsignedShort();
         int entitiesSize = dis.readUnsignedShort();
         List<EntityDataUpdate> entitiesUpdateList = new ArrayList<>(entitiesSize);
         for (int i = 0; i < entitiesSize; i++) {
           EntityDataUpdate entityDataUpdate = readEntityDataUpdate(dis);
           entitiesUpdateList.add(entityDataUpdate);
         }
-        return (handler) -> handler.entitiesUpdate(entitiesUpdateList);
+        return (handler) -> handler.entitiesUpdate(tick, entitiesUpdateList);
       case ACTIONS:
+        tick = dis.readUnsignedShort();
         int actionsSize = dis.readUnsignedShort();
         List<Pair<Integer, Action>> actions = new ArrayList<>(actionsSize);
         for (int i = 0; i < actionsSize; i++) {
@@ -121,18 +130,20 @@ class InputMessageFactory {
           Action action = readAction(dis);
           actions.add(new Pair<>(id, action));
         }
-        return (handler) -> handler.actions(actions);
+        return (handler) -> handler.actions(tick, actions);
       case ENTITY_CREATE:
+        tick = dis.readUnsignedShort();
         int entityIdCreate = dis.readUnsignedShort();
         EntityDataUpdate entityCreateUpdate = readEntityDataUpdate(dis);
         // TODO entitycreate
         return (handler) -> {
-          handler.entityCreate(entityIdCreate, entityCreateUpdate);
+          handler.entityCreate(tick, entityIdCreate, entityCreateUpdate);
         };
       case ENTITY_DESTROY:
+        tick = dis.readUnsignedShort();
         int entityIdDestroy = dis.readUnsignedShort();
         return (handler) -> {
-          handler.entityDestroy(entityIdDestroy);
+          handler.entityDestroy(tick, entityIdDestroy);
         };
         // TODO entitydestroy
       case CHAT_RECEIVE:

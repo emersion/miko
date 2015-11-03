@@ -6,13 +6,14 @@ import cr.fr.saucisseroyale.miko.network.NetworkClient;
 import java.awt.Graphics2D;
 import java.awt.Toolkit;
 import java.io.IOException;
+import java.text.ParseException;
 
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.synth.SynthLookAndFeel;
 
 public class Miko {
 
-  public static final String GAME_NAME = "Miko";
-  public static final int PROTOCOL_VERSION = 1;
+  public static final int PROTOCOL_VERSION = 2;
   private static final String SERVER_ADDRESS = "miko.emersion.fr";
   private static final int SERVER_PORT = 9999;
   private static final int TICK_TIME = 10; // milliseconds
@@ -31,14 +32,11 @@ public class Miko {
     System.exit(0);
   }
 
-  private void initFrame() {
-    SynthLookAndFeel lookAndFeel = new SynthLookAndFeel();
-    try {
-      lookAndFeel.load(Miko.class.getResourceAsStream("/style.xml"), Miko.class);
-      // UIManager.setLookAndFeel(lookAndFeel);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+  private void initFrame() throws ParseException, UnsupportedLookAndFeelException {
+    SynthLookAndFeel lookAndFeel = new SynthLookAndFeel(); // TODO handle exc better than throws
+    lookAndFeel.load(Miko.class.getResourceAsStream("/style.xml"), Miko.class);
+    // UIManager.setLookAndFeel(lookAndFeel);
+    // TODO enable synth l&f once stylesheet created
     window = new UiWindow();
     window.setRenderable((graphics) -> render(graphics));
     // TODO add ui panels
@@ -86,14 +84,14 @@ public class Miko {
     // TODO render w/ alpha
   }
 
-  private void run() throws IOException {
-    initNetwork(); // TODO handle better than throws IOE
+  private void run() throws Exception {
+    initNetwork(); // TODO handle better than throws Exc
     initFrame();
     connect();
     loop();
   }
 
-  public static void main(String... args) throws IOException {
+  public static void main(String... args) throws Exception {
     Miko miko = new Miko();
     miko.run();
   }

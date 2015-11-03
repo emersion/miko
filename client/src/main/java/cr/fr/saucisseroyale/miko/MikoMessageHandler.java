@@ -25,7 +25,7 @@ class MikoMessageHandler implements MessageHandler {
   // TODO ajouter entitydestory et faire mieux entitycreate
   // TODO remplir les méthodes d'entrée
 
-  public void actions(List<Pair<Integer, Action>> actions) {
+  public void actions(int tick, List<Pair<Integer, Action>> actions) {
     messageReceived();
   }
 
@@ -33,19 +33,19 @@ class MikoMessageHandler implements MessageHandler {
     messageReceived();
   }
 
-  public void chunkUpdate(ChunkPoint chunkPoint, Chunk chunk) {
+  public void chunkUpdate(int tick, ChunkPoint chunkPoint, Chunk chunk) {
     messageReceived();
   }
 
-  public void entityCreate(int entityId, EntityDataUpdate entityDataUpdate) {
+  public void entityCreate(int tick, int entityId, EntityDataUpdate entityDataUpdate) {
     messageReceived();
   }
 
-  public void entityDestroy(int entityId) {
+  public void entityDestroy(int tick, int entityId) {
     messageReceived();
   }
 
-  public void entitiesUpdate(List<EntityDataUpdate> entitiesUpdateList) {
+  public void entitiesUpdate(int tick, List<EntityDataUpdate> entitiesUpdateList) {
     messageReceived();
   }
 
@@ -53,7 +53,11 @@ class MikoMessageHandler implements MessageHandler {
     messageReceived();
   }
 
-  public void loginResponse(LoginResponseType loginResponseType) {
+  public void loginFail(LoginResponseType loginResponseType) {
+    messageReceived();
+  }
+
+  public void loginSuccess(int tick) {
     messageReceived();
   }
 
