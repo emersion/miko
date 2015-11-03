@@ -16,7 +16,7 @@ An experimental minimalist multiplayer top-down adventure game (en français)
 * go
 * non fonctionnel
 
-## Protocole v1
+## Protocole version *2*
 
 ### Généralités
 
@@ -33,27 +33,30 @@ An experimental minimalist multiplayer top-down adventure game (en français)
 
 ### Messages
 
-Envoyeur | Valeur | Nom | Contenu
---- | --- | --- | ---
-SC | 0 | ping |
-SC | 1 | pong |
-SC | 2 | exit | uint8 exitcode
-C | 3 | login | str pseudo + str password
-S | 4 | login_response | uint8 loginresponsecode
-C | 5 | register | str pseudo + str password
-S | 6 | register_response | uint8 registerresponsecode
-S | 7 | meta_action | uint16 entityid + uint8 metaactioncode + bytes metaactionbody
-S | 8 | terrain_update | bytes terrain
-C | 9 | terrain_request | bytes terrainhint
-S | 10 | entities_update | bytes entities
-C | 11 | entity_update | bytes entity
-S | 12 | actions_done | bytes actions
-C | 13 | action_do | bytes action
-S | 14 | entity_create | uint16 entityid + bytes entity_create
-S | 15 | entity_destroy | uint16 entityid + bytes entity_destroy
-C | 16 | chat_send | str message
-S | 17 | chat_receive | uint16 entityid + str message
-C | 18 | version | uint16 versionid
+Envoyeur | Valeur | Tick | Nom | Contenu
+--- | --- | --- | --- | ---
+SC | 0 | Non | ping |
+SC | 1 | Non | pong |
+SC | 2 | Non | exit | uint8 exitcode
+C | 3 | Non | login | str pseudo + str password
+S | 4 | Non(*) | login_response | uint8 loginresponsecode
+C | 5 | Non | register | str pseudo + str password
+S | 6 | Non | register_response | uint8 registerresponsecode
+S | 7 | Oui | meta_action | uint16 entityid + uint8 metaactioncode + bytes metaactionbody
+S | 8 | Oui | terrain_update | bytes terrain
+C | 9 | Non | terrain_request | bytes terrainhint
+S | 10 | Oui | entities_update | bytes entities
+C | 11 | Oui | entity_update | bytes entity
+S | 12 | Oui | actions_done | bytes actions
+C | 13 | Oui | action_do | bytes action
+S | 14 | Oui | entity_create | uint16 entityid + bytes entity_create
+S | 15 | Oui | entity_destroy | uint16 entityid + bytes entity_destroy
+C | 16 | Non | chat_send | str message
+S | 17 | Non | chat_receive | uint16 entityid + str message
+C | 18 | Non | version | uint16 versionid
+
+* Si le message possède un tick, il l'envoit avant son contenu : headers puis tick puis contenu. Le tick est un uint16 et est la frame de logique actuelle sur le simulateur du jeu envoyant le message.
+* (*) : Un tick est envoyé après le loginresponsecode si c'est le code "ok".
 
 #### exitcode
 
@@ -78,6 +81,8 @@ Valeur | Signification
 3 | too_many_tries
 4 | already_connected
 5 | player_limit_reached
+
+Un tick est envoyé après le code si le code est "ok".
 
 #### registerresponsecode
 
