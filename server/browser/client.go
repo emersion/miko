@@ -7,6 +7,7 @@ import (
 	"github.com/gopherjs/websocket"
 
 	"git.emersion.fr/saucisse-royale/miko.git/server/browser/client"
+	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
@@ -19,6 +20,7 @@ func main() {
 	ctx := message.NewClientContext()
 	ctx.Terrain = trn
 	ctx.Entity = ent
+	ctx.Clock = clock.NewService()
 	ctx.Me = &message.Session{Username: "root"}
 
 	hdlr := handler.New(ctx)

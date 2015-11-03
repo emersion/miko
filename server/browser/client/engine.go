@@ -1,19 +1,19 @@
 package client
 
 import (
-	"math"
 	"io"
 	"log"
+	"math"
 
-	"github.com/gopherjs/gopherjs/js"
+	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
-	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
+	"github.com/gopherjs/gopherjs/js"
 )
 
 type EngineInput struct {
 	Dirty bool
-	Keys map[string]bool
+	Keys  map[string]bool
 }
 
 func (i *EngineInput) SetKey(key string, value bool) {
@@ -84,8 +84,8 @@ func NewEngineInput() *EngineInput {
 
 type Engine struct {
 	Input *EngineInput
-	ctx *message.Context
-	w io.Writer
+	ctx   *message.Context
+	w     io.Writer
 }
 
 func (e *Engine) Start() {
@@ -99,7 +99,7 @@ func (e *Engine) Start() {
 			e.Input.Dirty = false
 
 			speed := &message.Speed{
-				Norm: e.Input.GetSpeedNorm(),
+				Norm:  e.Input.GetSpeedNorm(),
 				Angle: e.Input.GetSpeedAngle(),
 			}
 			diff := &message.EntityDiff{SpeedAngle: true, SpeedNorm: true}

@@ -3,6 +3,7 @@ package main
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/auth"
 	"git.emersion.fr/saucisse-royale/miko.git/server/browser/server"
+	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
@@ -18,6 +19,7 @@ func main() {
 	ctx.Auth = auth.NewService()
 	ctx.Entity = entity.NewService()
 	ctx.Terrain = trn
+	ctx.Clock = clock.NewService()
 
 	go ctx.Entity.Animate(trn)
 
