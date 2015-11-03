@@ -15,7 +15,7 @@ type Mover struct {
 }
 
 // Compute an entity's new position
-// Returns true if the position has changed, false otherwise
+// Returns an EntityDiff if the entity has changed, nil otherwise.
 func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
 	last := m.lastUpdates[entity.Id]
 	now := m.clock.GetTicks()
