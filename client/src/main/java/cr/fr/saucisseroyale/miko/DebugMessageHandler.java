@@ -53,8 +53,12 @@ class DebugMessageHandler implements MessageHandler {
     System.out.println("exit " + exitType);
   }
 
-  public void loginResponse(LoginResponseType loginResponseType) {
-    System.out.println("loginr " + loginResponseType);
+  public void loginFail(LoginResponseType loginResponseType) {
+    System.out.println("loginfailed, error: " + loginResponseType);
+  }
+
+  public void loginSuccess(int tick) {
+    System.out.println("loginsuccess tick: " + tick);
   }
 
   public void ping() {

@@ -68,7 +68,12 @@ class InputMessageFactory {
         LoginResponseType loginResponseType = LoginResponseType.getType(loginResponseCode);
         if (loginResponseType == null)
           throw newParseException();
-        return (handler) -> handler.loginResponse(loginResponseType);
+        if (loginResponseType == LoginResponseType.OK) {
+          int tick = dis.readUnsignedShort();
+          return (handler) -> handler.loginSuccess(tick);
+        } else {
+          return (handler) -> handler.loginFail(loginResponseType);
+        }
       case REGISTER_RESPONSE:
         int registerResponseCode = dis.readUnsignedByte();
         RegisterResponseType registerResponseType =

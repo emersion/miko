@@ -80,9 +80,4 @@ public final class Chunk {
     }
     return defaultType;
   }
-
-  // TODO DEBUG
-  public void dumpSize() {
-    System.out.println(blocks.size());
-  }
 }

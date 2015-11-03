@@ -53,7 +53,11 @@ class MikoMessageHandler implements MessageHandler {
     messageReceived();
   }
 
-  public void loginResponse(LoginResponseType loginResponseType) {
+  public void loginFail(LoginResponseType loginResponseType) {
+    messageReceived();
+  }
+
+  public void loginSuccess(int tick) {
     messageReceived();
   }
 

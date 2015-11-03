@@ -32,7 +32,9 @@ public interface MessageHandler {
 
   public void exit(ExitType exitType);
 
-  public void loginResponse(LoginResponseType loginResponseType);
+  public void loginFail(LoginResponseType loginResponseType);
+
+  public void loginSuccess(int tick);
 
   public void ping();
 
