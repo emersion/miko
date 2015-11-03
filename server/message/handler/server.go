@@ -12,9 +12,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		var version message.ProtocolVersion
 		read(io.Reader, &version)
 
-		if version != message.CURRENT_VERSION {
+		if version != message.CurrentVersion {
 			exitCode := message.ExitCodes["client_outdated"]
-			if version > message.CURRENT_VERSION {
+			if version > message.CurrentVersion {
 				exitCode = message.ExitCodes["server_outdated"]
 			}
 

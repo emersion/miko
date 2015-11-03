@@ -1,14 +1,14 @@
 package builder
 
 import (
-	"io"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"io"
 )
 
 func SendVersion(w io.Writer) error {
 	return writeAll(w, []interface{}{
 		message.Types["version"],
-		message.CURRENT_VERSION,
+		message.CurrentVersion,
 	})
 }
 
