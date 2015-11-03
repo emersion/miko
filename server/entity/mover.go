@@ -35,6 +35,7 @@ func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
 	}
 
 	// Check terrain
+	// TODO: block position just before the wall
 	canMove := true
 	pts := GetRouteBetween(pos, nextPos)
 	for _, pt := range pts {
