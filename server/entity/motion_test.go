@@ -5,6 +5,16 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 )
 
+func ExampleGetRouteBetween_point() {
+	from := &entity.Position{0, 0}
+	to := &entity.Position{0, 0}
+
+	route := entity.GetRouteBetween(from, to)
+
+	fmt.Println(route)
+	// Output: [[0 0]]
+}
+
 func ExampleGetRouteBetween_horizontal() {
 	from := &entity.Position{-2, 0}
 	to := &entity.Position{4, 0}

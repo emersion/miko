@@ -95,8 +95,11 @@ func GetRouteBetween(from, to *Position) (route [][2]int) {
 	if dx > dy {
 		kx = 1
 		ky = dy / dx
-	} else {
+	} else if dx < dy {
 		kx = dx / dy
+		ky = 1
+	} else {
+		kx = 1
 		ky = 1
 	}
 
