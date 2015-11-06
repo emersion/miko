@@ -36,18 +36,20 @@ func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
 
 	// Check terrain
 	// TODO: block position just before the wall
-	canMove := true
 	pts := GetRouteBetween(pos, nextPos)
+	var lastPt [2]int
 	for _, pt := range pts {
-		t := m.terrain.GetPointAt(pt[0], pt[1])
+		t, err := m.terrain.GetPointAt(pt[0], pt[1])
+		if err != nil {
+			return nil // TODO: trigger a more severe error
+		}
 
 		if t != message.PointType(0) {
-			canMove = false
+			nextPos = &Position{float64(lastPt[0]), float64(lastPt[1])}
+			break
 		}
-	}
 
-	if !canMove {
-		return nil
+		lastPt = pt
 	}
 
 	m.positions[entity.Id] = nextPos

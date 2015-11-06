@@ -9,9 +9,9 @@ type BlockPoints [BLOCK_LEN][BLOCK_LEN]PointType
 
 // A terrain
 type Terrain interface {
-	GetBlockAt(x, y BlockCoord) *Block
-	GetPointAt(x, y int) PointType
-	SetBlock(blk *Block)
+	GetBlockAt(bx, by BlockCoord) (*Block, error)
+	GetPointAt(x, y int) (PointType, error)
+	SetBlock(blk *Block) error
 }
 
 // A block

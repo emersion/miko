@@ -1,4 +1,4 @@
-all: client server
+all: server client
 
 client:
 	gopherjs build client.go -o public/client.js

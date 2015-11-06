@@ -53,6 +53,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		if code == message.LoginResponseCodes["ok"] {
 			log.Println("Client logged in:", username)
 
+			// Create entity
 			session := ctx.Auth.GetSession(io.Id)
 			if session == nil {
 				return errors.New("Cannot get newly logged in user's session")
@@ -60,12 +61,19 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			ctx.Entity.Add(session.Entity) // TODO: move this elsewhere
 
 			// Send initial terrain
+
 			pos := session.Entity.Position
-			err := builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetTick(), ctx.Terrain.GetBlockAt(pos.BX, pos.BY))
+			blk, err := ctx.Terrain.GetBlockAt(pos.BX, pos.BY)
 			if err != nil {
 				return err
 			}
 
+			err = builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetTick(), blk)
+			if err != nil {
+				return err
+			}
+
+			// Broadcast new entity
 			err = builder.SendEntitiesDiffToClients(io.BroadcastWriter, ctx.Clock.GetTick(), ctx.Entity.Flush())
 			if err != nil {
 				return err
@@ -92,7 +100,12 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			read(io.Reader, &x)
 			read(io.Reader, &y)
 
-			err := builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetTick(), ctx.Terrain.GetBlockAt(x, y))
+			blk, err := ctx.Terrain.GetBlockAt(x, y)
+			if err != nil {
+				return err
+			}
+
+			err = builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetTick(), blk)
 			if err != nil {
 				return err
 			}
