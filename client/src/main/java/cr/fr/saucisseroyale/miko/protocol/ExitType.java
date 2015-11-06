@@ -15,9 +15,7 @@ public enum ExitType implements UniquelyIdentifiable {
   NETWORK_ERROR(2),
   PING_TIMEOUT(3),
   CLIENT_KICKED(4),
-  CLIENT_BANNED(5),
-  CLIENT_OUTDATED(6),
-  SERVER_OUTDATED(7);
+  CLIENT_BANNED(5);
   // @formatting
 
   static {

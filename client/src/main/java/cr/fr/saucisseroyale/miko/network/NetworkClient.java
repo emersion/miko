@@ -22,15 +22,24 @@ import javax.net.ssl.TrustManagerFactory;
  *
  * @see FutureInputMessage
  * @see FutureOutputMessage
- *
  */
 public class NetworkClient {
 
+  private SSLSocketFactory socketFactory;
   private Socket socket;
   private ReceiverThread receiverThread;
   private SenderThread senderThread;
   private Queue<FutureInputMessage> inputMessages = new ConcurrentLinkedQueue<>();
   private BlockingQueue<FutureOutputMessage> outputMessages = new LinkedBlockingQueue<>();
+
+  public NetworkClient() {
+    try {
+      socketFactory = createSocketFactory();
+    } catch (Exception e) {
+      // TODO log cette erreur
+      throw new RuntimeException(e);
+    }
+  }
 
   /**
    * Se connecte au serveur spécifié et démarre les threads d'envoi et de réception des messages.
@@ -40,40 +49,44 @@ public class NetworkClient {
    * @throws IOException S'il y a des erreurs quelconques d'IO lors de la connexion.
    */
   public void connect(String address, int port) throws IOException {
-    // TODO accepter seulement un certain certificat ?
-    SSLSocketFactory socketFactory;
-    try {
-      socketFactory = createSocketFactory();
-    } catch (Exception e) {
-      // TODO log cette erreur
-      throw new RuntimeException(e);
-    }
     socket = socketFactory.createSocket(address, port);
     socket.setTcpNoDelay(true);
     socket.setTrafficClass(0x10); // LOWDELAY
-    receiverThread = new ReceiverThread(socket.getInputStream(), inputMessages);
-    senderThread = new SenderThread(socket.getOutputStream(), outputMessages);
+    receiverThread = new ReceiverThread(socket.getInputStream(), inputMessages, this::networkError);
+    senderThread = new SenderThread(socket.getOutputStream(), outputMessages, this::networkError);
     receiverThread.start();
     senderThread.start();
   }
 
-
   /**
-   * Termine définitivement la connection et l'envoi et la réception des messages.
-   *
-   * @throws IOException S'il y a des erreurs quelconques d'IO lors de l'extinction.
+   * Déconnecte définitivement le client du serveur.
+   * <p>
+   * Le client peut se reconnecter ensuite à un serveur avec {@link #connect(String, int)}. Si des
+   * messages sont encores reçus ou ajoutés à la liste d'envoi, ils seront ignorés.
    */
-  public void exit() throws IOException {
-    receiverThread.interrupt();
-    senderThread.interrupt();
-    socket.close();
+  public void disconnect() {
+    if (receiverThread != null) {
+      receiverThread.interrupt();
+      receiverThread = null;
+    }
+    if (senderThread != null) {
+      senderThread.interrupt();
+      senderThread = null;
+    }
+    if (socket != null) {
+      try {
+        socket.close();
+      } catch (IOException e) {
+        // connection closing failed, ignore.
+      }
+      socket = null;
+    }
   }
 
   /**
    * Renvoie un message de la liste de réception des messages.
    *
    * @return Le message reçu le plus ancien, ou <code>null</code> si aucun message n'est en attente.
-   *
    */
   public FutureInputMessage getMessage() {
     return inputMessages.poll();
@@ -86,6 +99,11 @@ public class NetworkClient {
    */
   public void putMessage(FutureOutputMessage fom) {
     outputMessages.add(fom);
+  }
+
+  private void networkError(Exception e) {
+    inputMessages.add(InputMessageFactory.networkError(e));
+    disconnect();
   }
 
   private static SSLSocketFactory createSocketFactory() throws KeyStoreException, IOException,

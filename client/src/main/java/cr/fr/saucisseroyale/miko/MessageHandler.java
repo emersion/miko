@@ -7,6 +7,7 @@ import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
 import cr.fr.saucisseroyale.miko.protocol.ExitType;
 import cr.fr.saucisseroyale.miko.protocol.LoginResponseType;
 import cr.fr.saucisseroyale.miko.protocol.RegisterResponseType;
+import cr.fr.saucisseroyale.miko.protocol.VersionResponseType;
 import cr.fr.saucisseroyale.miko.util.Pair;
 
 import java.util.List;
@@ -36,6 +37,8 @@ public interface MessageHandler {
 
   public void loginSuccess(int tick);
 
+  public void networkError(Exception e);
+
   public void ping();
 
   public void playerJoined(int entityId, String pseudo);
@@ -45,5 +48,7 @@ public interface MessageHandler {
   public void pong();
 
   public void registerResponse(RegisterResponseType registerResponseType);
+
+  public void versionResponse(VersionResponseType versionResponseType);
 
 }

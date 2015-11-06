@@ -86,12 +86,12 @@ public class OutputMessageFactory {
   public static FutureOutputMessage entityUpdate(int tick, EntityDataUpdate entityDataUpdate) {
     boolean[] updateTypes = new boolean[8];
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    DataOutputStream buffer = new DataOutputStream(baos);
-    for (int b = 0; b < 8; b++) {
-      EntityUpdateType updateType = EntityUpdateType.getType(b);
-      if (updateType == null)
-        throw new IllegalArgumentException("Unknown parameters set in entityDataUpdate");
-      try {
+    try (DataOutputStream buffer = new DataOutputStream(baos)) {
+      for (int b = 0; b < 8; b++) {
+        EntityUpdateType updateType = EntityUpdateType.getType(b);
+        if (updateType == null)
+          throw new IllegalArgumentException("Unknown parameters set in entityDataUpdate");
+
         switch (updateType) {
           case POSITION:
             if (!entityDataUpdate.hasPosition())
@@ -126,10 +126,10 @@ public class OutputMessageFactory {
           default:
             throw new IllegalArgumentException("Unknown parameters set in entityDataUpdate");
         }
-      } catch (IOException e) {
-        // impossible to get here since we write to a local byte array stream
-        throw new RuntimeException(e);
       }
+    } catch (IOException e) {
+      // impossible to get here since we write to a local byte array stream
+      throw new RuntimeException(e);
     }
     int updateTypesByte = bitfieldToByte(updateTypes);
     return (dos) -> {
