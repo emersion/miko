@@ -122,7 +122,7 @@ func (e *Engine) Start() {
 		}
 
 		if e.ctx.Entity.IsDirty() {
-			err := builder.SendEntitiesDiffToServer(e.w, e.ctx.Entity.Flush())
+			err := builder.SendEntitiesDiffToServer(e.w, e.ctx.Clock.GetTick(), e.ctx.Entity.Flush())
 			if err != nil {
 				log.Println("Could not send entities update to server", err)
 			}
