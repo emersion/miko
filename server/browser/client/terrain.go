@@ -1,8 +1,8 @@
 package client
 
 import (
-	"github.com/gopherjs/gopherjs/js"
 	"github.com/emersion/go-js-canvas"
+	"github.com/gopherjs/gopherjs/js"
 
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
@@ -19,10 +19,10 @@ func (t *Terrain) DrawPoint(x, y int) {
 	ptType := t.Points[x][y]
 
 	if int(ptType) == 0 {
-		t.Canvas.ClearRect(x * res, y * res, res, res)
+		t.Canvas.ClearRect(x*res, y*res, res, res)
 	} else {
 		t.Canvas.SetFillStyle("black")
-		t.Canvas.FillRect(x * res, y * res, res, res)
+		t.Canvas.FillRect(x*res, y*res, res, res)
 	}
 }
 
@@ -54,13 +54,19 @@ func (t *Terrain) Draw() {
 	}
 }
 
-func (t *Terrain) SetBlock(blk *message.Block) {
-	t.Terrain.SetBlock(blk)
+func (t *Terrain) SetBlock(blk *message.Block) error {
+	err := t.Terrain.SetBlock(blk)
+	if err != nil {
+		return err
+	}
+
 	t.Draw()
+
+	return nil
 }
 
 func NewTerrain(el *js.Object) *Terrain {
-	t := &Terrain{*terrain.New(),canvas.New(el)}
+	t := &Terrain{*terrain.New(), canvas.New(el)}
 	t.Reset(1)
 	return t
 }

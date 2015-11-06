@@ -39,7 +39,7 @@ SC | 0 | Non | ping |
 SC | 1 | Non | pong |
 SC | 2 | Non | exit | uint8 exitcode
 C | 3 | Non | login | str pseudo + str password
-S | 4 | Non(*) | login_response | uint8 loginresponsecode
+S | 4 | Non [1] | login_response | uint8 loginresponsecode
 C | 5 | Non | register | str pseudo + str password
 S | 6 | Non | register_response | uint8 registerresponsecode
 S | 7 | Non | meta_action | uint16 entityid + uint8 metaactioncode + bytes metaactionbody
@@ -57,7 +57,7 @@ C | 18 | Non | version | uint16 versionid
 S | 19 | Non | version_response | uint8 versionresponsecode
 
 * Si le message possède un tick, il l'envoit avant son contenu : headers puis tick puis contenu. Le tick est un uint16 et est la frame de logique actuelle sur le simulateur du jeu envoyant le message.
-* (*) : Un tick est envoyé après le loginresponsecode si c'est le code "ok".
+* [1] : Un tick est envoyé après le `loginresponsecode` si c'est le code "ok".
 
 #### exitcode
 

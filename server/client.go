@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 
+	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/crypto"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
@@ -19,6 +20,7 @@ func main() {
 
 	ctx := message.NewClientContext()
 	ctx.Terrain = trn
+	ctx.Clock = clock.NewService()
 
 	hdlr := handler.New(ctx)
 

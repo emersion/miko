@@ -1,9 +1,9 @@
 package handler
 
 import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"io"
 	"log"
-	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 func ReadEntity(r io.Reader) (*message.Entity, *message.EntityDiff) {
@@ -110,11 +110,14 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["terrain_update"]: func(ctx *message.Context, io *message.IO) error {
+		readTick(io.Reader)
 		blk := ReadBlock(io.Reader)
 		ctx.Terrain.SetBlock(blk)
 		return nil
 	},
 	message.Types["entities_update"]: func(ctx *message.Context, io *message.IO) error {
+		readTick(io.Reader)
+
 		var size uint16
 		read(io.Reader, &size)
 
@@ -131,6 +134,8 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["entity_create"]: func(ctx *message.Context, io *message.IO) error {
+		readTick(io.Reader)
+
 		entity, _ := ReadEntity(io.Reader)
 		ctx.Entity.Add(entity)
 		ctx.Entity.Flush()
@@ -139,6 +144,8 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["actions_done"]: func(ctx *message.Context, io *message.IO) error {
+		readTick(io.Reader)
+
 		var size uint16
 		read(io.Reader, &size)
 

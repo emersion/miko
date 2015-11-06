@@ -1,19 +1,21 @@
 package client
 
 import (
-	"math"
 	"io"
 	"log"
+	"math"
+	"time"
 
-	"github.com/gopherjs/gopherjs/js"
+	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
+	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
-	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
+	"github.com/gopherjs/gopherjs/js"
 )
 
 type EngineInput struct {
 	Dirty bool
-	Keys map[string]bool
+	Keys  map[string]bool
 }
 
 func (i *EngineInput) SetKey(key string, value bool) {
@@ -58,7 +60,7 @@ func (i *EngineInput) GetSpeedNorm() float32 {
 	keys := []string{"ArrowUp", "ArrowRight", "ArrowLeft", "ArrowDown"}
 	for _, key := range keys {
 		if i.IsKeyActive(key) {
-			return 0.1
+			return 2
 		}
 	}
 	return 0
@@ -84,22 +86,31 @@ func NewEngineInput() *EngineInput {
 
 type Engine struct {
 	Input *EngineInput
-	ctx *message.Context
-	w io.Writer
+	ctx   *message.Context
+	w     io.Writer
 }
 
 func (e *Engine) Start() {
-	mover := entity.NewMover(e.ctx.Terrain)
+	mover := entity.NewMover(e.ctx.Terrain, e.ctx.Clock)
 
 	var step func(timestampObj *js.Object)
+	var lastTick time.Duration
 	step = func(timestampObj *js.Object) {
-		//timestamp := timestampObj.Int()
+		now := time.Duration(timestampObj.Float()*1000) * time.Microsecond // Precision is 1 µs
+		if lastTick == time.Duration(0) {
+			lastTick = now
+		}
+
+		for t := lastTick; t+clock.TickDuration <= now; t += clock.TickDuration {
+			e.ctx.Clock.Tick()
+			lastTick = t
+		}
 
 		if e.ctx.Me.Entity != nil && e.Input.Dirty {
 			e.Input.Dirty = false
 
 			speed := &message.Speed{
-				Norm: e.Input.GetSpeedNorm(),
+				Norm:  e.Input.GetSpeedNorm(),
 				Angle: e.Input.GetSpeedAngle(),
 			}
 			diff := &message.EntityDiff{SpeedAngle: true, SpeedNorm: true}
@@ -113,16 +124,16 @@ func (e *Engine) Start() {
 		}
 
 		if e.ctx.Entity.IsDirty() {
-			err := builder.SendEntitiesDiffToServer(e.w, e.ctx.Entity.Flush())
+			err := builder.SendEntitiesDiffToServer(e.w, e.ctx.Clock.GetTick(), e.ctx.Entity.Flush())
 			if err != nil {
 				log.Println("Could not send entities update to server", err)
 			}
 		}
 
 		for _, entity := range e.ctx.Entity.List() {
-			updated := mover.UpdateEntity(entity)
-			if updated {
-				e.ctx.Entity.Update(entity, &message.EntityDiff{Position: true})
+			diff := mover.UpdateEntity(entity)
+			if diff != nil {
+				e.ctx.Entity.Update(entity, diff)
 			}
 		}
 		e.ctx.Entity.Flush()

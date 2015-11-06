@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"log"
 	"errors"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
+	"log"
 )
 
 var serverHandlers = &map[message.Type]TypeHandler{
@@ -12,9 +12,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		var version message.ProtocolVersion
 		read(io.Reader, &version)
 
-		if version != message.CURRENT_VERSION {
+		if version != message.CurrentVersion {
 			exitCode := message.ExitCodes["client_outdated"]
-			if version > message.CURRENT_VERSION {
+			if version > message.CurrentVersion {
 				exitCode = message.ExitCodes["server_outdated"]
 			}
 
@@ -53,6 +53,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		if code == message.LoginResponseCodes["ok"] {
 			log.Println("Client logged in:", username)
 
+			// Create entity
 			session := ctx.Auth.GetSession(io.Id)
 			if session == nil {
 				return errors.New("Cannot get newly logged in user's session")
@@ -60,13 +61,20 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			ctx.Entity.Add(session.Entity) // TODO: move this elsewhere
 
 			// Send initial terrain
+
 			pos := session.Entity.Position
-			err := builder.SendTerrainUpdate(io.Writer, ctx.Terrain.GetBlockAt(pos.BX, pos.BY))
+			blk, err := ctx.Terrain.GetBlockAt(pos.BX, pos.BY)
 			if err != nil {
 				return err
 			}
 
-			err = builder.SendEntitiesDiffToClients(io.BroadcastWriter, ctx.Entity.Flush())
+			err = builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetTick(), blk)
+			if err != nil {
+				return err
+			}
+
+			// Broadcast new entity
+			err = builder.SendEntitiesDiffToClients(io.BroadcastWriter, ctx.Clock.GetTick(), ctx.Entity.Flush())
 			if err != nil {
 				return err
 			}
@@ -92,7 +100,12 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			read(io.Reader, &x)
 			read(io.Reader, &y)
 
-			err := builder.SendTerrainUpdate(io.Writer, ctx.Terrain.GetBlockAt(x, y))
+			blk, err := ctx.Terrain.GetBlockAt(x, y)
+			if err != nil {
+				return err
+			}
+
+			err = builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetTick(), blk)
 			if err != nil {
 				return err
 			}
@@ -102,6 +115,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	},
 	message.Types["entity_update"]: func(ctx *message.Context, io *message.IO) error {
 		// TODO: security checks
+
+		readTick(io.Reader)
 
 		entity, diff := ReadEntity(io.Reader)
 		ctx.Entity.Update(entity, diff)
@@ -114,6 +129,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			return nil
 		}
 
+		readTick(io.Reader)
+
 		session := ctx.Auth.GetSession(io.Id)
 
 		action := &message.Action{
@@ -124,7 +141,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		log.Println("Client triggered action:", action.Id)
 
-		return builder.SendActionsDone(io.BroadcastWriter, []*message.Action{action})
+		return builder.SendActionsDone(io.BroadcastWriter, ctx.Clock.GetTick(), []*message.Action{action})
 	},
 	message.Types["chat_send"]: func(ctx *message.Context, io *message.IO) error {
 		msg := readString(io.Reader)

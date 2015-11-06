@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"time"
 )
@@ -8,21 +9,30 @@ import (
 // A service that moves entities
 type Mover struct {
 	terrain     message.Terrain
+	clock       message.ClockService
 	lastUpdates map[message.EntityId]int64
 	positions   map[message.EntityId]*Position
 }
 
 // Compute an entity's new position
-// Returns true if the position has changed, false otherwise
+// Returns an EntityDiff if the entity has changed, nil otherwise.
 func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
-	last := m.lastUpdates[entity.Id]
-	now := time.Now().UnixNano()
-	m.lastUpdates[entity.Id] = now
-	dt := float64(now-last) / 1000 / 1000 // Convert to seconds
+	now := m.clock.GetTickCount()
 
-	speed := NewSpeedFromMessage(entity.Speed) // TODO
-	var pos *Position
+	var last int64
 	var ok bool
+	if last, ok = m.lastUpdates[entity.Id]; !ok {
+		last = now
+	}
+
+	m.lastUpdates[entity.Id] = now
+	dt := time.Duration(now-last) * clock.TickDuration // Convert to seconds
+	if dt == 0 {
+		return nil
+	}
+
+	speed := NewSpeedFromMessage(entity.Speed)
+	var pos *Position
 	if pos, ok = m.positions[entity.Id]; !ok {
 		pos = NewPositionFromMessage(entity.Position)
 	}
@@ -33,18 +43,20 @@ func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
 	}
 
 	// Check terrain
-	canMove := true
 	pts := GetRouteBetween(pos, nextPos)
+	var lastPt [2]int
 	for _, pt := range pts {
-		t := m.terrain.GetPointAt(pt[0], pt[1])
+		t, err := m.terrain.GetPointAt(pt[0], pt[1])
+		if err != nil {
+			return nil // TODO: trigger a more severe error
+		}
 
 		if t != message.PointType(0) {
-			canMove = false
+			nextPos = &Position{float64(lastPt[0]), float64(lastPt[1])}
+			break
 		}
-	}
 
-	if !canMove {
-		return nil
+		lastPt = pt
 	}
 
 	m.positions[entity.Id] = nextPos
@@ -53,9 +65,10 @@ func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
 	return &message.EntityDiff{Position: true}
 }
 
-func NewMover(trn message.Terrain) *Mover {
+func NewMover(trn message.Terrain, clk message.ClockService) *Mover {
 	return &Mover{
 		terrain:     trn,
+		clock:       clk,
 		lastUpdates: map[message.EntityId]int64{},
 		positions:   map[message.EntityId]*Position{},
 	}
