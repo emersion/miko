@@ -74,6 +74,11 @@ func ReadLoginResponse(r io.Reader) (code message.LoginResponseCode) {
 	return
 }
 
+func ReadVersionResponse(r io.Reader) (code message.VersionResponseCode) {
+	read(r, &code)
+	return
+}
+
 var clientHandlers = &map[message.Type]TypeHandler{
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
 		code := ReadExit(io.Reader)
@@ -162,6 +167,11 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		msg := readString(io.Reader)
 
 		log.Println("Chat:", username, msg)
+		return nil
+	},
+	message.Types["version_response"]: func(ctx *message.Context, io *message.IO) error {
+		code := ReadVersionResponse(io.Reader)
+		log.Println("Version response:", code)
 		return nil
 	},
 }

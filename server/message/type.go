@@ -2,13 +2,15 @@ package message
 
 type ProtocolVersion uint16
 
-const CurrentVersion ProtocolVersion = 2
+const CurrentVersion ProtocolVersion = 3
 
 type Type uint8
 type ExitCode uint8
 type LoginResponseCode uint8
 type RegisterResponseCode uint8
 type MetaActionCode uint8
+type VersionResponseCode uint8
+
 type PointType uint8
 
 var Types = map[string]Type{
@@ -31,17 +33,16 @@ var Types = map[string]Type{
 	"chat_send":         16,
 	"chat_receive":      17,
 	"version":           18,
+	"version_response":  19,
 }
 
 var ExitCodes = map[string]ExitCode{
-	"client_quit":     0,
-	"server_closed":   1,
-	"network_error":   2,
-	"ping_timeout":    3,
-	"client_kicked":   4,
-	"client_banned":   5,
-	"client_outdated": 6,
-	"server_outdated": 7,
+	"client_quit":   0,
+	"server_closed": 1,
+	"network_error": 2,
+	"ping_timeout":  3,
+	"client_kicked": 4,
+	"client_banned": 5,
 }
 
 var LoginResponseCodes = map[string]LoginResponseCode{
@@ -65,4 +66,10 @@ var RegisterResponseCodes = map[string]RegisterResponseCode{
 var MetaActionCodes = map[string]MetaActionCode{
 	"player_joined": 0,
 	"player_left":   1,
+}
+
+var VersionResponseCodes = map[string]VersionResponseCode{
+	"ok":              0,
+	"client_outdated": 1,
+	"server_outdated": 2,
 }

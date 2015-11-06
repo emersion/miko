@@ -11,22 +11,25 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	message.Types["version"]: func(ctx *message.Context, io *message.IO) error {
 		var version message.ProtocolVersion
 		read(io.Reader, &version)
+		io.Version = version
+
+		code := message.VersionResponseCodes["ok"]
 
 		if version != message.CurrentVersion {
-			exitCode := message.ExitCodes["client_outdated"]
+			code = message.VersionResponseCodes["client_outdated"]
 			if version > message.CurrentVersion {
-				exitCode = message.ExitCodes["server_outdated"]
+				code = message.VersionResponseCodes["server_outdated"]
 			}
+		}
 
-			if err := builder.SendExit(io.Writer, exitCode); err != nil {
-				return err
-			}
+		if err := builder.SendVersionResponse(io.Writer, code); err != nil {
+			return err
+		}
 
+		if code != message.VersionResponseCodes["ok"] {
 			if err := io.Writer.Close(); err != nil {
 				return err
 			}
-		} else {
-			io.Version = version
 		}
 
 		return nil

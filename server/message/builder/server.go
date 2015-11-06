@@ -189,6 +189,13 @@ func SendChatReceive(w io.Writer, username string, msg string) error {
 	return writeString(w, msg)
 }
 
+func SendVersionResponse(w io.Writer, code message.VersionResponseCode) error {
+	if err := write(w, message.Types["version_response"]); err != nil {
+		return err
+	}
+	return write(w, code)
+}
+
 func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.EntityDiffPool) error {
 	// TODO: broadcast only to clients who need it
 
