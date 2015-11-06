@@ -16,7 +16,7 @@ An experimental minimalist multiplayer top-down adventure game (en français)
 * go
 * non fonctionnel
 
-## Protocole version *2*
+## Protocole version *3*
 
 ### Généralités
 
@@ -54,6 +54,7 @@ S | 15 | Oui | entity_destroy | uint16 entityid + bytes entity_destroy
 C | 16 | Non | chat_send | str message
 S | 17 | Non | chat_receive | uint16 entityid + str message
 C | 18 | Non | version | uint16 versionid
+S | 19 | Non | version_response | uint8 versionresponsecode
 
 * Si le message possède un tick, il l'envoit avant son contenu : headers puis tick puis contenu. Le tick est un uint16 et est la frame de logique actuelle sur le simulateur du jeu envoyant le message.
 * (*) : Un tick est envoyé après le loginresponsecode si c'est le code "ok".
@@ -68,8 +69,6 @@ Valeur | Signification
 3 | ping_timeout
 4 | client_kicked
 5 | client_banned
-6 | client_outdated
-7 | server_outdated
 
 #### loginresponsecode
 
@@ -105,6 +104,14 @@ Valeur | Signification | Contenu
 #### versionid
 
 * identifiant unique de la version du protocole utilisé par le client
+
+#### versionresponsecode
+
+Valeur | Signification
+--- | ---
+0 | ok
+1 | client_outdated
+2 | server_outdated
 
 ### Terrain
 
