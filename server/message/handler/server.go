@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"log"
 	"errors"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
+	"log"
 )
 
 var serverHandlers = &map[message.Type]TypeHandler{
@@ -61,12 +61,12 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 			// Send initial terrain
 			pos := session.Entity.Position
-			err := builder.SendTerrainUpdate(io.Writer, ctx.Terrain.GetBlockAt(pos.BX, pos.BY))
+			err := builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetTick(), ctx.Terrain.GetBlockAt(pos.BX, pos.BY))
 			if err != nil {
 				return err
 			}
 
-			err = builder.SendEntitiesDiffToClients(io.BroadcastWriter, ctx.Entity.Flush())
+			err = builder.SendEntitiesDiffToClients(io.BroadcastWriter, ctx.Clock.GetTick(), ctx.Entity.Flush())
 			if err != nil {
 				return err
 			}
@@ -92,7 +92,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			read(io.Reader, &x)
 			read(io.Reader, &y)
 
-			err := builder.SendTerrainUpdate(io.Writer, ctx.Terrain.GetBlockAt(x, y))
+			err := builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetTick(), ctx.Terrain.GetBlockAt(x, y))
 			if err != nil {
 				return err
 			}
@@ -102,6 +102,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	},
 	message.Types["entity_update"]: func(ctx *message.Context, io *message.IO) error {
 		// TODO: security checks
+
+		readTick(io.Reader)
 
 		entity, diff := ReadEntity(io.Reader)
 		ctx.Entity.Update(entity, diff)
@@ -114,6 +116,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			return nil
 		}
 
+		readTick(io.Reader)
+
 		session := ctx.Auth.GetSession(io.Id)
 
 		action := &message.Action{
@@ -124,7 +128,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		log.Println("Client triggered action:", action.Id)
 
-		return builder.SendActionsDone(io.BroadcastWriter, []*message.Action{action})
+		return builder.SendActionsDone(io.BroadcastWriter, ctx.Clock.GetTick(), []*message.Action{action})
 	},
 	message.Types["chat_send"]: func(ctx *message.Context, io *message.IO) error {
 		msg := readString(io.Reader)

@@ -1,6 +1,9 @@
 package clock
 
-import "time"
+import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"time"
+)
 
 const TickDuration = time.Microsecond * 20
 
@@ -12,8 +15,12 @@ func (s *Service) Tick() {
 	s.ticks++
 }
 
-func (s *Service) GetTicks() int64 {
+func (s *Service) GetTickCount() int64 {
 	return s.ticks
+}
+
+func (s *Service) GetTick() message.Tick {
+	return message.Tick(s.ticks)
 }
 
 func NewService() *Service {

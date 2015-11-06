@@ -18,7 +18,7 @@ type Mover struct {
 // Returns an EntityDiff if the entity has changed, nil otherwise.
 func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
 	last := m.lastUpdates[entity.Id]
-	now := m.clock.GetTicks()
+	now := m.clock.GetTickCount()
 	m.lastUpdates[entity.Id] = now
 	dt := time.Duration(now-last) * clock.TickDuration // Convert to seconds
 

@@ -1,11 +1,11 @@
 package handler
 
 import (
-	"io"
 	"fmt"
-	"log"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
+	"io"
+	"log"
 )
 
 // A handler for a specific message
@@ -13,7 +13,7 @@ type TypeHandler func(*message.Context, *message.IO) error
 
 // Handles messages from remote
 type Handler struct {
-	ctx *message.Context
+	ctx      *message.Context
 	handlers map[message.Type]TypeHandler
 }
 
@@ -41,7 +41,7 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 	if h.ctx.IsServer() {
 		// No errors, send updates
 		if h.ctx.Entity.IsDirty() {
-			err := builder.SendEntitiesDiffToClients(io.BroadcastWriter, h.ctx.Entity.Flush())
+			err := builder.SendEntitiesDiffToClients(io.BroadcastWriter, h.ctx.Clock.GetTick(), h.ctx.Entity.Flush())
 			if err != nil {
 				return err
 			}
@@ -117,7 +117,7 @@ func New(ctx *message.Context) *Handler {
 	}
 
 	return &Handler{
-		ctx: ctx,
+		ctx:      ctx,
 		handlers: handlers,
 	}
 }

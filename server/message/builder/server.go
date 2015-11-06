@@ -1,8 +1,8 @@
 package builder
 
 import (
-	"io"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"io"
 )
 
 func SendLoginResp(w io.Writer, code message.LoginResponseCode) error {
@@ -64,7 +64,7 @@ func WriteBlock(w io.Writer, blk *message.Block) error {
 	if err := write(w, defaultType); err != nil {
 		return err
 	}
-	if err := write(w, uint16(blk.Size() - defaultTypeCount)); err != nil {
+	if err := write(w, uint16(blk.Size()-defaultTypeCount)); err != nil {
 		return err
 	}
 
@@ -90,8 +90,11 @@ func WriteBlock(w io.Writer, blk *message.Block) error {
 	return nil
 }
 
-func SendTerrainUpdate(w io.Writer, blk *message.Block) error {
+func SendTerrainUpdate(w io.Writer, t message.Tick, blk *message.Block) error {
 	if err := write(w, message.Types["terrain_update"]); err != nil {
+		return err
+	}
+	if err := write(w, t); err != nil {
 		return err
 	}
 	if err := WriteBlock(w, blk); err != nil {
@@ -101,8 +104,11 @@ func SendTerrainUpdate(w io.Writer, blk *message.Block) error {
 }
 
 // TODO: check proto
-func SendEntityCreate(w io.Writer, entity *message.Entity) error {
+func SendEntityCreate(w io.Writer, t message.Tick, entity *message.Entity) error {
 	if err := write(w, message.Types["entity_create"]); err != nil {
+		return err
+	}
+	if err := write(w, t); err != nil {
 		return err
 	}
 
@@ -110,8 +116,11 @@ func SendEntityCreate(w io.Writer, entity *message.Entity) error {
 	return sendEntityUpdateBody(w, entity, diff)
 }
 
-func SendEntitiesUpdate(w io.Writer, entities []*message.Entity, diffs []*message.EntityDiff) error {
+func SendEntitiesUpdate(w io.Writer, t message.Tick, entities []*message.Entity, diffs []*message.EntityDiff) error {
 	if err := write(w, message.Types["entities_update"]); err != nil {
+		return err
+	}
+	if err := write(w, t); err != nil {
 		return err
 	}
 	if err := write(w, uint16(len(entities))); err != nil {
@@ -129,8 +138,11 @@ func SendEntitiesUpdate(w io.Writer, entities []*message.Entity, diffs []*messag
 	return nil
 }
 
-func SendEntityDestroy(w io.Writer, id message.EntityId) error {
+func SendEntityDestroy(w io.Writer, t message.Tick, id message.EntityId) error {
 	if err := write(w, message.Types["entity_destroy"]); err != nil {
+		return err
+	}
+	if err := write(w, t); err != nil {
 		return err
 	}
 
@@ -141,11 +153,13 @@ func SendEntityDestroy(w io.Writer, id message.EntityId) error {
 	return nil
 }
 
-func SendActionsDone(w io.Writer, actions []*message.Action) error {
+func SendActionsDone(w io.Writer, t message.Tick, actions []*message.Action) error {
 	if err := write(w, message.Types["actions_done"]); err != nil {
 		return err
 	}
-
+	if err := write(w, t); err != nil {
+		return err
+	}
 	if err := write(w, uint16(len(actions))); err != nil {
 		return err
 	}
@@ -175,12 +189,12 @@ func SendChatReceive(w io.Writer, username string, msg string) error {
 	return writeString(w, msg)
 }
 
-func SendEntitiesDiffToClients(w io.Writer, pool *message.EntityDiffPool) error {
+func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.EntityDiffPool) error {
 	// TODO: broadcast only to clients who need it
 
 	// Created entities
 	for _, entity := range pool.Created {
-		err := SendEntityCreate(w, entity)
+		err := SendEntityCreate(w, t, entity)
 		if err != nil {
 			return err
 		}
@@ -196,14 +210,14 @@ func SendEntitiesDiffToClients(w io.Writer, pool *message.EntityDiffPool) error 
 		i++
 	}
 
-	err := SendEntitiesUpdate(w, entities, diffs)
+	err := SendEntitiesUpdate(w, t, entities, diffs)
 	if err != nil {
 		return err
 	}
 
 	// Deleted entities
 	for _, entityId := range pool.Deleted {
-		err := SendEntityDestroy(w, entityId)
+		err := SendEntityDestroy(w, t, entityId)
 		if err != nil {
 			return err
 		}
