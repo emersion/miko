@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const TickDuration = time.Microsecond * 500
+const TickDuration = time.Millisecond * 500
 
 type Service struct {
 	ticks int64

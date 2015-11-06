@@ -51,8 +51,8 @@ func (s *Speed) GetNextPosition(current *Position, dt time.Duration) *Position {
 	sx, sy := s.Norm*math.Cos(s.Angle), s.Norm*math.Sin(s.Angle)
 
 	return &Position{
-		X: current.X + sx*float64(dt/time.Second),
-		Y: current.Y + sy*float64(dt/time.Second),
+		X: current.X + sx*float64(dt)/float64(time.Second),
+		Y: current.Y + sy*float64(dt)/float64(time.Second),
 	}
 }
 

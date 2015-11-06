@@ -60,7 +60,7 @@ func (i *EngineInput) GetSpeedNorm() float32 {
 	keys := []string{"ArrowUp", "ArrowRight", "ArrowLeft", "ArrowDown"}
 	for _, key := range keys {
 		if i.IsKeyActive(key) {
-			return 0.1
+			return 2
 		}
 	}
 	return 0
@@ -94,14 +94,16 @@ func (e *Engine) Start() {
 	mover := entity.NewMover(e.ctx.Terrain, e.ctx.Clock)
 
 	var step func(timestampObj *js.Object)
-	var last float64
+	var lastTick time.Duration
 	step = func(timestampObj *js.Object) {
-		now := timestampObj.Float() // In ms, precision is 1 µs
-		ellapsed := time.Duration((now-last)*1000) * time.Microsecond
+		now := time.Duration(timestampObj.Float()*1000) * time.Microsecond // Precision is 1 µs
+		if lastTick == time.Duration(0) {
+			lastTick = now
+		}
 
-		// TODO: find something better
-		for t := time.Duration(0); t <= ellapsed; t += clock.TickDuration {
+		for t := lastTick; t+clock.TickDuration <= now; t += clock.TickDuration {
 			e.ctx.Clock.Tick()
+			lastTick = t
 		}
 
 		if e.ctx.Me.Entity != nil && e.Input.Dirty {

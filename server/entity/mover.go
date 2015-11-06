@@ -17,14 +17,22 @@ type Mover struct {
 // Compute an entity's new position
 // Returns an EntityDiff if the entity has changed, nil otherwise.
 func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
-	last := m.lastUpdates[entity.Id]
 	now := m.clock.GetTickCount()
+
+	var last int64
+	var ok bool
+	if last, ok = m.lastUpdates[entity.Id]; !ok {
+		last = now
+	}
+
 	m.lastUpdates[entity.Id] = now
 	dt := time.Duration(now-last) * clock.TickDuration // Convert to seconds
+	if dt == 0 {
+		return nil
+	}
 
 	speed := NewSpeedFromMessage(entity.Speed)
 	var pos *Position
-	var ok bool
 	if pos, ok = m.positions[entity.Id]; !ok {
 		pos = NewPositionFromMessage(entity.Position)
 	}
