@@ -16,16 +16,12 @@ import cr.fr.saucisseroyale.miko.util.Pair;
 import java.awt.Graphics2D;
 import java.awt.Toolkit;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.List;
-
-import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.plaf.synth.SynthLookAndFeel;
 
 public class Miko implements MessageHandler {
 
   private enum MikoState {
-    CONNECTION_REQUEST, CONNECTION, VERSION, LOGIN_REQUEST, REGISTER, LOGIN, JOIN, EXIT;
+    NETWORK, CONNECTION_REQUEST, CONNECTION, VERSION, LOGIN_REQUEST, REGISTER, LOGIN, JOIN, EXIT;
   }
 
   public static final int PROTOCOL_VERSION = 3;
@@ -34,25 +30,36 @@ public class Miko implements MessageHandler {
   private static final int TICK_TIME = 20; // milliseconds
   private UiComponents.Connect uiConnect;
   private UiComponents.Login uiLogin;
-  private MikoState state;
+  private MikoState state = MikoState.NETWORK;
   private UiWindow window;
   private boolean closeRequested = false;
   private NetworkClient networkClient;
   private float alpha; // for drawing, updated each loop
 
   private void exit() {
-    window.close();
+    if (window != null)
+      window.close();
+    if (networkClient != null)
+      networkClient.disconnect();
     System.exit(0);
   }
 
-  private void initWindow() throws ParseException, UnsupportedLookAndFeelException {
-    SynthLookAndFeel lookAndFeel = new SynthLookAndFeel(); // TODO handle exc better than throws
-    lookAndFeel.load(Miko.class.getResourceAsStream("/style.xml"), Miko.class);
+  private void initWindow() {
+    // TODO uncomment this when stylesheet design is done
+    // SynthLookAndFeel lookAndFeel = new SynthLookAndFeel();
+    // try {
+    // lookAndFeel.load(Miko.class.getResourceAsStream("/style.xml"), Miko.class);
+    // } catch (ParseException e) {
+    // // should never happen on normal releases
+    // throw new RuntimeException(e);
+    // }
+    // try {
     // UIManager.setLookAndFeel(lookAndFeel);
-    // TODO enable synth l&f once stylesheet created
+    // } catch (UnsupportedLookAndFeelException e) {
+    // // will never be thrown, SynthLookAndFeel#isSupportedLookAndFeel() never returns false
+    // throw new RuntimeException(e);
+    // }
 
-    // load toolkit (may be heavy operation)
-    Toolkit.getDefaultToolkit();
     window = new UiWindow();
     window.setRenderable(this::render);
     uiConnect =
@@ -62,10 +69,6 @@ public class Miko implements MessageHandler {
     window.addUi(uiConnect);
     window.addUi(uiLogin);
     window.initAndShow();
-  }
-
-  private void initNetwork() {
-    networkClient = new NetworkClient();
   }
 
   private void logic() {
@@ -87,13 +90,14 @@ public class Miko implements MessageHandler {
       }
       alpha = (float) accumulator / (TICK_TIME * 1000000);
       window.render(); // calls render(graphics)
-      Toolkit.getDefaultToolkit().sync();
+      Toolkit.getDefaultToolkit().sync(); // vsync
     }
     exit();
   }
 
   private void network() {
-    if (state == MikoState.CONNECTION_REQUEST || state == MikoState.CONNECTION)
+    if (state == MikoState.NETWORK || state == MikoState.CONNECTION_REQUEST
+        || state == MikoState.CONNECTION)
       return;
     FutureInputMessage fim = networkClient.getMessage();
     while (fim != null) {
@@ -169,7 +173,7 @@ public class Miko implements MessageHandler {
       case REGISTER:
         break;
       case JOIN:
-        // montrer chargement
+        // TODO montrer chargement
         break;
       case EXIT:
         break;
@@ -179,8 +183,8 @@ public class Miko implements MessageHandler {
   }
 
   private void run() throws Exception {
-    initNetwork(); // TODO handle better than throws Exc
     initWindow();
+    networkClient = new NetworkClient();
     changeStateTo(MikoState.CONNECTION_REQUEST);
     loop();
   }

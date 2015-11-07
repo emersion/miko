@@ -32,6 +32,7 @@ public class UiComponents {
       add(new JLabel());
       statusField = new JLabel();
       add(statusField);
+      setOpaque(false);
     }
 
     public void setStatusText(String text) {
