@@ -1,8 +1,10 @@
 package cr.fr.saucisseroyale.miko;
 
+import java.awt.AWTEvent;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.DisplayMode;
+import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
@@ -10,6 +12,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.PointerInfo;
+import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
@@ -56,9 +59,29 @@ public class UiWindow {
     }
   }
 
+  /**
+   * Une EventQueue qui se synchronise avec un lock pour éviter des problèmes de concurrence.
+   */
+  private static class SynchronizedEventQueue extends EventQueue {
+
+    private Object lock;
+
+    public SynchronizedEventQueue(Object lock) {
+      this.lock = lock;
+    }
+
+    @Override
+    protected void dispatchEvent(AWTEvent event) {
+      synchronized (lock) {
+        super.dispatchEvent(event);
+      }
+    }
+  }
+
   private static final Integer UI_VISIBLE_LAYER = new Integer(1);
   private static final Integer UI_HIDDEN_LAYER = new Integer(-1);
   private static final Integer MAIN_LAYER = new Integer(0);
+  private SynchronizedEventQueue eventQueue;
   private Runnable closeListener;
   private JFrame frame;
   private GraphicsDevice device;
@@ -66,6 +89,7 @@ public class UiWindow {
   private BufferStrategy strategy;
   private Consumer<Graphics2D> renderable;
   private EventBlockerComponent mainComponent;
+  private Object uiLock = new Object();
   private int width;
   private int height;
 
@@ -94,6 +118,8 @@ public class UiWindow {
     this.displayMode = displayMode;
     width = displayMode.getWidth();
     height = displayMode.getHeight();
+    eventQueue = new SynchronizedEventQueue(uiLock);
+    Toolkit.getDefaultToolkit().getSystemEventQueue().push(eventQueue);
     frame = new JFrame();
     frame.setUndecorated(true);
     frame.setResizable(false);
@@ -266,29 +292,31 @@ public class UiWindow {
   }
 
   private void paintComponents(Graphics2D graphics) {
-    Component[] uiComponents = frame.getLayeredPane().getComponentsInLayer(UI_VISIBLE_LAYER);
-    for (int i = 0; i < uiComponents.length; i++) { // top to bottom
-      Component uiComponent = uiComponents[i];
-      if (uiComponent.isOpaque() && uiComponent.getWidth() == width
-          && uiComponent.getHeight() == height) {
-        // fully opaque component found
-        // only render ui in front of it + itself
-        for (int j = i; j >= 0; j--) { // bottom to top
-          uiComponents[j].paint(graphics);
+    synchronized (uiLock) {
+      Component[] uiComponents = frame.getLayeredPane().getComponentsInLayer(UI_VISIBLE_LAYER);
+      for (int i = 0; i < uiComponents.length; i++) { // top to bottom
+        Component uiComponent = uiComponents[i];
+        if (uiComponent.isOpaque() && uiComponent.getWidth() == width
+            && uiComponent.getHeight() == height) {
+          // fully opaque component found
+          // only render ui in front of it + itself
+          for (int j = i; j >= 0; j--) { // bottom to top
+            uiComponents[j].paint(graphics);
+          }
+          return;
         }
-        return;
       }
-    }
-    // no fully opaque component found
-    // draw opaque background
-    graphics.setBackground(Color.BLACK);
-    graphics.clearRect(0, 0, width, height);
-    // render game
-    if (renderable != null)
-      renderable.accept(graphics);
-    // render ui
-    for (int i = uiComponents.length - 1; i >= 0; i--) { // bottom to top
-      uiComponents[i].paint(graphics);
+      // no fully opaque component found
+      // draw opaque background
+      graphics.setBackground(Color.BLACK);
+      graphics.clearRect(0, 0, width, height);
+      // render game
+      if (renderable != null)
+        renderable.accept(graphics);
+      // render ui
+      for (int i = uiComponents.length - 1; i >= 0; i--) { // bottom to top
+        uiComponents[i].paint(graphics);
+      }
     }
   }
 

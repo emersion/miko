@@ -26,7 +26,7 @@ public class Miko implements MessageHandler {
 
   public static final int PROTOCOL_VERSION = 3;
   private static final String DEFAULT_SERVER_ADDRESS = "miko.emersion.fr";
-  private static final String DEFAULT_SERVER_PORT = "9999";
+  private static final int DEFAULT_SERVER_PORT = 9999;
   private static final int TICK_TIME = 20; // milliseconds
   private UiComponents.Connect uiConnect;
   private UiComponents.Login uiLogin;
@@ -124,20 +124,12 @@ public class Miko implements MessageHandler {
     networkClient.putMessage(OutputMessageFactory.version());
   }
 
-  private void connectRequested(String address, String port) {
+  private void connectRequested(String address, int port) {
     if (state != MikoState.CONNECTION_REQUEST)
       return;
-    int portInt;
-    try {
-      portInt = Integer.parseInt(port);
-    } catch (NumberFormatException e) {
-      // port isn't an integer
-      uiConnect.setStatusText("Erreur de connexion : le port doit être un entier.");
-      return;
-    }
     changeStateTo(MikoState.CONNECTION);
     // use thread to avoid blocking swing event dispatching for too long
-    new Thread(() -> connect(address, portInt)).start();
+    new Thread(() -> connect(address, port)).start();
   }
 
   private void loginRequested(String username, String password) {
