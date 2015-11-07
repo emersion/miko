@@ -2,28 +2,28 @@ package server
 
 import (
 	"bufio"
+	"crypto/tls"
 	"log"
 	"net"
-	"crypto/tls"
 
+	"git.emersion.fr/saucisse-royale/miko.git/server/crypto"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
-	"git.emersion.fr/saucisse-royale/miko.git/server/crypto"
 )
 
 // Client holds info about connection
 type Client struct {
-	conn net.Conn
-	Server *server
+	conn     net.Conn
+	Server   *server
 	incoming chan string // Channel for incoming data from client
-	id int
+	id       int
 }
 
 // TCP server
 type server struct {
 	clients []*Client
-	address string // Address to open connection, e.g. localhost:9999
-	joins chan net.Conn // Channel for new connections
+	address string        // Address to open connection, e.g. localhost:9999
+	joins   chan net.Conn // Channel for new connections
 	handler *handler.Handler
 }
 
@@ -34,10 +34,10 @@ func (c *Client) listen() {
 	reader := bufio.NewReader(c.conn)
 
 	clientIO := &message.IO{
-		Reader: reader,
-		Writer: c.conn,
+		Reader:          reader,
+		Writer:          c.conn,
 		BroadcastWriter: c.Server,
-		Id: c.id,
+		Id:              c.id,
 	}
 
 	defer c.Close()
@@ -61,7 +61,7 @@ func (s *server) newClient(conn net.Conn) {
 	client := &Client{
 		conn:   conn,
 		Server: s,
-		id: len(s.clients),
+		id:     len(s.clients),
 	}
 	s.clients = append(s.clients, client)
 	go client.listen()
@@ -83,7 +83,7 @@ func (s *server) Listen() {
 
 	tlsConfig, err := crypto.GetServerTlsConfig()
 	if err != nil {
-		log.Println("WARN: could not get TLS config")
+		log.Println("Warning: could not get TLS config")
 	}
 
 	var listener net.Listener
@@ -91,6 +91,7 @@ func (s *server) Listen() {
 		listener, err = tls.Listen("tcp", s.address, tlsConfig)
 	} else {
 		listener, err = net.Listen("tcp", s.address)
+		log.Println("Warning: creating a non-TLS insecure server")
 	}
 
 	if err != nil {
@@ -126,7 +127,7 @@ func New(address string, ctx *message.Context) *server {
 	log.Println("Creating server with address", address)
 	server := &server{
 		address: address,
-		joins: make(chan net.Conn),
+		joins:   make(chan net.Conn),
 		handler: handler.New(ctx),
 	}
 
