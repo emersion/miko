@@ -1,8 +1,10 @@
 package cr.fr.saucisseroyale.miko;
 
+import java.awt.AWTEvent;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.DisplayMode;
+import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
@@ -10,11 +12,13 @@ import java.awt.GraphicsEnvironment;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.PointerInfo;
+import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
+import java.util.function.Consumer;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -33,37 +37,11 @@ import javax.swing.WindowConstants;
  * <li>Pour ajouter un composant d'UI à la fenêtre, utiliser {@link #addUi(JComponent)}.
  * <li>Pour le rendre visible, utiliser {@link #showUi(JComponent)}.
  * <li>Pour le cacher, utiliser {@link #hideUi(JComponent)}.
- * <li>Pour définir le composant principal, utiliser {@link #setRenderable(Renderable)}.
+ * <li>Pour définir le composant principal, utiliser {@link #setRenderable(Consumer)}.
  * <li>Pour afficher les composants sur l'écran, utiliser {@link #render()}.
  * </ul>
  */
 public class UiWindow {
-
-  /**
-   * Un composant pouvant être affiché manuellement avec {@link #render(Graphics2D)}.
-   *
-   */
-  public static interface Renderable {
-
-    /**
-     * Affiche le composant sur les graphiques passés en paramètre.
-     * 
-     * @param graphics Les graphiques sur lesquels peindre composant.
-     */
-    public void render(Graphics2D graphics);
-  }
-
-  /**
-   * Un listener pour la demande de fermeture d'une {@link UiWindow}.
-   *
-   */
-  public static interface CloseRequestedListener {
-
-    /**
-     * Appelé lors de la demande de fermeture de la {@link UiWindow}.
-     */
-    public void closeRequested();
-  }
 
   @SuppressWarnings("serial")
   private static class EventBlockerComponent extends Component {
@@ -81,16 +59,37 @@ public class UiWindow {
     }
   }
 
+  /**
+   * Une EventQueue qui se synchronise avec un lock pour éviter des problèmes de concurrence.
+   */
+  private static class SynchronizedEventQueue extends EventQueue {
+
+    private Object lock;
+
+    public SynchronizedEventQueue(Object lock) {
+      this.lock = lock;
+    }
+
+    @Override
+    protected void dispatchEvent(AWTEvent event) {
+      synchronized (lock) {
+        super.dispatchEvent(event);
+      }
+    }
+  }
+
   private static final Integer UI_VISIBLE_LAYER = new Integer(1);
   private static final Integer UI_HIDDEN_LAYER = new Integer(-1);
   private static final Integer MAIN_LAYER = new Integer(0);
-  private CloseRequestedListener closeListener;
+  private SynchronizedEventQueue eventQueue;
+  private Runnable closeListener;
   private JFrame frame;
   private GraphicsDevice device;
   private DisplayMode displayMode;
   private BufferStrategy strategy;
-  private Renderable renderable;
+  private Consumer<Graphics2D> renderable;
   private EventBlockerComponent mainComponent;
+  private Object uiLock = new Object();
   private int width;
   private int height;
 
@@ -119,6 +118,8 @@ public class UiWindow {
     this.displayMode = displayMode;
     width = displayMode.getWidth();
     height = displayMode.getHeight();
+    eventQueue = new SynchronizedEventQueue(uiLock);
+    Toolkit.getDefaultToolkit().getSystemEventQueue().push(eventQueue);
     frame = new JFrame();
     frame.setUndecorated(true);
     frame.setResizable(false);
@@ -129,7 +130,7 @@ public class UiWindow {
       @Override
       public void windowClosing(WindowEvent e) {
         if (closeListener != null)
-          closeListener.closeRequested();
+          closeListener.run();
       }
     });
   }
@@ -137,7 +138,7 @@ public class UiWindow {
   /**
    * Initialise et affiche la fenêtre.
    */
-  public void initWindow() {
+  public void initAndShow() {
     RepaintManager repaintDisabler = new RepaintManager() {
       @Override
       public void addDirtyRegion(JComponent c, int x, int y, int w, int h) {}
@@ -209,7 +210,7 @@ public class UiWindow {
   }
 
   /**
-   * Cache un coposant d'UI.
+   * Cache un copposant d'UI.
    * 
    * @param component Le composant à cacher.
    */
@@ -218,20 +219,33 @@ public class UiWindow {
   }
 
   /**
+   * Cache tous les composants d'UI.
+   */
+  public void hideAllUi() {
+    for (Component c : frame.getLayeredPane().getComponentsInLayer(UI_VISIBLE_LAYER)) {
+      hideUi((JComponent) c);
+    }
+  }
+
+  /**
    * Définit le composant principal.
+   * <p>
+   * Il devra s'afficher sur les graphiques lorsque sa méthode {@link Consumer#accept(Object)
+   * accept(Graphics2D)} sera appelée.
    * 
    * @param renderable Le composant principal.
    */
-  public void setRenderable(Renderable renderable) {
+  public void setRenderable(Consumer<Graphics2D> renderable) {
     this.renderable = renderable;
   }
 
   /**
-   * Définit le listener de fermeture demandée de fenêtre. Appelé par exemple lors d'un Alt+F4.
+   * Définit le listener de fermeture demandée de fenêtre. Appelé lors de la demande de fermeture de
+   * la {@link UiWindow}.
    * 
    * @param closeListener Le listener de fermeture.
    */
-  public void setCloseRequestedListener(CloseRequestedListener closeListener) {
+  public void setCloseRequestedListener(Runnable closeListener) {
     this.closeListener = closeListener;
   }
 
@@ -278,29 +292,31 @@ public class UiWindow {
   }
 
   private void paintComponents(Graphics2D graphics) {
-    Component[] uiComponents = frame.getLayeredPane().getComponentsInLayer(UI_VISIBLE_LAYER);
-    for (int i = 0; i < uiComponents.length; i++) { // top to bottom
-      Component uiComponent = uiComponents[i];
-      if (uiComponent.isOpaque() && uiComponent.getWidth() == width
-          && uiComponent.getHeight() == height) {
-        // fully opaque component found
-        // only render ui in front of it + itself
-        for (int j = i; j >= 0; j--) { // bottom to top
-          uiComponents[j].paint(graphics);
+    synchronized (uiLock) {
+      Component[] uiComponents = frame.getLayeredPane().getComponentsInLayer(UI_VISIBLE_LAYER);
+      for (int i = 0; i < uiComponents.length; i++) { // top to bottom
+        Component uiComponent = uiComponents[i];
+        if (uiComponent.isOpaque() && uiComponent.getWidth() == width
+            && uiComponent.getHeight() == height) {
+          // fully opaque component found
+          // only render ui in front of it + itself
+          for (int j = i; j >= 0; j--) { // bottom to top
+            uiComponents[j].paint(graphics);
+          }
+          return;
         }
-        return;
       }
-    }
-    // no fully opaque component found
-    // draw opaque background
-    graphics.setBackground(Color.BLACK);
-    graphics.clearRect(0, 0, width, height);
-    // render game
-    if (renderable != null)
-      renderable.render(graphics);
-    // render ui
-    for (int i = uiComponents.length - 1; i >= 0; i--) { // bottom to top
-      uiComponents[i].paint(graphics);
+      // no fully opaque component found
+      // draw opaque background
+      graphics.setBackground(Color.BLACK);
+      graphics.clearRect(0, 0, width, height);
+      // render game
+      if (renderable != null)
+        renderable.accept(graphics);
+      // render ui
+      for (int i = uiComponents.length - 1; i >= 0; i--) { // bottom to top
+        uiComponents[i].paint(graphics);
+      }
     }
   }
 

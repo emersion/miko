@@ -15,6 +15,7 @@ import cr.fr.saucisseroyale.miko.protocol.MetaActionType;
 import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
 import cr.fr.saucisseroyale.miko.protocol.RegisterResponseType;
 import cr.fr.saucisseroyale.miko.protocol.TerrainType;
+import cr.fr.saucisseroyale.miko.protocol.VersionResponseType;
 import cr.fr.saucisseroyale.miko.util.Pair;
 
 import java.io.DataInputStream;
@@ -150,18 +151,22 @@ class InputMessageFactory {
         int entityIdChat = dis.readUnsignedShort();
         String chatMessage = readString(dis);
         return (handler) -> handler.chatReceived(entityIdChat, chatMessage);
-      case LOGIN: // client-only
-      case REGISTER: // client-only
-      case TERRAIN_REQUEST: // client-only
-      case ENTITY_UPDATE: // client-only
-      case ACTION: // client-only
-      case CHAT_SEND: // client-only
-      default: // unknown
+      case VERSION_RESPONSE:
+        int versionResponseCode = dis.readUnsignedByte();
+        VersionResponseType versionResponseType = VersionResponseType.getType(versionResponseCode);
+        if (versionResponseType == null)
+          throw newParseException();
+        return (handler) -> handler.versionResponse(versionResponseType);
+      default: // unknown or client-only
         throw newParseException();
     }
   }
 
-  private final static Action readAction(DataInputStream dis) throws MessageParseException,
+  static final FutureInputMessage networkError(Exception e) {
+    return (handler) -> handler.networkError(e);
+  }
+
+  private static final Action readAction(DataInputStream dis) throws MessageParseException,
       IOException {
     int actionCode = dis.readUnsignedShort();
     ActionType actionType = ActionType.getType(actionCode);
@@ -184,7 +189,7 @@ class InputMessageFactory {
     }
   }
 
-  private final static Block readBlock(DataInputStream dis) throws MessageParseException,
+  private static final Block readBlock(DataInputStream dis) throws MessageParseException,
       IOException {
     int x = dis.readUnsignedByte();
     int y = dis.readUnsignedByte();
@@ -196,7 +201,7 @@ class InputMessageFactory {
     return block;
   }
 
-  private final static ChunkPoint readChunkPoint(DataInputStream dis) throws MessageParseException,
+  private static final ChunkPoint readChunkPoint(DataInputStream dis) throws MessageParseException,
       IOException {
     int chunkX = dis.readShort();
     int chunkY = dis.readShort();
@@ -204,7 +209,7 @@ class InputMessageFactory {
     return chunkPoint;
   }
 
-  private final static EntityDataUpdate readEntityDataUpdate(DataInputStream dis)
+  private static final EntityDataUpdate readEntityDataUpdate(DataInputStream dis)
       throws MessageParseException, IOException {
     int entityId = dis.readUnsignedShort();
     EntityDataUpdate.Builder builder = new EntityDataUpdate.Builder(entityId);
@@ -247,7 +252,7 @@ class InputMessageFactory {
     return builder.build();
   }
 
-  private final static MapPoint readMapPoint(DataInputStream dis) throws MessageParseException,
+  private static final MapPoint readMapPoint(DataInputStream dis) throws MessageParseException,
       IOException {
     int chunkX = dis.readShort();
     int chunkY = dis.readShort();
@@ -259,7 +264,7 @@ class InputMessageFactory {
 
   // On utilise notre propre méthode de lecture de String au cas où le protocole change (au lieu
   // d'utiliser dis.readInputStream() qui par coïncidence utilise la même méthode que nous)
-  private final static String readString(DataInputStream dis) throws IOException {
+  private static final String readString(DataInputStream dis) throws IOException {
     int length = dis.readUnsignedShort();
     byte[] data = new byte[length];
     dis.readFully(data);

@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Queue;
+import java.util.function.Consumer;
 
 
 /**
@@ -18,10 +19,13 @@ class ReceiverThread extends Thread {
 
   private DataInputStream dis;
   private Queue<FutureInputMessage> inputMessages;
+  private Consumer<Exception> errorCallback;
 
-  public ReceiverThread(InputStream is, Queue<FutureInputMessage> inputMessages) {
+  public ReceiverThread(InputStream is, Queue<FutureInputMessage> inputMessages,
+      Consumer<Exception> errorCallback) {
     dis = new DataInputStream(new BufferedInputStream(is));
     this.inputMessages = inputMessages;
+    this.errorCallback = errorCallback;
   }
 
   @Override
@@ -30,19 +34,11 @@ class ReceiverThread extends Thread {
       FutureInputMessage fim;
       try {
         fim = InputMessageFactory.parseMessage(dis);
-      } catch (MessageParseException e) {
-        // Si l'on arrive ici, c'est sans doute qu'un parse a échoué et qu'on est dans un état
-        // corrompu, ou qu'on un client malicieux envoit n'importe quoi
-        e.printStackTrace();
-        // TODO log cet évènement/notifier le networking
-        break;
+        inputMessages.add(fim);
       } catch (IOException e) {
-        e.printStackTrace();
-        // TODO log cet évènement/notifier le networking
-        break;
+        errorCallback.accept(e);
+        return;
       }
-      inputMessages.add(fim);
     }
   }
-
 }

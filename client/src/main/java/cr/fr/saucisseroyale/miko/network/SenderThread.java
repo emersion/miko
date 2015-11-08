@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.BlockingQueue;
+import java.util.function.Consumer;
 
 
 /**
@@ -18,10 +19,13 @@ class SenderThread extends Thread {
 
   private DataOutputStream dos;
   private BlockingQueue<FutureOutputMessage> outputMessages;
+  private Consumer<Exception> errorCallback;
 
-  public SenderThread(OutputStream os, BlockingQueue<FutureOutputMessage> outputMessages) {
+  public SenderThread(OutputStream os, BlockingQueue<FutureOutputMessage> outputMessages,
+      Consumer<Exception> errorCallback) {
     dos = new DataOutputStream(new BufferedOutputStream(os));
     this.outputMessages = outputMessages;
+    this.errorCallback = errorCallback;
   }
 
   @Override
@@ -31,18 +35,15 @@ class SenderThread extends Thread {
       try {
         fom = outputMessages.take();
       } catch (InterruptedException e) {
-        // On a demandé notre interruption, quitter
-        // TODO enlever le stack trace
-        e.printStackTrace();
-        break;
+        // close requested, quit
+        return;
       }
       try {
         fom.writeTo(dos);
         dos.flush();
       } catch (IOException e) {
-        // TODO log cet évènement/notifier le networking
-        e.printStackTrace();
-        break;
+        errorCallback.accept(e);
+        return;
       }
     }
   }
