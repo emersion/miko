@@ -43,7 +43,7 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 	if h.ctx.IsServer() {
 		// No errors, send updates
 		if h.ctx.Entity.IsDirty() {
-			err := builder.SendEntitiesDiffToClients(io.BroadcastWriter, h.ctx.Clock.GetTick(), h.ctx.Entity.Flush())
+			err := builder.SendEntitiesDiffToClients(io.BroadcastWriter, h.ctx.Clock.GetRelativeTick(), h.ctx.Entity.Flush())
 			if err != nil {
 				return err
 			}

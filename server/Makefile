@@ -12,6 +12,7 @@ crypto:
 	openssl req -new -x509 -key crypto/server.key -out crypto/server.pem -days 3650
 test:
 	go test git.emersion.fr/saucisse-royale/miko.git/server/auth
+	go test git.emersion.fr/saucisse-royale/miko.git/server/clock
 	go test git.emersion.fr/saucisse-royale/miko.git/server/entity
 
 .PHONY: all server client start start-client crypto

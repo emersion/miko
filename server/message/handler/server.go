@@ -49,7 +49,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		password := readString(io.Reader)
 
 		code := ctx.Auth.Login(io.Id, username, password)
-		if err := builder.SendLoginResp(io.Writer, code, ctx.Clock.GetTick()); err != nil {
+		if err := builder.SendLoginResp(io.Writer, code, ctx.Clock.GetRelativeTick()); err != nil {
 			return err
 		}
 
@@ -71,13 +71,13 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return err
 			}
 
-			err = builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetTick(), blk)
+			err = builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetRelativeTick(), blk)
 			if err != nil {
 				return err
 			}
 
 			// Broadcast new entity
-			err = builder.SendEntitiesDiffToClients(io.BroadcastWriter, ctx.Clock.GetTick(), ctx.Entity.Flush())
+			err = builder.SendEntitiesDiffToClients(io.BroadcastWriter, ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
 			if err != nil {
 				return err
 			}
@@ -111,7 +111,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return err
 			}
 
-			err = builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetTick(), blk)
+			err = builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetRelativeTick(), blk)
 			if err != nil {
 				return err
 			}
@@ -147,7 +147,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		log.Println("Client triggered action:", action.Id)
 
-		return builder.SendActionsDone(io.BroadcastWriter, ctx.Clock.GetTick(), []*message.Action{action})
+		return builder.SendActionsDone(io.BroadcastWriter, ctx.Clock.GetRelativeTick(), []*message.Action{action})
 	},
 	message.Types["chat_send"]: func(ctx *message.Context, io *message.IO) error {
 		msg := readString(io.Reader)
