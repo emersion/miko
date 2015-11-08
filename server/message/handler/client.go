@@ -69,8 +69,13 @@ func ReadActionDone(r io.Reader) (action *message.Action) {
 	return
 }
 
-func ReadLoginResponse(r io.Reader) (code message.LoginResponseCode) {
+func ReadLoginResponse(r io.Reader) (code message.LoginResponseCode, t message.Tick) {
 	read(r, &code)
+
+	if code == message.LoginResponseCodes["ok"] {
+		read(r, &t)
+	}
+
 	return
 }
 
@@ -87,7 +92,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return io.Writer.Close()
 	},
 	message.Types["login_response"]: func(ctx *message.Context, io *message.IO) error {
-		code := ReadLoginResponse(io.Reader)
+		code, _ := ReadLoginResponse(io.Reader)
 		log.Println("Login response:", code)
 		return nil
 	},

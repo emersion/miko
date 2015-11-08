@@ -5,11 +5,22 @@ import (
 	"io"
 )
 
-func SendLoginResp(w io.Writer, code message.LoginResponseCode) error {
+func SendLoginResp(w io.Writer, code message.LoginResponseCode, t message.Tick) error {
 	if err := write(w, message.Types["login_response"]); err != nil {
 		return err
 	}
-	return write(w, code)
+
+	if err := write(w, code); err != nil {
+		return err
+	}
+
+	if code == message.LoginResponseCodes["ok"] {
+		if err := write(w, t); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func SendRegisterResp(w io.Writer, code message.RegisterResponseCode) error {

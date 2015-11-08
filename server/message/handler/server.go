@@ -49,7 +49,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		password := readString(io.Reader)
 
 		code := ctx.Auth.Login(io.Id, username, password)
-		if err := builder.SendLoginResp(io.Writer, code); err != nil {
+		if err := builder.SendLoginResp(io.Writer, code, ctx.Clock.GetTick()); err != nil {
 			return err
 		}
 
