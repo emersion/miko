@@ -21,8 +21,7 @@ class SenderThread extends Thread {
   private BlockingQueue<FutureOutputMessage> outputMessages;
   private Consumer<Exception> errorCallback;
 
-  public SenderThread(OutputStream os, BlockingQueue<FutureOutputMessage> outputMessages,
-      Consumer<Exception> errorCallback) {
+  public SenderThread(OutputStream os, BlockingQueue<FutureOutputMessage> outputMessages, Consumer<Exception> errorCallback) {
     dos = new DataOutputStream(new BufferedOutputStream(os));
     this.outputMessages = outputMessages;
     this.errorCallback = errorCallback;

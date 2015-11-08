@@ -2,7 +2,7 @@ package cr.fr.saucisseroyale.miko.protocol;
 
 /**
  * Un type de paramètres associés à des actions.
- * 
+ *
  * @see ActionType
  * @see Action
  */

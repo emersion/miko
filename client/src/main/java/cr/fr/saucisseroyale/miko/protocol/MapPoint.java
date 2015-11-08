@@ -19,14 +19,18 @@ public final class MapPoint {
    * @param blockY La coordonnée Y de la case.
    */
   public MapPoint(int chunkX, int chunkY, int blockX, int blockY) {
-    if (chunkX < -(1 << 15) || chunkX >= 1 << 15)
+    if (chunkX < -(1 << 15) || chunkX >= 1 << 15) {
       throw new IllegalArgumentException("chunkX must be between -32768 and 32767 inclusive");
-    if (chunkY < -(1 << 15) || chunkY >= 1 << 15)
+    }
+    if (chunkY < -(1 << 15) || chunkY >= 1 << 15) {
       throw new IllegalArgumentException("chunkY must be between -32768 and 32767 inclusive");
-    if (blockX < 0 || blockX >= 1 << 8)
+    }
+    if (blockX < 0 || blockX >= 1 << 8) {
       throw new IllegalArgumentException("blockX must be between 0 and 255 inclusive");
-    if (blockY < 0 || blockY >= 1 << 8)
+    }
+    if (blockY < 0 || blockY >= 1 << 8) {
       throw new IllegalArgumentException("blockY must be between 0 and 255 inclusive");
+    }
     this.chunkX = chunkX;
     this.chunkY = chunkY;
     this.blockX = blockX;

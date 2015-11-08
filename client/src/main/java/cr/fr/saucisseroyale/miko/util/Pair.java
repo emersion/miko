@@ -2,7 +2,7 @@ package cr.fr.saucisseroyale.miko.util;
 
 /**
  * An immutable generic pair of data (2-tuple).
- * 
+ *
  * @param <T> The type of the first element.
  * @param <U> The type of the second element.
  *

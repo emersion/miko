@@ -24,7 +24,7 @@ public class Miko implements MessageHandler {
     NETWORK, CONNECTION_REQUEST, CONNECTION, VERSION, LOGIN_REQUEST, REGISTER, LOGIN, JOIN, EXIT;
   }
 
-  public static final int PROTOCOL_VERSION = 3;
+  public static final int PROTOCOL_VERSION = 4;
   private static final String DEFAULT_SERVER_ADDRESS = "miko.emersion.fr";
   private static final int DEFAULT_SERVER_PORT = 9999;
   private static final int TICK_TIME = 20; // milliseconds
@@ -37,10 +37,12 @@ public class Miko implements MessageHandler {
   private float alpha; // for drawing, updated each loop
 
   private void exit() {
-    if (window != null)
+    if (window != null) {
       window.close();
-    if (networkClient != null)
+    }
+    if (networkClient != null) {
       networkClient.disconnect();
+    }
     System.exit(0);
   }
 
@@ -62,10 +64,8 @@ public class Miko implements MessageHandler {
 
     window = new UiWindow();
     window.setRenderable(this::render);
-    uiConnect =
-        new UiComponents.Connect(DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT,
-            this::connectRequested);
-    uiLogin = new UiComponents.Login(this::loginRequested, this::registerRequested);
+    uiConnect = new UiComponents.Connect(DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT, this::connectRequested);
+    uiLogin = new UiComponents.Login(this::registerRequested, this::loginRequested);
     window.addUi(uiConnect);
     window.addUi(uiLogin);
     window.initAndShow();
@@ -96,9 +96,9 @@ public class Miko implements MessageHandler {
   }
 
   private void network() {
-    if (state == MikoState.NETWORK || state == MikoState.CONNECTION_REQUEST
-        || state == MikoState.CONNECTION)
+    if (state == MikoState.NETWORK || state == MikoState.CONNECTION_REQUEST || state == MikoState.CONNECTION) {
       return;
+    }
     FutureInputMessage fim = networkClient.getMessage();
     while (fim != null) {
       fim.execute(this);
@@ -115,8 +115,7 @@ public class Miko implements MessageHandler {
       networkClient.connect(address, port);
     } catch (IOException e) {
       networkClient.disconnect();
-      uiConnect
-          .setStatusText("Erreur de connexion : erreur d'établissement de connexion inconnue.");
+      uiConnect.setStatusText("Erreur de connexion : erreur d'établissement de connexion inconnue.");
       changeStateTo(MikoState.CONNECTION_REQUEST);
       return;
     }
@@ -125,23 +124,26 @@ public class Miko implements MessageHandler {
   }
 
   private void connectRequested(String address, int port) {
-    if (state != MikoState.CONNECTION_REQUEST)
+    if (state != MikoState.CONNECTION_REQUEST) {
       return;
+    }
     changeStateTo(MikoState.CONNECTION);
     // use thread to avoid blocking swing event dispatching for too long
     new Thread(() -> connect(address, port)).start();
   }
 
   private void loginRequested(String username, String password) {
-    if (state != MikoState.LOGIN_REQUEST)
+    if (state != MikoState.LOGIN_REQUEST) {
       return;
+    }
     changeStateTo(MikoState.LOGIN);
     networkClient.putMessage(OutputMessageFactory.login(username, password));
   }
 
   private void registerRequested(String username, String password) {
-    if (state != MikoState.LOGIN_REQUEST)
+    if (state != MikoState.LOGIN_REQUEST) {
       return;
+    }
     changeStateTo(MikoState.REGISTER);
     networkClient.putMessage(OutputMessageFactory.register(username, password));
   }
@@ -187,45 +189,51 @@ public class Miko implements MessageHandler {
   }
 
   @Override
-  public void actions(int tick, List<Pair<Integer, Action>> actions) {
+  public void actions(int tickRemainder, List<Pair<Integer, Action>> actions) {
     messageReceived();
-    if (state != MikoState.EXIT)
+    if (state != MikoState.EXIT) {
       return;
+    }
   }
 
   @Override
   public void chatReceived(int entityIdChat, String chatMessage) {
     messageReceived();
-    if (state != MikoState.JOIN || state != MikoState.EXIT)
+    if (state != MikoState.JOIN || state != MikoState.EXIT) {
       return;
+    }
   }
 
   @Override
-  public void chunkUpdate(int tick, ChunkPoint chunkPoint, Chunk chunk) {
+  public void chunkUpdate(int tickRemainder, ChunkPoint chunkPoint, Chunk chunk) {
     messageReceived();
-    if (state != MikoState.JOIN || state != MikoState.EXIT)
+    if (state != MikoState.JOIN || state != MikoState.EXIT) {
       return;
+    }
   }
 
   @Override
-  public void entityCreate(int tick, int entityId, EntityDataUpdate entityDataUpdate) {
+  public void entityCreate(int tickRemainder, EntityDataUpdate entityDataUpdate) {
     messageReceived();
-    if (state != MikoState.JOIN || state != MikoState.EXIT)
+    if (state != MikoState.JOIN || state != MikoState.EXIT) {
       return;
+    }
   }
 
   @Override
-  public void entityDestroy(int tick, int entityId) {
+  public void entityDestroy(int tickRemainder, int entityId) {
     messageReceived();
-    if (state != MikoState.JOIN || state != MikoState.EXIT)
+    if (state != MikoState.JOIN || state != MikoState.EXIT) {
       return;
+    }
   }
 
   @Override
-  public void entitiesUpdate(int tick, List<EntityDataUpdate> entitiesUpdateList) {
+  public void entitiesUpdate(int tickRemainder, List<EntityDataUpdate> entitiesUpdateList) {
     messageReceived();
-    if (state != MikoState.JOIN || state != MikoState.EXIT)
+    if (state != MikoState.JOIN || state != MikoState.EXIT) {
       return;
+    }
   }
 
   @Override
@@ -262,13 +270,11 @@ public class Miko implements MessageHandler {
   @Override
   public void loginFail(LoginResponseType loginResponseType) {
     messageReceived();
-    if (state != MikoState.LOGIN)
+    if (state != MikoState.LOGIN) {
       return;
+    }
     String statusMessage;
     switch (loginResponseType) {
-      case OK:
-        statusMessage = "Enregistré avec succès.";
-        break;
       case ALREADY_CONNECTED:
         statusMessage = "Erreur de connexion : utilisateur déjà connecté.";
         break;
@@ -293,10 +299,11 @@ public class Miko implements MessageHandler {
   }
 
   @Override
-  public void loginSuccess(int tick) {
+  public void loginSuccess(int tickRemainder) {
     messageReceived();
-    if (state != MikoState.LOGIN)
+    if (state != MikoState.LOGIN) {
       return;
+    }
     changeStateTo(MikoState.JOIN);
     // TODO init state with tick
   }
@@ -304,7 +311,7 @@ public class Miko implements MessageHandler {
   @Override
   public void networkError(Exception e) {
     networkClient.disconnect();
-    uiConnect.setStatusText("Déconnexion : erreur de réseau.");
+    uiConnect.setStatusText("Déconnexion forcée : erreur de réseau.");
     changeStateTo(MikoState.CONNECTION_REQUEST);
   }
 
@@ -315,10 +322,11 @@ public class Miko implements MessageHandler {
   }
 
   @Override
-  public void playerJoined(int entityId, String pseudo) {
+  public void playerJoined(int tickRemainder, int entityId, String pseudo) {
     messageReceived();
-    if (state != MikoState.JOIN || state != MikoState.EXIT)
+    if (state != MikoState.JOIN || state != MikoState.EXIT) {
       return;
+    }
     if (state == MikoState.JOIN) {
       // TODO donner notre entityid au jeu
       changeStateTo(MikoState.EXIT);
@@ -326,10 +334,11 @@ public class Miko implements MessageHandler {
   }
 
   @Override
-  public void playerLeft(int entityId) {
+  public void playerLeft(int tickRemainder, int entityId) {
     messageReceived();
-    if (state != MikoState.EXIT)
+    if (state != MikoState.EXIT) {
       return;
+    }
 
   }
 
@@ -341,8 +350,9 @@ public class Miko implements MessageHandler {
   @Override
   public void registerResponse(RegisterResponseType registerResponseType) {
     messageReceived();
-    if (state != MikoState.REGISTER)
+    if (state != MikoState.REGISTER) {
       return;
+    }
     String statusMessage;
     switch (registerResponseType) {
       case OK:
@@ -374,8 +384,9 @@ public class Miko implements MessageHandler {
   @Override
   public void versionResponse(VersionResponseType versionResponseType) {
     messageReceived();
-    if (state != MikoState.VERSION)
+    if (state != MikoState.VERSION) {
       return;
+    }
     if (versionResponseType == VersionResponseType.OK) {
       uiLogin.setStatusText("Connexion réussie, connectez ou enregistrez-vous.");
       changeStateTo(MikoState.LOGIN_REQUEST);

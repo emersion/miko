@@ -47,13 +47,13 @@ class InputMessageFactory {
    *         état <b>corrompu et irrécupérable</b>).
    * @throws IOException S'il y a une erreur quelconque lors de la récupération des données.
    */
-  public static FutureInputMessage parseMessage(DataInputStream dis) throws MessageParseException,
-      IOException {
+  public static FutureInputMessage parseMessage(DataInputStream dis) throws MessageParseException, IOException {
     int messageCode = dis.readUnsignedByte();
     MessageType messageType = MessageType.getType(messageCode);
-    if (messageType == null)
+    if (messageType == null) {
       throw newParseException();
-    int tick;
+    }
+    int tickRemainder;
     switch (messageType) {
       case PING:
         return (handler) -> handler.ping();
@@ -62,49 +62,54 @@ class InputMessageFactory {
       case EXIT:
         int exitCode = dis.readUnsignedByte();
         ExitType exitType = ExitType.getType(exitCode);
-        if (exitType == null)
+        if (exitType == null) {
           throw newParseException();
+        }
         return (handler) -> handler.exit(exitType);
       case LOGIN_RESPONSE:
         int loginResponseCode = dis.readUnsignedByte();
         LoginResponseType loginResponseType = LoginResponseType.getType(loginResponseCode);
-        if (loginResponseType == null)
+        if (loginResponseType == null) {
           throw newParseException();
+        }
         if (loginResponseType == LoginResponseType.OK) {
-          tick = dis.readUnsignedShort();
-          return (handler) -> handler.loginSuccess(tick);
+          tickRemainder = dis.readUnsignedShort();
+          return (handler) -> handler.loginSuccess(tickRemainder);
         } else {
           return (handler) -> handler.loginFail(loginResponseType);
         }
       case REGISTER_RESPONSE:
         int registerResponseCode = dis.readUnsignedByte();
-        RegisterResponseType registerResponseType =
-            RegisterResponseType.getType(registerResponseCode);
-        if (registerResponseType == null)
+        RegisterResponseType registerResponseType = RegisterResponseType.getType(registerResponseCode);
+        if (registerResponseType == null) {
           throw newParseException();
+        }
         return (handler) -> handler.registerResponse(registerResponseType);
       case META_ACTION:
+        tickRemainder = dis.readUnsignedShort();
         int entityId = dis.readUnsignedShort();
         int metaActionCode = dis.readUnsignedByte();
         MetaActionType metaActionType = MetaActionType.getType(metaActionCode);
-        if (metaActionType == null)
+        if (metaActionType == null) {
           throw newParseException();
+        }
         switch (metaActionType) {
           case PLAYER_JOINED:
             String pseudo = readString(dis);
-            return (handler) -> handler.playerJoined(entityId, pseudo);
+            return (handler) -> handler.playerJoined(tickRemainder, entityId, pseudo);
           case PLAYER_LEFT:
-            return (handler) -> handler.playerLeft(entityId);
+            return (handler) -> handler.playerLeft(tickRemainder, entityId);
           default: // unknown
             throw newParseException();
         }
       case TERRAIN_UPDATE:
-        tick = dis.readUnsignedShort();
+        tickRemainder = dis.readUnsignedShort();
         ChunkPoint chunkPoint = readChunkPoint(dis);
         int defaultCode = dis.readUnsignedByte();
         TerrainType defaultType = TerrainType.getType(defaultCode);
-        if (defaultType == null)
+        if (defaultType == null) {
           throw newParseException();
+        }
         int blocksSize = dis.readUnsignedShort();
         Block[] blocks = new Block[blocksSize];
         for (int i = 0; i < blocksSize; i++) {
@@ -112,18 +117,18 @@ class InputMessageFactory {
           blocks[i] = block;
         }
         Chunk chunk = new Chunk(defaultType, Arrays.asList(blocks));
-        return (handler) -> handler.chunkUpdate(tick, chunkPoint, chunk);
+        return (handler) -> handler.chunkUpdate(tickRemainder, chunkPoint, chunk);
       case ENTITIES_UPDATE:
-        tick = dis.readUnsignedShort();
+        tickRemainder = dis.readUnsignedShort();
         int entitiesSize = dis.readUnsignedShort();
         List<EntityDataUpdate> entitiesUpdateList = new ArrayList<>(entitiesSize);
         for (int i = 0; i < entitiesSize; i++) {
           EntityDataUpdate entityDataUpdate = readEntityDataUpdate(dis);
           entitiesUpdateList.add(entityDataUpdate);
         }
-        return (handler) -> handler.entitiesUpdate(tick, entitiesUpdateList);
+        return (handler) -> handler.entitiesUpdate(tickRemainder, entitiesUpdateList);
       case ACTIONS:
-        tick = dis.readUnsignedShort();
+        tickRemainder = dis.readUnsignedShort();
         int actionsSize = dis.readUnsignedShort();
         List<Pair<Integer, Action>> actions = new ArrayList<>(actionsSize);
         for (int i = 0; i < actionsSize; i++) {
@@ -131,22 +136,19 @@ class InputMessageFactory {
           Action action = readAction(dis);
           actions.add(new Pair<>(id, action));
         }
-        return (handler) -> handler.actions(tick, actions);
+        return (handler) -> handler.actions(tickRemainder, actions);
       case ENTITY_CREATE:
-        tick = dis.readUnsignedShort();
-        int entityIdCreate = dis.readUnsignedShort();
+        tickRemainder = dis.readUnsignedShort();
         EntityDataUpdate entityCreateUpdate = readEntityDataUpdate(dis);
-        // TODO entitycreate
         return (handler) -> {
-          handler.entityCreate(tick, entityIdCreate, entityCreateUpdate);
+          handler.entityCreate(tickRemainder, entityCreateUpdate);
         };
       case ENTITY_DESTROY:
-        tick = dis.readUnsignedShort();
+        tickRemainder = dis.readUnsignedShort();
         int entityIdDestroy = dis.readUnsignedShort();
         return (handler) -> {
-          handler.entityDestroy(tick, entityIdDestroy);
+          handler.entityDestroy(tickRemainder, entityIdDestroy);
         };
-        // TODO entitydestroy
       case CHAT_RECEIVE:
         int entityIdChat = dis.readUnsignedShort();
         String chatMessage = readString(dis);
@@ -154,8 +156,9 @@ class InputMessageFactory {
       case VERSION_RESPONSE:
         int versionResponseCode = dis.readUnsignedByte();
         VersionResponseType versionResponseType = VersionResponseType.getType(versionResponseCode);
-        if (versionResponseType == null)
+        if (versionResponseType == null) {
           throw newParseException();
+        }
         return (handler) -> handler.versionResponse(versionResponseType);
       default: // unknown or client-only
         throw newParseException();
@@ -166,12 +169,12 @@ class InputMessageFactory {
     return (handler) -> handler.networkError(e);
   }
 
-  private static final Action readAction(DataInputStream dis) throws MessageParseException,
-      IOException {
+  private static final Action readAction(DataInputStream dis) throws MessageParseException, IOException {
     int actionCode = dis.readUnsignedShort();
     ActionType actionType = ActionType.getType(actionCode);
-    if (actionType == null)
+    if (actionType == null) {
       throw newParseException();
+    }
     switch (actionType.getParametersType()) {
       case VOID:
         return new Action(actionType);
@@ -189,37 +192,37 @@ class InputMessageFactory {
     }
   }
 
-  private static final Block readBlock(DataInputStream dis) throws MessageParseException,
-      IOException {
+  private static final Block readBlock(DataInputStream dis) throws MessageParseException, IOException {
     int x = dis.readUnsignedByte();
     int y = dis.readUnsignedByte();
     int code = dis.readUnsignedByte();
     TerrainType type = TerrainType.getType(code);
-    if (type == null)
+    if (type == null) {
       throw newParseException();
+    }
     Block block = new Block(x, y, type);
     return block;
   }
 
-  private static final ChunkPoint readChunkPoint(DataInputStream dis) throws MessageParseException,
-      IOException {
+  private static final ChunkPoint readChunkPoint(DataInputStream dis) throws MessageParseException, IOException {
     int chunkX = dis.readShort();
     int chunkY = dis.readShort();
     ChunkPoint chunkPoint = new ChunkPoint(chunkX, chunkY);
     return chunkPoint;
   }
 
-  private static final EntityDataUpdate readEntityDataUpdate(DataInputStream dis)
-      throws MessageParseException, IOException {
+  private static final EntityDataUpdate readEntityDataUpdate(DataInputStream dis) throws MessageParseException, IOException {
     int entityId = dis.readUnsignedShort();
     EntityDataUpdate.Builder builder = new EntityDataUpdate.Builder(entityId);
     byte bitfield = dis.readByte();
     for (int b = 0; b < 8; b++) {
-      if ((bitfield & 1 << (7 - b)) == 0) // si le bit numéro b est 0
+      if ((bitfield & 1 << 7 - b) == 0) {
         continue;
+      }
       EntityUpdateType type = EntityUpdateType.getType(b);
-      if (type == null)
+      if (type == null) {
         throw newParseException();
+      }
       switch (type) {
         case POSITION:
           MapPoint mapPoint = readMapPoint(dis);
@@ -239,8 +242,9 @@ class InputMessageFactory {
           for (int j = 0; j < objectDataUpdateSize; j++) {
             int objectDataUpdateCode = dis.readUnsignedByte();
             ObjectAttribute objectDataUpdateType = ObjectAttribute.getType(objectDataUpdateCode);
-            if (objectDataUpdateType == null)
+            if (objectDataUpdateType == null) {
               throw newParseException();
+            }
             attributes.add(objectDataUpdateType);
           }
           builder.objectAttributes(attributes);
@@ -252,8 +256,7 @@ class InputMessageFactory {
     return builder.build();
   }
 
-  private static final MapPoint readMapPoint(DataInputStream dis) throws MessageParseException,
-      IOException {
+  private static final MapPoint readMapPoint(DataInputStream dis) throws MessageParseException, IOException {
     int chunkX = dis.readShort();
     int chunkY = dis.readShort();
     int blockX = dis.readUnsignedByte();

@@ -20,8 +20,7 @@ public class UiComponents {
 
     private JLabel statusField;
 
-    public Connect(String defaultAddress, int defaultPort,
-        BiConsumer<String, Integer> connectCallback) {
+    public Connect(String defaultAddress, int defaultPort, BiConsumer<String, Integer> connectCallback) {
       setLayout(new GridLayout(4, 2, 10, 10));
       add(new JLabel("Adresse"));
       JTextField addressField = new JTextField(defaultAddress);
@@ -61,8 +60,7 @@ public class UiComponents {
 
     private JLabel statusField;
 
-    public Login(BiConsumer<String, String> registerCallback,
-        BiConsumer<String, String> loginCallback) {
+    public Login(BiConsumer<String, String> registerCallback, BiConsumer<String, String> loginCallback) {
       setLayout(new GridLayout(4, 2, 10, 10));
       add(new JLabel("Nom d'utilisateur"));
       JTextField usernameField = new JTextField();
@@ -71,12 +69,10 @@ public class UiComponents {
       JPasswordField passwordField = new JPasswordField();
       add(passwordField);
       JButton registerButton = new JButton("S'inscrire");
-      registerButton.addActionListener((e) -> registerCallback.accept(usernameField.getText(),
-          passwordField.getPassword().toString()));
+      registerButton.addActionListener((e) -> registerCallback.accept(usernameField.getText(), new String(passwordField.getPassword())));
       add(registerButton);
       JButton loginButton = new JButton("Se connecter");
-      loginButton.addActionListener((e) -> loginCallback.accept(usernameField.getText(),
-          passwordField.getPassword().toString()));
+      loginButton.addActionListener((e) -> loginCallback.accept(usernameField.getText(), new String(passwordField.getPassword())));
       add(loginButton);
       statusField = new JLabel();
       add(statusField);

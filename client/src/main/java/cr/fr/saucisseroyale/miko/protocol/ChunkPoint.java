@@ -16,10 +16,12 @@ public final class ChunkPoint {
    * @param chunkY La coordonnée Y du bloc.
    */
   public ChunkPoint(int chunkX, int chunkY) {
-    if (chunkX < -(1 << 15) || chunkX >= 1 << 15)
+    if (chunkX < -(1 << 15) || chunkX >= 1 << 15) {
       throw new IllegalArgumentException("chunkX must be between -32768 and 32767 inclusive");
-    if (chunkY < -(1 << 15) || chunkY >= 1 << 15)
+    }
+    if (chunkY < -(1 << 15) || chunkY >= 1 << 15) {
       throw new IllegalArgumentException("chunkY must be between -32768 and 32767 inclusive");
+    }
     this.chunkX = chunkX;
     this.chunkY = chunkY;
   }

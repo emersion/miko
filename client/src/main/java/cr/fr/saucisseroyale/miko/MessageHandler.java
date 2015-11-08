@@ -19,31 +19,31 @@ import java.util.List;
  */
 public interface MessageHandler {
 
-  public void actions(int tick, List<Pair<Integer, Action>> actions);
+  public void actions(int tickRemainder, List<Pair<Integer, Action>> actions);
 
   public void chatReceived(int entityIdChat, String chatMessage);
 
-  public void chunkUpdate(int tick, ChunkPoint chunkPoint, Chunk chunk);
+  public void chunkUpdate(int tickRemainder, ChunkPoint chunkPoint, Chunk chunk);
 
-  public void entityCreate(int tick, int entityId, EntityDataUpdate entityDataUpdate);
+  public void entityCreate(int tickRemainder, EntityDataUpdate entityDataUpdate);
 
-  public void entityDestroy(int tick, int entityId);
+  public void entityDestroy(int tickRemainder, int entityId);
 
-  public void entitiesUpdate(int tick, List<EntityDataUpdate> entitiesUpdateList);
+  public void entitiesUpdate(int tickRemainder, List<EntityDataUpdate> entitiesUpdateList);
 
   public void exit(ExitType exitType);
 
   public void loginFail(LoginResponseType loginResponseType);
 
-  public void loginSuccess(int tick);
+  public void loginSuccess(int tickRemainder);
 
   public void networkError(Exception e);
 
   public void ping();
 
-  public void playerJoined(int entityId, String pseudo);
+  public void playerJoined(int tickRemainder, int entityId, String pseudo);
 
-  public void playerLeft(int entityId);
+  public void playerLeft(int tickRemainder, int entityId);
 
   public void pong();
 

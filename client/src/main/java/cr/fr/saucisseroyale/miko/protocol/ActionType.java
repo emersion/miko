@@ -10,7 +10,7 @@ import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 public enum ActionType implements UniquelyIdentifiable {
 
   // @noformatting
-;
+  ;
   // @formatting
 
   static {

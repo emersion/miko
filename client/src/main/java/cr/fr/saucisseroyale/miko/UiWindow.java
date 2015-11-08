@@ -45,6 +45,7 @@ public class UiWindow {
 
   @SuppressWarnings("serial")
   private static class EventBlockerComponent extends Component {
+
     private MouseListener mouseListener;
 
     public EventBlockerComponent(int width, int height) {
@@ -52,8 +53,9 @@ public class UiWindow {
     }
 
     public void setMouseListener(MouseListener mouseListener) {
-      if (this.mouseListener != null)
+      if (this.mouseListener != null) {
         removeMouseListener(this.mouseListener);
+      }
       this.mouseListener = mouseListener;
       addMouseListener(mouseListener);
     }
@@ -97,17 +99,17 @@ public class UiWindow {
    * Construit un {@link UiWindow} avec les écran et mode d'affichage par défaut.
    */
   public UiWindow() {
-    this(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice(),
-        GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode());
+    this(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice(), GraphicsEnvironment.getLocalGraphicsEnvironment()
+        .getDefaultScreenDevice().getDisplayMode());
   }
 
   /**
    * Construit un {@link UiWindow} avec les écran et mode d'affichage spécifié, sans afficher la
    * fenêtre.
-   * 
+   *
    * @param device L'écran sur lequel afficher la fenêtre.
    * @param displayMode La mode d'affichage à utiliser pour afficher la fenêtre.
-   * 
+   *
    * @throws IllegalArgumentException Si l'écran ne supporte pas le mode d'affichage spécifié.
    */
   public UiWindow(GraphicsDevice device, DisplayMode displayMode) {
@@ -129,8 +131,9 @@ public class UiWindow {
     frame.addWindowListener(new WindowAdapter() {
       @Override
       public void windowClosing(WindowEvent e) {
-        if (closeListener != null)
+        if (closeListener != null) {
           closeListener.run();
+        }
       }
     });
   }
@@ -181,7 +184,7 @@ public class UiWindow {
 
   /**
    * Ajoute un composant d'UI à la fenêtre, en le redimensionnant à la taille de la fenêtre, caché.
-   * 
+   *
    * @param component Le composant à ajouter à la fenêtre.
    */
   public void addUi(JComponent component) {
@@ -190,19 +193,20 @@ public class UiWindow {
 
   /**
    * Ajoute un composant d'UI à la fenêtre, caché.
-   * 
+   *
    * @param component Le composant à ajouter à la fenêtre.
    * @param resize Si le composant doit être redimensionné à la taille de la fenêtre.
    */
   public void addUi(JComponent component, boolean resize) {
-    if (resize)
+    if (resize) {
       component.setSize(getWidth(), getHeight());
+    }
     frame.getLayeredPane().add(component, UI_HIDDEN_LAYER);
   }
 
   /**
    * Rend un composant d'UI visible et le met au premier plan.
-   * 
+   *
    * @param component Le composant à rendre visible.
    */
   public void showUi(JComponent component) {
@@ -211,7 +215,7 @@ public class UiWindow {
 
   /**
    * Cache un copposant d'UI.
-   * 
+   *
    * @param component Le composant à cacher.
    */
   public void hideUi(JComponent component) {
@@ -232,7 +236,7 @@ public class UiWindow {
    * <p>
    * Il devra s'afficher sur les graphiques lorsque sa méthode {@link Consumer#accept(Object)
    * accept(Graphics2D)} sera appelée.
-   * 
+   *
    * @param renderable Le composant principal.
    */
   public void setRenderable(Consumer<Graphics2D> renderable) {
@@ -242,7 +246,7 @@ public class UiWindow {
   /**
    * Définit le listener de fermeture demandée de fenêtre. Appelé lors de la demande de fermeture de
    * la {@link UiWindow}.
-   * 
+   *
    * @param closeListener Le listener de fermeture.
    */
   public void setCloseRequestedListener(Runnable closeListener) {
@@ -251,7 +255,7 @@ public class UiWindow {
 
   /**
    * Définit le listener de souris sur le composant principal.
-   * 
+   *
    * @param mouseListener Le listener de souris.
    */
   public void setMouseListener(MouseListener mouseListener) {
@@ -278,8 +282,9 @@ public class UiWindow {
    */
   public Point getMousePosition() {
     PointerInfo pointerInfo = MouseInfo.getPointerInfo();
-    if (pointerInfo.getDevice() != device)
+    if (pointerInfo.getDevice() != device) {
       return null;
+    }
     Point mousePoint = pointerInfo.getLocation();
     for (Component component : frame.getLayeredPane().getComponentsInLayer(UI_VISIBLE_LAYER)) {
       Point componentPoint = new Point(mousePoint);
@@ -296,8 +301,7 @@ public class UiWindow {
       Component[] uiComponents = frame.getLayeredPane().getComponentsInLayer(UI_VISIBLE_LAYER);
       for (int i = 0; i < uiComponents.length; i++) { // top to bottom
         Component uiComponent = uiComponents[i];
-        if (uiComponent.isOpaque() && uiComponent.getWidth() == width
-            && uiComponent.getHeight() == height) {
+        if (uiComponent.isOpaque() && uiComponent.getWidth() == width && uiComponent.getHeight() == height) {
           // fully opaque component found
           // only render ui in front of it + itself
           for (int j = i; j >= 0; j--) { // bottom to top
@@ -311,8 +315,9 @@ public class UiWindow {
       graphics.setBackground(Color.BLACK);
       graphics.clearRect(0, 0, width, height);
       // render game
-      if (renderable != null)
+      if (renderable != null) {
         renderable.accept(graphics);
+      }
       // render ui
       for (int i = uiComponents.length - 1; i >= 0; i--) { // bottom to top
         uiComponents[i].paint(graphics);
@@ -325,8 +330,8 @@ public class UiWindow {
       if (displayMode.getWidth() == supportedDisplayMode.getWidth()
           && displayMode.getHeight() == supportedDisplayMode.getHeight()
           && displayMode.getBitDepth() == supportedDisplayMode.getBitDepth()
-          && (displayMode.getRefreshRate() == DisplayMode.REFRESH_RATE_UNKNOWN || displayMode
-              .getRefreshRate() == supportedDisplayMode.getRefreshRate())) {
+          && (displayMode.getRefreshRate() == DisplayMode.REFRESH_RATE_UNKNOWN || displayMode.getRefreshRate() == supportedDisplayMode
+              .getRefreshRate())) {
         return true;
       }
     }

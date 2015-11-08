@@ -31,8 +31,9 @@ public final class Action {
     if (type.getParametersType() != ActionParametersType.ENTITY_ID) {
       throw newConstructorValueException();
     }
-    if (entityId < 0 || entityId >= 1 << 16)
+    if (entityId < 0 || entityId >= 1 << 16) {
       throw new IllegalArgumentException("entityId must be between 0 and 65535 inclusive");
+    }
     this.type = type;
     parameter = entityId;
   }
