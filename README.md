@@ -1,4 +1,5 @@
-﻿# Miko
+﻿
+# Miko
 
 An experimental minimalist multiplayer top-down adventure game (en français)
 
@@ -16,7 +17,7 @@ An experimental minimalist multiplayer top-down adventure game (en français)
 * go
 * non fonctionnel
 
-## Protocole version *3*
+## Protocole version *4*
 
 ### Généralités
 
@@ -42,7 +43,7 @@ C | 3 | Non | login | str pseudo + str password
 S | 4 | Non [1] | login_response | uint8 loginresponsecode
 C | 5 | Non | register | str pseudo + str password
 S | 6 | Non | register_response | uint8 registerresponsecode
-S | 7 | Non | meta_action | uint16 entityid + uint8 metaactioncode + bytes metaactionbody
+S | 7 | Oui | meta_action | uint16 entityid + uint8 metaactioncode + bytes metaactionbody
 S | 8 | Oui | terrain_update | bytes terrain
 C | 9 | Non | terrain_request | bytes terrainhint
 S | 10 | Oui | entities_update | bytes entities
@@ -50,13 +51,13 @@ C | 11 | Oui | entity_update | bytes entity
 S | 12 | Oui | actions_done | bytes actions
 C | 13 | Oui | action_do | bytes action
 S | 14 | Oui | entity_create | uint16 entityid + bytes entity_create
-S | 15 | Oui | entity_destroy | uint16 entityid + bytes entity_destroy
+S | 15 | Oui | entity_destroy | uint16 entityid
 C | 16 | Non | chat_send | str message
 S | 17 | Non | chat_receive | uint16 entityid + str message
 C | 18 | Non | version | uint16 versionid
 S | 19 | Non | version_response | uint8 versionresponsecode
 
-* Si le message possède un tick, il l'envoit avant son contenu : headers puis tick puis contenu. Le tick est un uint16 et est la frame de logique actuelle sur le simulateur du jeu envoyant le message.
+* Si le message possède un tick, il l'envoit avant son contenu : headers puis tick puis contenu. Le tick est un uint16 et est la frame de logique actuelle sur le simulateur du jeu envoyant le message, elle revient à 0 après avoir atteint son maximum (2^16 - 1)
 * [1] : Un tick est envoyé après le `loginresponsecode` si c'est le code "ok".
 
 #### exitcode
@@ -166,15 +167,18 @@ for bit in bitfield:
 	bytes data
 ```
 
+#### entity_create
+
+```
+entity_update
+```
+
 #### entities_update
 
 ```
 uint16 size
 size times:
-	uint16 entityid
-	uint8 bitfield
-	for bit in bitfield:
-		bytes data
+	entity_create
 ```
 
 #### bitfield
@@ -189,8 +193,17 @@ Bit | Signification | Contenu
 3 |
 4 |
 5 |
-6 |
+6 | sprite | uint16 sprite
 7 | object | uint8 size + uint8...objectattributes
+
+#### sprite
+
+* un identifiant unique de l'animation (graphique) d'une entité
+
+Valeur | Description de l'animation
+--- | ---
+
+* exemple : 0 | loli_rouge
 
 #### objectattribute
 
@@ -201,10 +214,6 @@ Valeur | Signification | Détail
 --- | --- | ---
 0 | disabled | objet désactivé (interrupteur, ...)
 1 | enabled | object activé (inteerrupteur, ...)
-
-#### entitycreate
-
-#### entitydestroy
 
 ### Actions
 
@@ -229,8 +238,7 @@ bytes params
 uint16 size
 size times:
 	uint16 entityid
-	uint16 actionid
-	bytes params
+	action_do
 ```
 
 #### actionid
