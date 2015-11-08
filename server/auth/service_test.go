@@ -11,7 +11,7 @@ const (
 	password = "password"
 )
 
-func TestAuthService(t *testing.T) {
+func TestService(t *testing.T) {
 	s := auth.NewService()
 
 	loginCode := s.Login(0, username, password)

@@ -1,29 +1,29 @@
 package auth
 
-import(
+import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 // The authentication service
 // It aims to manage users: login, register, sessions
-type AuthService struct {
+type Service struct {
 	sessions map[int]*message.Session
-	users []*User
+	users    []*User
 }
 
-func (a *AuthService) HasSession(id int) bool {
+func (a *Service) HasSession(id int) bool {
 	_, ok := a.sessions[id]
 	return ok
 }
 
-func (a *AuthService) GetSession(id int) *message.Session {
+func (a *Service) GetSession(id int) *message.Session {
 	if session, ok := a.sessions[id]; ok {
 		return session
 	}
 	return nil
 }
 
-func (a *AuthService) getSessionByUsername(username string) *message.Session {
+func (a *Service) getSessionByUsername(username string) *message.Session {
 	for _, session := range a.sessions {
 		if session != nil && session.Username == username {
 			return session
@@ -32,7 +32,7 @@ func (a *AuthService) getSessionByUsername(username string) *message.Session {
 	return nil
 }
 
-func (a *AuthService) Login(id int, username string, password string) message.LoginResponseCode {
+func (a *Service) Login(id int, username string, password string) message.LoginResponseCode {
 	code := "unknown_pseudo"
 	for _, user := range a.users {
 		if username != user.Username {
@@ -56,16 +56,16 @@ func (a *AuthService) Login(id int, username string, password string) message.Lo
 	if code == "ok" {
 		entity := message.NewEntity()
 		a.sessions[id] = &message.Session{
-			Id: id,
+			Id:       id,
 			Username: username,
-			Entity: entity,
+			Entity:   entity,
 		}
 	}
 
 	return message.LoginResponseCodes[code]
 }
 
-func (a *AuthService) Logout(id int) {
+func (a *Service) Logout(id int) {
 	if !a.HasSession(id) {
 		return
 	}
@@ -73,7 +73,7 @@ func (a *AuthService) Logout(id int) {
 	delete(a.sessions, id)
 }
 
-func (a *AuthService) Register(id int, username string, password string) message.RegisterResponseCode {
+func (a *Service) Register(id int, username string, password string) message.RegisterResponseCode {
 	for _, user := range a.users {
 		if username == user.Username {
 			return message.RegisterResponseCodes["used_pseudo"]
@@ -86,9 +86,9 @@ func (a *AuthService) Register(id int, username string, password string) message
 	return message.RegisterResponseCodes["ok"]
 }
 
-func NewService() *AuthService {
-	return &AuthService{
+func NewService() *Service {
+	return &Service{
 		sessions: map[int]*message.Session{},
-		users: LoadUserDb(),
+		users:    LoadUserDb(),
 	}
 }
