@@ -97,10 +97,10 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["meta_action"]: func(ctx *message.Context, io *message.IO) error {
-		var code message.MetaActionCode
 		var entityId message.EntityId
-		read(io.Reader, &code)
+		var code message.MetaActionCode
 		read(io.Reader, &entityId)
+		read(io.Reader, &code)
 
 		if code == message.MetaActionCodes["player_joined"] {
 			username := readString(io.Reader)

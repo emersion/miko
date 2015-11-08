@@ -33,16 +33,16 @@ func SendRegisterResp(w io.Writer, code message.RegisterResponseCode) error {
 func SendPlayerJoined(w io.Writer, id message.EntityId, username string) error {
 	return writeAll(w, []interface{}{
 		message.Types["meta_action"],
-		message.MetaActionCodes["player_joined"],
 		id,
+		message.MetaActionCodes["player_joined"],
 		username,
 	})
 }
 func SendPlayerLeft(w io.Writer, id message.EntityId) error {
 	return writeAll(w, []interface{}{
 		message.Types["meta_action"],
-		message.MetaActionCodes["player_left"],
 		id,
+		message.MetaActionCodes["player_left"],
 	})
 }
 
