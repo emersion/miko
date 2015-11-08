@@ -53,9 +53,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			return err
 		}
 
-		if code == message.LoginResponseCodes["ok"] {
-			log.Println("Client logged in:", username)
+		log.Println("Client logged in:", username, code)
 
+		if code == message.LoginResponseCodes["ok"] {
 			// Create entity
 			session := ctx.Auth.GetSession(io.Id)
 			if session == nil {
@@ -92,6 +92,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		password := readString(io.Reader)
 
 		code := ctx.Auth.Register(io.Id, username, password)
+
+		log.Println("Client registered:", username, code)
+
 		return builder.SendRegisterResp(io.Writer, code)
 	},
 	message.Types["terrain_request"]: func(ctx *message.Context, io *message.IO) error {
