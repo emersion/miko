@@ -1,17 +1,28 @@
 package builder
 
 import (
-	"io"
 	"encoding/binary"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"io"
+	"log"
 )
 
 func write(w io.Writer, data interface{}) error {
+	if code, ok := data.(message.Type); ok {
+		for name, val := range message.Types {
+			if code == val {
+				log.Println(name)
+				break
+			}
+		}
+	}
+
 	return binary.Write(w, binary.BigEndian, data)
 }
 
 func writeString(w io.Writer, data string) error {
 	if err := write(w, uint16(len(data))); err != nil {
-		return err;
+		return err
 	}
 
 	_, err := w.Write([]byte(data))
