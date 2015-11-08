@@ -30,17 +30,19 @@ func SendRegisterResp(w io.Writer, code message.RegisterResponseCode) error {
 	return write(w, code)
 }
 
-func SendPlayerJoined(w io.Writer, id message.EntityId, username string) error {
+func SendPlayerJoined(w io.Writer, t message.Tick, id message.EntityId, username string) error {
 	return writeAll(w, []interface{}{
 		message.Types["meta_action"],
+		t,
 		id,
 		message.MetaActionCodes["player_joined"],
 		username,
 	})
 }
-func SendPlayerLeft(w io.Writer, id message.EntityId) error {
+func SendPlayerLeft(w io.Writer, t message.Tick, id message.EntityId) error {
 	return writeAll(w, []interface{}{
 		message.Types["meta_action"],
+		t,
 		id,
 		message.MetaActionCodes["player_left"],
 	})
@@ -123,7 +125,11 @@ func SendEntityCreate(w io.Writer, t message.Tick, entity *message.Entity) error
 		return err
 	}
 
-	diff := &message.EntityDiff{true, true, true}
+	diff := &message.EntityDiff{
+		Position:   true,
+		SpeedAngle: true,
+		SpeedNorm:  true,
+	}
 	return sendEntityUpdateBody(w, entity, diff)
 }
 

@@ -2,7 +2,7 @@ package message
 
 type ProtocolVersion uint16
 
-const CurrentVersion ProtocolVersion = 3
+const CurrentVersion ProtocolVersion = 4
 
 type Type uint8
 type ExitCode uint8

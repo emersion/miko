@@ -63,7 +63,7 @@ func (h *Handler) Listen(clientIO *message.IO) {
 			session = h.ctx.Auth.GetSession(clientIO.Id)
 			if session != nil {
 				h.ctx.Auth.Logout(clientIO.Id)
-				builder.SendPlayerLeft(clientIO.BroadcastWriter, session.Entity.Id)
+				builder.SendPlayerLeft(clientIO.BroadcastWriter, h.ctx.Clock.GetRelativeTick(), session.Entity.Id)
 			}
 		}
 		if h.ctx.IsClient() {

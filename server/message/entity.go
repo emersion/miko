@@ -16,12 +16,16 @@ type Speed struct {
 	Norm  float32
 }
 
+// A sprite index
+type Sprite uint16
+
 // An entity
 // Can be a player, an object, a monster, and so on.
 type Entity struct {
 	Id       EntityId
 	Position *Position
 	Speed    *Speed
+	Sprite   Sprite
 }
 
 func NewEntity() *Entity {
@@ -36,6 +40,7 @@ type EntityDiff struct {
 	Position   bool
 	SpeedAngle bool
 	SpeedNorm  bool
+	Sprite     bool
 }
 
 func (d *EntityDiff) GetBitfield() uint8 {
@@ -49,6 +54,9 @@ func (d *EntityDiff) GetBitfield() uint8 {
 	if d.SpeedNorm {
 		bitfield |= 1 << 5
 	}
+	if d.Sprite {
+		bitfield |= 1 << 1
+	}
 	return bitfield
 }
 
@@ -56,6 +64,7 @@ func (d *EntityDiff) Merge(other *EntityDiff) {
 	d.Position = d.Position || other.Position
 	d.SpeedAngle = d.SpeedAngle || other.SpeedAngle
 	d.SpeedNorm = d.SpeedNorm || other.SpeedNorm
+	d.Sprite = d.Sprite || other.Sprite
 }
 
 func (d *EntityDiff) Apply(src *Entity, dst *Entity) {
@@ -68,6 +77,9 @@ func (d *EntityDiff) Apply(src *Entity, dst *Entity) {
 	if d.SpeedAngle {
 		dst.Speed.Angle = src.Speed.Angle
 	}
+	if d.Sprite {
+		dst.Sprite = src.Sprite
+	}
 }
 
 func NewEntityDiffFromBitfield(bitfield uint8) *EntityDiff {
@@ -75,6 +87,7 @@ func NewEntityDiffFromBitfield(bitfield uint8) *EntityDiff {
 		bitfield&(1<<7) > 0,
 		bitfield&(1<<6) > 0,
 		bitfield&(1<<5) > 0,
+		bitfield&(1<<1) > 0,
 	}
 }
 

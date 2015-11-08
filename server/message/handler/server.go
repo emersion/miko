@@ -82,7 +82,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return err
 			}
 
-			return builder.SendPlayerJoined(io.BroadcastWriter, session.Entity.Id, username)
+			return builder.SendPlayerJoined(io.BroadcastWriter, ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
 		} else {
 			return nil
 		}
