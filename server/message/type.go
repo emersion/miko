@@ -36,6 +36,15 @@ var Types = map[string]Type{
 	"version_response":  19,
 }
 
+func GetTypeName(t Type) string {
+	for name, val := range Types {
+		if t == val {
+			return name
+		}
+	}
+	return ""
+}
+
 var ExitCodes = map[string]ExitCode{
 	"client_quit":   0,
 	"server_closed": 1,

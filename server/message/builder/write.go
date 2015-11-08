@@ -8,13 +8,8 @@ import (
 )
 
 func write(w io.Writer, data interface{}) error {
-	if code, ok := data.(message.Type); ok {
-		for name, val := range message.Types {
-			if code == val {
-				log.Println(name)
-				break
-			}
-		}
+	if t, ok := data.(message.Type); ok {
+		log.Println("Sent:", message.GetTypeName(t))
 	}
 
 	return binary.Write(w, binary.BigEndian, data)
