@@ -60,7 +60,7 @@ func (i *EngineInput) GetSpeedNorm() float32 {
 	keys := []string{"ArrowUp", "ArrowRight", "ArrowLeft", "ArrowDown"}
 	for _, key := range keys {
 		if i.IsKeyActive(key) {
-			return 2
+			return 10
 		}
 	}
 	return 0
@@ -101,9 +101,10 @@ func (e *Engine) Start() {
 			lastTick = now
 		}
 
-		for t := lastTick; t+clock.TickDuration <= now; t += clock.TickDuration {
+		missedTicks := int((now - lastTick) / clock.TickDuration)
+		for i := 0; i < missedTicks; i++ {
 			e.ctx.Clock.Tick()
-			lastTick = t
+			lastTick += clock.TickDuration
 		}
 
 		if e.ctx.Me.Entity != nil && e.Input.Dirty {
