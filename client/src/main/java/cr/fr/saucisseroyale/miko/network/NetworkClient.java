@@ -106,14 +106,13 @@ public class NetworkClient {
     disconnect();
   }
 
-  private static SSLSocketFactory createSocketFactory() throws KeyStoreException, IOException,
-      NoSuchAlgorithmException, CertificateException, KeyManagementException {
+  private static SSLSocketFactory createSocketFactory() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException,
+      KeyManagementException {
     KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
     try (InputStream keyStoreStream = NetworkClient.class.getResourceAsStream("/keystore")) {
       keyStore.load(keyStoreStream, "keypass".toCharArray());
     }
-    TrustManagerFactory tmf =
-        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     tmf.init(keyStore);
     SSLContext context = SSLContext.getInstance("TLS");
     context.init(null, tmf.getTrustManagers(), null);

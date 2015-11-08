@@ -21,8 +21,7 @@ class ReceiverThread extends Thread {
   private Queue<FutureInputMessage> inputMessages;
   private Consumer<Exception> errorCallback;
 
-  public ReceiverThread(InputStream is, Queue<FutureInputMessage> inputMessages,
-      Consumer<Exception> errorCallback) {
+  public ReceiverThread(InputStream is, Queue<FutureInputMessage> inputMessages, Consumer<Exception> errorCallback) {
     dis = new DataInputStream(new BufferedInputStream(is));
     this.inputMessages = inputMessages;
     this.errorCallback = errorCallback;

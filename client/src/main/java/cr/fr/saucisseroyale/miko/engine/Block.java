@@ -18,10 +18,12 @@ public final class Block {
    * @param type Le type de terrain de la case à créer.
    */
   public Block(int x, int y, TerrainType type) {
-    if (x < 0 || x >= 1 << 8)
+    if (x < 0 || x >= 1 << 8) {
       throw new IllegalArgumentException("x must be between 0 and 255 inclusive");
-    if (y < 0 || y >= 1 << 8)
+    }
+    if (y < 0 || y >= 1 << 8) {
       throw new IllegalArgumentException("y must be between 0 and 255 inclusive");
+    }
     this.x = x;
     this.y = y;
     this.type = type;

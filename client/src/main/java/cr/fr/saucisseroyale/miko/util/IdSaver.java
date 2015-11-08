@@ -32,8 +32,7 @@ public class IdSaver {
   public static <T extends Enum<T> & UniquelyIdentifiable> T getValue(Class<T> enumeration, int id) {
     Object[] ordered = map.get(enumeration);
     if (ordered == null) {
-      throw new IllegalArgumentException("Enum " + enumeration.getCanonicalName()
-          + " has not been registered before use");
+      throw new IllegalArgumentException("Enum " + enumeration.getCanonicalName() + " has not been registered before use");
     }
     if (id < 0 || id > ordered.length) {
       return null;
@@ -58,8 +57,9 @@ public class IdSaver {
       if (id < 0) {
         throw new IllegalArgumentException("Id " + id + " must positive");
       }
-      if (id > maxId)
+      if (id > maxId) {
         maxId = id;
+      }
     }
     Object[] ordered = new Object[maxId + 1];
     Arrays.fill(ordered, null);

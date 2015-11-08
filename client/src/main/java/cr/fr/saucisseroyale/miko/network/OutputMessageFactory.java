@@ -64,15 +64,18 @@ public class OutputMessageFactory {
   public static FutureOutputMessage terrainRequest(List<ChunkPoint> chunks) {
     // check size against list size before further processing
     int size0 = chunks.size();
-    if (size0 >= 1 << 8)
+    if (size0 >= 1 << 8) {
       throw new IllegalArgumentException("The specified list is too long, max size: 255 chunks");
+    }
     // make defensive copy
     List<ChunkPoint> chunksCopy = new ArrayList<>(chunks.size());
-    for (ChunkPoint chunk : chunks)
+    for (ChunkPoint chunk : chunks) {
       chunksCopy.add(chunk);
+    }
     int size = chunksCopy.size();
-    if (size >= 1 << 8)
+    if (size >= 1 << 8) {
       throw new IllegalArgumentException("The specified list is too long, max size: 255 chunks");
+    }
     return (dos) -> {
       dos.writeByte(MessageType.TERRAIN_REQUEST.getId());
       dos.writeByte(size);
@@ -83,40 +86,45 @@ public class OutputMessageFactory {
     };
   }
 
-  public static FutureOutputMessage entityUpdate(int tick, EntityDataUpdate entityDataUpdate) {
+  public static FutureOutputMessage entityUpdate(long tick, EntityDataUpdate entityDataUpdate) {
     boolean[] updateTypes = new boolean[8];
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try (DataOutputStream buffer = new DataOutputStream(baos)) {
       for (int b = 0; b < 8; b++) {
         EntityUpdateType updateType = EntityUpdateType.getType(b);
-        if (updateType == null)
+        if (updateType == null) {
           throw new IllegalArgumentException("Unknown parameters set in entityDataUpdate");
+        }
 
         switch (updateType) {
           case POSITION:
-            if (!entityDataUpdate.hasPosition())
+            if (!entityDataUpdate.hasPosition()) {
               break;
+            }
             updateTypes[b] = true;
             MapPoint point = entityDataUpdate.getPosition();
             writeMapPoint(buffer, point);
             break;
           case SPEED_ANGLE:
-            if (!entityDataUpdate.hasSpeedAngle())
+            if (!entityDataUpdate.hasSpeedAngle()) {
               break;
+            }
             updateTypes[b] = true;
             float speedAngle = entityDataUpdate.getSpeedAngle();
             buffer.writeFloat(speedAngle);
             break;
           case SPEED_NORM:
-            if (!entityDataUpdate.hasSpeedNorm())
+            if (!entityDataUpdate.hasSpeedNorm()) {
               break;
+            }
             updateTypes[b] = true;
             float speedNorm = entityDataUpdate.getSpeedNorm();
             buffer.writeFloat(speedNorm);
             break;
           case OBJECT_DATA:
-            if (!entityDataUpdate.hasObjectAttributes())
+            if (!entityDataUpdate.hasObjectAttributes()) {
               break;
+            }
             updateTypes[b] = true;
             Set<ObjectAttribute> attributes = entityDataUpdate.getObjectAttributes();
             for (ObjectAttribute attribute : attributes) {
@@ -134,17 +142,17 @@ public class OutputMessageFactory {
     int updateTypesByte = bitfieldToByte(updateTypes);
     return (dos) -> {
       dos.writeByte(MessageType.ENTITY_UPDATE.getId());
-      dos.writeShort(tick);
+      dos.writeShort((int) (tick % (1 << 16)));
       dos.writeShort(entityDataUpdate.getEntityId());
       dos.writeByte(updateTypesByte);
       dos.write(baos.toByteArray());
     };
   }
 
-  public static FutureOutputMessage action(int tick, Action action) {
+  public static FutureOutputMessage action(long tick, Action action) {
     return (dos) -> {
       dos.writeByte(MessageType.ACTION.getId());
-      dos.writeShort(tick);
+      dos.writeShort((int) (tick % (1 << 16)));
       writeAction(dos, action);
     };
   }
@@ -164,12 +172,14 @@ public class OutputMessageFactory {
   }
 
   private static int bitfieldToByte(boolean[] values) {
-    if (values.length != 8)
+    if (values.length != 8) {
       throw new IllegalArgumentException("The specified array has to be 8 booleans long");
+    }
     int b = 0;
     for (int i = 0; i < 8; i++) {
-      if (values[i])
-        b |= 1 << (7 - i); // on met à 1 le bit en position i en partant de la gauche
+      if (values[i]) {
+        b |= 1 << 7 - i; // on met à 1 le bit en position i en partant de la gauche
+      }
     }
     return b;
   }
@@ -203,12 +213,14 @@ public class OutputMessageFactory {
   private static void writeString(DataOutputStream dos, String string) throws IOException {
     // check length by characters length first to avoid heavy data array creation
     // (length in bytes >= characters length)
-    if (string.length() >= 1 << 16)
+    if (string.length() >= 1 << 16) {
       throw new IllegalArgumentException("The specified string is too long, max size: 65565 bytes");
+    }
     byte[] data = string.getBytes(StandardCharsets.UTF_8);
     int size = data.length;
-    if (size >= 1 << 16)
+    if (size >= 1 << 16) {
       throw new IllegalArgumentException("The specified string is too long, max size: 65565 bytes");
+    }
     dos.writeShort(size);
     dos.write(data);
   }

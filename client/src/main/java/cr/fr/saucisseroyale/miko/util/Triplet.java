@@ -2,7 +2,7 @@ package cr.fr.saucisseroyale.miko.util;
 
 /**
  * An immutable generic triplet of data (3-tuple).
- * 
+ *
  * @param <T> The type of the first element.
  * @param <U> The type of the second element.
  * @param <V> The type of the third element.
