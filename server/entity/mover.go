@@ -10,7 +10,7 @@ import (
 type Mover struct {
 	terrain     message.Terrain
 	clock       message.ClockService
-	lastUpdates map[message.EntityId]uint64
+	lastUpdates map[message.EntityId]message.AbsoluteTick
 	positions   map[message.EntityId]*Position
 }
 
@@ -19,7 +19,7 @@ type Mover struct {
 func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
 	now := m.clock.GetAbsoluteTick()
 
-	var last uint64
+	var last message.AbsoluteTick
 	var ok bool
 	if last, ok = m.lastUpdates[entity.Id]; !ok {
 		last = now
@@ -69,7 +69,7 @@ func NewMover(trn message.Terrain, clk message.ClockService) *Mover {
 	return &Mover{
 		terrain:     trn,
 		clock:       clk,
-		lastUpdates: map[message.EntityId]uint64{},
+		lastUpdates: map[message.EntityId]message.AbsoluteTick{},
 		positions:   map[message.EntityId]*Position{},
 	}
 }

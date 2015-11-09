@@ -33,7 +33,7 @@ func TestService(t *testing.T) {
 	//         tick   now
 	relTick := message.Tick(ticks - 6)
 	absTick := s.ToAbsoluteTick(relTick)
-	if absTick != uint64(relTick) {
+	if int(absTick) != int(relTick) {
 		t.Error("Invalid absolute tick conversion, expected", relTick, "but got", absTick)
 	}
 
@@ -53,7 +53,7 @@ func TestService(t *testing.T) {
 	//                        tick   now
 	relTick = message.Tick(6)
 	absTick = s.ToAbsoluteTick(relTick)
-	if absTick != uint64(message.MaxTick+6) {
+	if int(absTick) != message.MaxTick+6 {
 		t.Error("Invalid absolute tick conversion, expected", message.MaxTick+6, "but got", absTick)
 	}
 
@@ -62,7 +62,7 @@ func TestService(t *testing.T) {
 	//               tick             now
 	relTick = message.Tick(message.MaxTick - 42)
 	absTick = s.ToAbsoluteTick(relTick)
-	if absTick != uint64(relTick) {
+	if int(absTick) != int(relTick) {
 		t.Error("Invalid absolute tick conversion, expected", relTick, "but got", absTick)
 	}
 }
