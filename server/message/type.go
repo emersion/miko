@@ -1,10 +1,13 @@
+// Provides the protocol core data types.
 package message
 
+// A protocol version.
 type ProtocolVersion uint16
 
+// The current protocol version.
 const CurrentVersion ProtocolVersion = 4
 
-type Type uint8
+type Type uint8 // A message type.
 type ExitCode uint8
 type LoginResponseCode uint8
 type RegisterResponseCode uint8
@@ -13,6 +16,7 @@ type VersionResponseCode uint8
 
 type PointType uint8
 
+// A map containing all message types.
 var Types = map[string]Type{
 	"ping":              0,
 	"pong":              1,
@@ -36,6 +40,7 @@ var Types = map[string]Type{
 	"version_response":  19,
 }
 
+// Get a message type name from its type.
 func GetTypeName(t Type) string {
 	for name, val := range Types {
 		if t == val {

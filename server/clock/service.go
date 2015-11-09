@@ -1,3 +1,4 @@
+// Provides functions to manage time, relative to the in-game world.
 package clock
 
 import (

@@ -1,3 +1,4 @@
+// Provides functions to keep track of entities.
 package entity
 
 import (

@@ -1,3 +1,4 @@
+// Provides functions to manage the game terrain.
 package terrain
 
 import (
@@ -6,7 +7,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
-// The terrain
+// The terrain.
 // It is a database of the game map. It offers functions to retrieve specific
 // parts of it.
 type Terrain struct {
@@ -45,6 +46,7 @@ func (t *Terrain) GetBlockAt(bx, by message.BlockCoord) (*message.Block, error) 
 	}, nil
 }
 
+// Get a point at a specific absolute position.
 func (t *Terrain) GetPointAt(x, y int) (message.PointType, error) {
 	if !t.hasPointAt(x, y) {
 		return 0, errors.New(fmt.Sprintf("Cannot get point at [%d %d]: out of range", x, y))
@@ -68,6 +70,7 @@ func (t *Terrain) SetBlock(blk *message.Block) error {
 	return nil
 }
 
+// Reset the terrain with a given number of blocks.
 func (t *Terrain) Reset(blkNbr int) {
 	t.Points = make([][]message.PointType, blkNbr*message.BLOCK_LEN)
 	for i := range t.Points {
@@ -75,12 +78,14 @@ func (t *Terrain) Reset(blkNbr int) {
 	}
 }
 
+// Auto-generate a new terrain.
 func (t *Terrain) Generate() {
 	for i := 0; i < 20; i++ {
 		t.Points[10][10+i] = message.PointType(1)
 	}
 }
 
+// Create a new terrain.
 func New() *Terrain {
 	t := &Terrain{}
 	t.Reset(2)

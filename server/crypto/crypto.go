@@ -1,8 +1,9 @@
+// Provides basic utilities to get server crypto config.
 package crypto
 
 import (
-	"os"
 	"crypto/tls"
+	"os"
 )
 
 func IsEnabled() bool {
@@ -14,7 +15,7 @@ func IsEnabled() bool {
 }
 
 func GetX509KeyPair() [2]string {
-	return [2]string{"crypto/server.pem","crypto/server.key"}
+	return [2]string{"crypto/server.pem", "crypto/server.key"}
 }
 
 func GetServerTlsConfig() (*tls.Config, error) {
