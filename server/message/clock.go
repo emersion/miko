@@ -17,8 +17,21 @@ const MaxTick = 65536
 type ClockService interface {
 	// Trigger a new tick.
 	Tick()
+
+	// Convert a relative tick to an absolute one.
+	ToRelativeTick(at AbsoluteTick) Tick
+
+	// Convert an absolute tick to a relative one.
+	ToAbsoluteTick(rt Tick) AbsoluteTick
+
 	// Get the current absolute tick.
 	GetAbsoluteTick() AbsoluteTick
+
 	// Get the current relative tick.
 	GetRelativeTick() Tick
+
+	// Synchronise the internal clock with another one.
+	// Most of the times, it is used to synchronise the client's clock with the
+	// server's one.
+	Sync(t Tick)
 }

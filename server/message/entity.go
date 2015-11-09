@@ -107,9 +107,9 @@ func NewEntityDiffPool() *EntityDiffPool {
 type EntityService interface {
 	List() []*Entity
 	Get(id EntityId) *Entity
-	Add(entity *Entity)
-	Update(entity *Entity, diff *EntityDiff)
-	Delete(id EntityId)
+	Add(entity *Entity, t AbsoluteTick)
+	Update(entity *Entity, diff *EntityDiff, t AbsoluteTick)
+	Delete(id EntityId, t AbsoluteTick)
 	IsDirty() bool
 	Flush() *EntityDiffPool
 	Animate(trn Terrain, clk ClockService)

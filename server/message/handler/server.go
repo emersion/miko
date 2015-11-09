@@ -61,7 +61,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			if session == nil {
 				return errors.New("Cannot get newly logged in user's session")
 			}
-			ctx.Entity.Add(session.Entity) // TODO: move this elsewhere
+			ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere
 
 			// Send initial terrain
 
@@ -122,10 +122,10 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	message.Types["entity_update"]: func(ctx *message.Context, io *message.IO) error {
 		// TODO: security checks
 
-		readTick(io.Reader)
+		t := ctx.Clock.ToAbsoluteTick(readTick(io.Reader))
 
 		entity, diff := ReadEntity(io.Reader)
-		ctx.Entity.Update(entity, diff)
+		ctx.Entity.Update(entity, diff, t)
 
 		return nil
 	},
@@ -135,13 +135,13 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			return nil
 		}
 
-		readTick(io.Reader)
-
 		session := ctx.Auth.GetSession(io.Id)
 
 		action := &message.Action{
 			Initiator: session.Entity.Id,
 		}
+
+		readTick(io.Reader) // TODO: properly handle this tick
 		read(io.Reader, &action.Id)
 		// TODO: action params
 

@@ -42,6 +42,11 @@ func (s *Service) ToAbsoluteTick(rt message.Tick) message.AbsoluteTick {
 	return at
 }
 
+func (s *Service) Sync(t message.Tick) {
+	s.ticks = 0
+	s.ticks = s.ToAbsoluteTick(t)
+}
+
 func NewService() *Service {
 	return &Service{}
 }

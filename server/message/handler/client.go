@@ -92,13 +92,20 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return io.Writer.Close()
 	},
 	message.Types["login_response"]: func(ctx *message.Context, io *message.IO) error {
-		code, _ := ReadLoginResponse(io.Reader)
+		code, t := ReadLoginResponse(io.Reader)
+
+		if code == message.LoginResponseCodes["ok"] {
+			ctx.Clock.Sync(t)
+		}
+
 		log.Println("Login response:", code)
 		return nil
 	},
 	message.Types["meta_action"]: func(ctx *message.Context, io *message.IO) error {
 		var entityId message.EntityId
 		var code message.MetaActionCode
+
+		readTick(io.Reader) // TODO: properly handle this tick
 		read(io.Reader, &entityId)
 		read(io.Reader, &code)
 
@@ -120,13 +127,13 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["terrain_update"]: func(ctx *message.Context, io *message.IO) error {
-		readTick(io.Reader)
+		readTick(io.Reader) // TODO: properly handle this tick
 		blk := ReadBlock(io.Reader)
 		ctx.Terrain.SetBlock(blk)
 		return nil
 	},
 	message.Types["entities_update"]: func(ctx *message.Context, io *message.IO) error {
-		readTick(io.Reader)
+		t := ctx.Clock.ToAbsoluteTick(readTick(io.Reader))
 
 		var size uint16
 		read(io.Reader, &size)
@@ -136,25 +143,38 @@ var clientHandlers = &map[message.Type]TypeHandler{
 			// TODO: do something with entity
 			log.Println("Received entity update with ID:", entity.Id)
 
-			ctx.Entity.Update(entity, diff)
+			ctx.Entity.Update(entity, diff, t)
 		}
 
+		// These are changes triggered by the server, do not fill the diff pool
+		// TODO: if the pool wasn't empty, do not destroy all of it
 		ctx.Entity.Flush()
 
 		return nil
 	},
 	message.Types["entity_create"]: func(ctx *message.Context, io *message.IO) error {
-		readTick(io.Reader)
+		t := ctx.Clock.ToAbsoluteTick(readTick(io.Reader))
 
 		entity, _ := ReadEntity(io.Reader)
-		ctx.Entity.Add(entity)
+		ctx.Entity.Add(entity, t)
 		ctx.Entity.Flush()
 
 		log.Println("Received new entity with ID:", entity.Id)
 		return nil
 	},
+	message.Types["entity_destroy"]: func(ctx *message.Context, io *message.IO) error {
+		t := ctx.Clock.ToAbsoluteTick(readTick(io.Reader))
+
+		var entityId message.EntityId
+		read(io.Reader, &entityId)
+		ctx.Entity.Delete(entityId, t)
+		ctx.Entity.Flush()
+
+		log.Println("Entity destroyed:", entityId)
+		return nil
+	},
 	message.Types["actions_done"]: func(ctx *message.Context, io *message.IO) error {
-		readTick(io.Reader)
+		readTick(io.Reader) // TODO: properly handle this tick
 
 		var size uint16
 		read(io.Reader, &size)

@@ -30,7 +30,7 @@ func (s *Service) Get(id message.EntityId) *message.Entity {
 	return nil
 }
 
-func (s *Service) Add(entity *message.Entity) {
+func (s *Service) Add(entity *message.Entity, t message.AbsoluteTick) {
 	if int(entity.Id) == 0 {
 		nextId := len(s.entities)
 		if nextId == 0 {
@@ -44,7 +44,7 @@ func (s *Service) Add(entity *message.Entity) {
 	s.diff.Created = append(s.diff.Created, entity)
 }
 
-func (s *Service) Update(entity *message.Entity, diff *message.EntityDiff) {
+func (s *Service) Update(entity *message.Entity, diff *message.EntityDiff, t message.AbsoluteTick) {
 	diff.Apply(entity, s.entities[entity.Id])
 	entity = s.entities[entity.Id]
 
@@ -55,7 +55,7 @@ func (s *Service) Update(entity *message.Entity, diff *message.EntityDiff) {
 	}
 }
 
-func (s *Service) Delete(id message.EntityId) {
+func (s *Service) Delete(id message.EntityId, t message.AbsoluteTick) {
 	delete(s.entities, id)
 	s.diff.Deleted = append(s.diff.Deleted, id)
 }
@@ -83,7 +83,7 @@ func (s *Service) Animate(trn message.Terrain, clk message.ClockService) {
 		for _, entity := range s.entities {
 			diff := mover.UpdateEntity(entity)
 			if diff != nil {
-				s.Update(entity, diff)
+				s.Update(entity, diff, clk.GetAbsoluteTick())
 			}
 		}
 
