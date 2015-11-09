@@ -1,5 +1,7 @@
 # Server
 
+[![GoDoc](https://godoc.org/git.emersion.fr/saucisse-royale/miko.git/server?status.svg)](https://godoc.org/git.emersion.fr/saucisse-royale/miko.git/server)
+
 ## Installation
 
 ```bash
