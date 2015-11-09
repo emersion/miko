@@ -6,7 +6,7 @@ type AbsoluteTick uint64
 
 // A relative tick. Absolute ticks are not designed to be sent over the network
 // because of their size. Instead, a smaller relative tick is used. Because of
-// its capacity, it raises much more quickly its maximum value, so it is
+// its capacity, it reaches much more quickly its maximum value, so it is
 // regularly reset.
 type Tick uint16
 
