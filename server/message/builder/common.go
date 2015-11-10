@@ -1,8 +1,9 @@
+// Provides functions to send messages to remotes.
 package builder
 
 import (
-	"io"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"io"
 )
 
 func SendPing(w io.Writer) error {

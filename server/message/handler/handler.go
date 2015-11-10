@@ -1,3 +1,4 @@
+// Handles incoming messages from remotes.
 package handler
 
 import (
