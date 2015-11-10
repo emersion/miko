@@ -3,10 +3,10 @@ package client
 import (
 	"github.com/gopherjs/gopherjs/js"
 
+	"git.emersion.fr/saucisse-royale/miko.git/server/browser/client"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
-	"git.emersion.fr/saucisse-royale/miko.git/server/browser/client"
 )
 
 const res = 5
@@ -30,8 +30,8 @@ func NewTerrain(el *js.Object) *client.Terrain {
 
 	t := client.NewTerrain(el)
 	t.Reset(size)
-	el.Set("width", size * message.BLOCK_LEN * res)
-	el.Set("height", size * message.BLOCK_LEN * res)
+	el.Set("width", size*message.BLOCK_LEN*res)
+	el.Set("height", size*message.BLOCK_LEN*res)
 
 	var pressing bool
 	var fromX, fromY, lastX, lastY int
@@ -46,13 +46,13 @@ func NewTerrain(el *js.Object) *client.Terrain {
 		}
 
 		x, y := getMouseCoords(event)
-		t.DrawRegion(fromX, fromY, lastX - fromX, lastY - fromY)
+		t.DrawRegion(fromX, fromY, lastX-fromX, lastY-fromY)
 		t.Canvas.SetFillStyle("rgba(0,0,255,0.1)")
-		t.Canvas.FillRect(fromX * res, fromY * res, (x - fromX) * res, (y - fromY) * res)
+		t.Canvas.FillRect(fromX*res, fromY*res, (x-fromX)*res, (y-fromY)*res)
 		lastX, lastY = x, y
 	})
 	el.Call("addEventListener", "mouseup", func(event *js.Object) {
-		t.DrawRegion(fromX, fromY, lastX - fromX, lastY - fromY)
+		t.DrawRegion(fromX, fromY, lastX-fromX, lastY-fromY)
 		pressing = false
 
 		if fromX == lastX && fromY == lastY {
@@ -78,7 +78,8 @@ func NewTerrain(el *js.Object) *client.Terrain {
 	saveBtn := js.Global.Get("document").Call("getElementById", "save-btn")
 	saveBtn.Call("addEventListener", "click", func() {
 		w := &ExportWriter{}
-		builder.WriteBlock(w, t.GetBlockAt(0, 0))
+		blk, _ := t.GetBlockAt(0, 0)
+		builder.WriteBlock(w, blk)
 		w.Export()
 	})
 
@@ -89,7 +90,7 @@ func NewTerrain(el *js.Object) *client.Terrain {
 			return
 		}
 
-		go (func () {
+		go (func() {
 			r := &ExportReader{}
 			r.File = file
 			blk := handler.ReadBlock(r)
