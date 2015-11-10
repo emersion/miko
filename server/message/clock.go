@@ -30,8 +30,8 @@ type ClockService interface {
 	// Get the current relative tick.
 	GetRelativeTick() Tick
 
-	// Synchronise the internal clock with another one.
-	// Most of the times, it is used to synchronise the client's clock with the
+	// Synchronize the internal clock with another one.
+	// Most of the time, it is used to synchronize the client's clock with the
 	// server's one.
 	Sync(t Tick)
 }
