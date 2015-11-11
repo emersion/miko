@@ -57,7 +57,8 @@ func NewTerrain(el *js.Object) *client.Terrain {
 
 		if fromX == lastX && fromY == lastY {
 			x, y := fromX, fromY
-			t.Points[x][y] = invertPoint(t.Points[x][y])
+			pt, _ := t.GetPointAt(x, y)
+			t.SetPointAt(x, y, invertPoint(pt), 0)
 			t.DrawPoint(x, y)
 		} else {
 			if fromX > lastX {
@@ -68,7 +69,8 @@ func NewTerrain(el *js.Object) *client.Terrain {
 			}
 			for i := fromX; i < lastX; i++ {
 				for j := fromY; j < lastY; j++ {
-					t.Points[i][j] = invertPoint(t.Points[i][j])
+					pt, _ := t.GetPointAt(i, j)
+					t.SetPointAt(i, j, invertPoint(pt), 0)
 					t.DrawPoint(i, j)
 				}
 			}
@@ -94,7 +96,7 @@ func NewTerrain(el *js.Object) *client.Terrain {
 			r := &ExportReader{}
 			r.File = file
 			blk := handler.ReadBlock(r)
-			t.SetBlock(blk)
+			t.SetBlock(blk, 0)
 			t.Draw()
 		})()
 	})
