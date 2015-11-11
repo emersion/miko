@@ -23,6 +23,10 @@ func (l *List) Last() *list.Element {
 	return l.deltas.Back()
 }
 
+func (l *List) Len() int {
+	return l.deltas.Len()
+}
+
 func (l *List) Cleanup(t message.AbsoluteTick) {
 	minTick := t - message.MaxRewind
 

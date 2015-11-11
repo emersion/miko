@@ -3,6 +3,7 @@ package entity
 
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
+	"git.emersion.fr/saucisse-royale/miko.git/server/delta"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"time"
 )
@@ -10,13 +11,17 @@ import (
 // A delta (not to be confused with @delthas) stores all data about an entity
 // change: not only its diff if it has been updated, but also the time when the
 // change has been made and the entity itself.
-type delta struct {
-	Tick     message.AbsoluteTick
+type Delta struct {
+	tick     message.AbsoluteTick
 	EntityId message.EntityId
 
 	Diff *message.EntityDiff
 	From *message.Entity
 	To   *message.Entity
+}
+
+func (d *Delta) GetTick() message.AbsoluteTick {
+	return d.tick
 }
 
 func copyFromDiff(src *message.Entity, diff *message.EntityDiff) *message.Entity {
@@ -30,8 +35,9 @@ func copyFromDiff(src *message.Entity, diff *message.EntityDiff) *message.Entity
 // diff pool keeps track of created, updated and deleted entities to send
 // appropriate messages to clients.
 type Service struct {
-	entities map[message.EntityId]*message.Entity
-	deltas   []*delta
+	entities  map[message.EntityId]*message.Entity
+	deltas    *delta.List
+	lastFlush message.AbsoluteTick
 }
 
 func (s *Service) List() (entities []*message.Entity) {
@@ -61,8 +67,8 @@ func (s *Service) Add(entity *message.Entity, t message.AbsoluteTick) {
 
 	s.entities[entity.Id] = entity
 
-	s.deltas = append(s.deltas, &delta{
-		Tick:     t,
+	s.deltas.Insert(&Delta{
+		tick:     t,
 		EntityId: entity.Id,
 		From:     nil,
 		To:       entity,
@@ -76,8 +82,8 @@ func (s *Service) Update(entity *message.Entity, diff *message.EntityDiff, t mes
 	}
 
 	// Calculate delta
-	d := &delta{
-		Tick:     t,
+	d := &Delta{
+		tick:     t,
 		EntityId: entity.Id,
 		Diff:     diff,
 		From:     copyFromDiff(current, diff),
@@ -88,15 +94,15 @@ func (s *Service) Update(entity *message.Entity, diff *message.EntityDiff, t mes
 	diff.Apply(entity, current)
 
 	// Add delta to history
-	s.deltas = append(s.deltas, d)
+	s.deltas.Insert(d)
 }
 
 func (s *Service) Delete(id message.EntityId, t message.AbsoluteTick) {
 	entity := s.entities[id]
 	delete(s.entities, id)
 
-	s.deltas = append(s.deltas, &delta{
-		Tick:     t,
+	s.deltas.Insert(&Delta{
+		tick:     t,
 		EntityId: entity.Id,
 		From:     entity,
 		To:       nil,
@@ -106,16 +112,18 @@ func (s *Service) Delete(id message.EntityId, t message.AbsoluteTick) {
 // Check if the diff pool is empty. If not, it means that entities updates need
 // to be sent to clients.
 func (s *Service) IsDirty() bool {
-	return len(s.deltas) > 0
+	return s.deltas.Len() > 0
 }
 
 // Flush the diff pool. This returns the current one and replace it by a new one.
 func (s *Service) Flush() *message.EntityDiffPool {
 	diff := message.NewEntityDiffPool()
 
-	// TODO: sort deltas by tick
+	// TODO: do not delete all deltas here
 
-	for _, d := range s.deltas {
+	for e := s.deltas.FirstAfter(s.lastFlush); e != nil; e = e.Next() {
+		d := e.Value.(Delta)
+
 		if d.From == nil {
 			diff.Created = append(diff.Created, s.Get(d.EntityId))
 		} else if d.To == nil {
@@ -131,7 +139,7 @@ func (s *Service) Flush() *message.EntityDiffPool {
 		}
 	}
 
-	s.deltas = []*delta{}
+	s.deltas = delta.NewList()
 
 	return diff
 }
@@ -158,5 +166,6 @@ func (s *Service) Animate(trn message.Terrain, clk message.ClockService) {
 func NewService() message.EntityService {
 	return &Service{
 		entities: map[message.EntityId]*message.Entity{},
+		deltas:   delta.NewList(),
 	}
 }
