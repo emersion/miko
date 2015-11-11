@@ -114,8 +114,7 @@ func (s *Service) IsDirty() bool {
 func (s *Service) Flush() *message.EntityDiffPool {
 	diff := message.NewEntityDiffPool()
 
-	// TODO: do not delete all deltas here
-
+	maxTick := s.lastFlush
 	for e := s.deltas.FirstAfter(s.lastFlush); e != nil; e = e.Next() {
 		d := e.Value.(Delta)
 
@@ -132,9 +131,12 @@ func (s *Service) Flush() *message.EntityDiffPool {
 				diff.Updated[entity] = d.Diff
 			}
 		}
+
+		maxTick = d.tick
 	}
 
-	s.deltas = delta.NewList()
+	s.lastFlush = maxTick + 1
+	s.deltas.Cleanup(maxTick) // Current tick >= maxTick
 
 	return diff
 }
