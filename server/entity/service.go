@@ -36,6 +36,7 @@ type Service struct {
 	entities  map[message.EntityId]*message.Entity
 	deltas    *delta.List
 	lastFlush message.AbsoluteTick
+	frontend  *Frontend
 }
 
 func (s *Service) List() map[message.EntityId]*message.Entity {
@@ -141,7 +142,15 @@ func (s *Service) Flush() *message.EntityDiffPool {
 	return diff
 }
 
-func NewService() message.EntityService {
+func (s *Service) Frontend() *Frontend {
+	if s.frontend != nil {
+		return s.frontend
+	}
+
+	return newFrontend(s)
+}
+
+func NewService() *Service {
 	return &Service{
 		entities: map[message.EntityId]*message.Entity{},
 		deltas:   delta.NewList(),

@@ -13,6 +13,7 @@ type Terrain interface {
 	GetPointAt(x, y int) (PointType, error)
 	SetBlock(blk *Block, t AbsoluteTick) error
 	SetPointAt(x, y int, pt PointType, t AbsoluteTick) error
+	Generate()
 }
 
 // A block
