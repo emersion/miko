@@ -1,8 +1,8 @@
 all: server
 server:
-	go build -o miko server.go
+	go build -o miko
 client:
-	go build -o miko-client client.go
+	go build -o miko-client -tags client
 start:
 	go run server.go
 start-client:

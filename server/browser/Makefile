@@ -1,11 +1,11 @@
 all: server client
 
 client:
-	gopherjs build client.go -o public/client.js
+	gopherjs build -o public/client.js client.go
 server:
-	go build -o miko server.go
+	go build -o miko
 start:
-	go run server.go
+	go run
 dev:
 	make all && ./miko
 

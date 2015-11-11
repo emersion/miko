@@ -98,10 +98,11 @@ func (s *Service) Flush() *message.EntityDiffPool {
 
 	for _, d := range s.deltas {
 		entity := s.entities[d.Entity.Id]
+
 		if d.Created {
 			diff.Created = append(diff.Created, entity)
 		} else if d.Deleted {
-			diff.Deleted = append(diff.Deleted, entity.Id)
+			diff.Deleted = append(diff.Deleted, d.Entity.Id)
 		} else {
 			// Entity has been updated
 			if _, ok := diff.Updated[entity]; ok {
