@@ -2,19 +2,23 @@
 package terrain
 
 import (
-	"container/list"
 	"errors"
 	"fmt"
+	"git.emersion.fr/saucisse-royale/miko.git/server/delta"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 // A terrain's point change.
-type delta struct {
+type Delta struct {
+	tick message.AbsoluteTick
 	X    int
 	Y    int
-	Tick message.AbsoluteTick
 	From message.PointType
 	To   message.PointType
+}
+
+func (d *Delta) GetTick() message.AbsoluteTick {
+	return d.tick
 }
 
 // The terrain.
@@ -23,7 +27,7 @@ type delta struct {
 type Terrain struct {
 	points [][]message.PointType
 	tick   message.AbsoluteTick
-	deltas *list.List
+	deltas *delta.List
 }
 
 // Get the last terrain update time.
@@ -103,30 +107,17 @@ func (t *Terrain) setPointAt(x, y int, pt message.PointType, tick message.Absolu
 		t.tick = tick
 	}
 
-	// If tick is set to zero or if the change is too old, do not keep track of it
-	minTick := t.tick - message.MaxRewind
-	if int(tick) != 0 && tick > minTick && t.points[x][y] != pt {
-		// Cleanup old deltas
-		for e := t.deltas.Front(); e != nil; e = e.Next() {
-			d := e.Value.(*delta)
+	// If tick is set to zero, do not keep track of it
+	if int(tick) != 0 && t.points[x][y] != pt {
+		t.deltas.Insert(&Delta{
+			X:    x,
+			Y:    y,
+			tick: tick,
+			From: t.points[x][y],
+			To:   pt,
+		})
 
-			if d.Tick < minTick {
-				t.deltas.Remove(e)
-			}
-
-			// Make sure to insert the new delta at the right position: we want to keep
-			// the list ordered
-			if d.Tick > tick {
-				t.deltas.InsertBefore(&delta{
-					X:    x,
-					Y:    y,
-					Tick: tick,
-					From: t.points[x][y],
-					To:   pt,
-				}, e)
-				break
-			}
-		}
+		t.deltas.Cleanup(t.tick)
 	}
 
 	t.points[x][y] = pt
@@ -145,7 +136,9 @@ func (t *Terrain) SetPointAt(x, y int, pt message.PointType, tick message.Absolu
 // Reset the terrain with a given number of blocks.
 func (t *Terrain) Reset(blkNbr int) {
 	t.tick = 0
+	t.deltas = delta.NewList()
 	t.points = make([][]message.PointType, blkNbr*message.BlockLen)
+
 	for i := range t.points {
 		t.points[i] = make([]message.PointType, blkNbr*message.BlockLen)
 	}
@@ -166,14 +159,10 @@ func (t *Terrain) Rewind(dt message.AbsoluteTick) error {
 	target := t.tick - dt
 
 	// Browse deltas list backward (from newer to older)
-	for e := t.deltas.Back(); e != nil; e = e.Prev() {
-		d := e.Value.(*delta)
+	for e := t.deltas.LastBefore(t.tick); e != nil; e = e.Prev() {
+		d := e.Value.(*Delta)
 
-		if d.Tick > t.tick {
-			// This delta is in the future, ignore it
-			continue
-		}
-		if d.Tick < target {
+		if d.tick < target {
 			// Reached target, stop here
 			break
 		}
@@ -188,14 +177,10 @@ func (t *Terrain) Rewind(dt message.AbsoluteTick) error {
 func (t *Terrain) FastForward(dt message.AbsoluteTick) error {
 	target := t.tick + dt
 
-	for e := t.deltas.Front(); e != nil; e = e.Next() {
-		d := e.Value.(*delta)
+	for e := t.deltas.FirstAfter(t.tick); e != nil; e = e.Next() {
+		d := e.Value.(*Delta)
 
-		if d.Tick < t.tick {
-			// This delta is in the past, ignore it.
-			continue
-		}
-		if d.Tick > target {
+		if d.tick > target {
 			// Reached target, stop here
 			break
 		}
@@ -209,9 +194,7 @@ func (t *Terrain) FastForward(dt message.AbsoluteTick) error {
 
 // Create a new terrain.
 func New() *Terrain {
-	t := &Terrain{
-		deltas: list.New(),
-	}
+	t := &Terrain{}
 	t.Reset(2)
 	return t
 }
