@@ -70,7 +70,10 @@ func NewSpeedFromMessage(speed *message.Speed) *Speed {
 	}
 }
 
-func GetRouteBetween(from, to *Position) (route [][2]int) {
+type RouteStep [2]int
+type Route []RouteStep
+
+func GetRouteBetween(from, to *Position) (route Route) {
 	// Distance between points
 	dx := math.Abs(to.X - from.X)
 	dy := math.Abs(to.Y - from.Y)
@@ -108,7 +111,7 @@ func GetRouteBetween(from, to *Position) (route [][2]int) {
 		x := round(from.X + float64(xSign*t)*kx)
 		y := round(from.Y + float64(ySign*t)*ky)
 
-		route = append(route, [2]int{x, y})
+		route = append(route, RouteStep{x, y})
 	}
 
 	return
