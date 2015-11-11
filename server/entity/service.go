@@ -20,7 +20,7 @@ type delta struct {
 }
 
 func copyFromDiff(src *message.Entity, diff *message.EntityDiff) *message.Entity {
-	dst := message.NewEntity()
+	dst := &message.Entity{}
 	diff.Apply(src, dst)
 	return dst
 }

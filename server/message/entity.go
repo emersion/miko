@@ -78,12 +78,17 @@ func (d *EntityDiff) Apply(src *Entity, dst *Entity) {
 	if d.Position {
 		dst.Position = src.Position
 	}
+
+	if d.SpeedNorm || d.SpeedAngle && dst.Speed == nil {
+		dst.Speed = &Speed
+	}
 	if d.SpeedNorm {
 		dst.Speed.Norm = src.Speed.Norm
 	}
 	if d.SpeedAngle {
 		dst.Speed.Angle = src.Speed.Angle
 	}
+
 	if d.Sprite {
 		dst.Sprite = src.Sprite
 	}
