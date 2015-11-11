@@ -7,16 +7,22 @@ import (
 	"time"
 )
 
-// A delta (and not a @delthas) stores all data about an entity change: not only
-// its diff if it has been updated, but also the time when the change has been
-// made and the entity itself.
+// A delta (not to be confused with @delthas) stores all data about an entity
+// change: not only its diff if it has been updated, but also the time when the
+// change has been made and the entity itself.
 type delta struct {
-	Tick   message.AbsoluteTick
-	Entity *message.Entity
+	Tick     message.AbsoluteTick
+	EntityId message.EntityId
 
-	Created bool
-	Deleted bool
-	Diff    *message.EntityDiff
+	Diff *message.EntityDiff
+	From *message.Entity
+	To   *message.Entity
+}
+
+func copyFromDiff(src *message.Entity, diff *message.EntityDiff) *message.Entity {
+	dst := message.NewEntity()
+	diff.Apply(src, dst)
+	return dst
 }
 
 // The entity service.
@@ -56,21 +62,33 @@ func (s *Service) Add(entity *message.Entity, t message.AbsoluteTick) {
 	s.entities[entity.Id] = entity
 
 	s.deltas = append(s.deltas, &delta{
-		Tick:    t,
-		Entity:  entity,
-		Created: true,
+		Tick:     t,
+		EntityId: entity.Id,
+		From:     nil,
+		To:       entity,
 	})
 }
 
 func (s *Service) Update(entity *message.Entity, diff *message.EntityDiff, t message.AbsoluteTick) {
-	diff.Apply(entity, s.entities[entity.Id])
-	entity = s.entities[entity.Id]
+	current := s.Get(entity.Id)
+	if current == nil {
+		return // TODO: error handling?
+	}
 
-	s.deltas = append(s.deltas, &delta{
-		Tick:   t,
-		Entity: entity,
-		Diff:   diff,
-	})
+	// Calculate delta
+	d := &delta{
+		Tick:     t,
+		EntityId: entity.Id,
+		Diff:     diff,
+		From:     copyFromDiff(current, diff),
+		To:       entity,
+	}
+
+	// Apply diff
+	diff.Apply(entity, current)
+
+	// Add delta to history
+	s.deltas = append(s.deltas, d)
 }
 
 func (s *Service) Delete(id message.EntityId, t message.AbsoluteTick) {
@@ -78,9 +96,10 @@ func (s *Service) Delete(id message.EntityId, t message.AbsoluteTick) {
 	delete(s.entities, id)
 
 	s.deltas = append(s.deltas, &delta{
-		Tick:    t,
-		Entity:  entity,
-		Deleted: true,
+		Tick:     t,
+		EntityId: entity.Id,
+		From:     entity,
+		To:       nil,
 	})
 }
 
@@ -97,14 +116,13 @@ func (s *Service) Flush() *message.EntityDiffPool {
 	// TODO: sort deltas by tick
 
 	for _, d := range s.deltas {
-		entity := s.entities[d.Entity.Id]
-
-		if d.Created {
-			diff.Created = append(diff.Created, entity)
-		} else if d.Deleted {
-			diff.Deleted = append(diff.Deleted, d.Entity.Id)
+		if d.From == nil {
+			diff.Created = append(diff.Created, s.Get(d.EntityId))
+		} else if d.To == nil {
+			diff.Deleted = append(diff.Deleted, d.EntityId)
 		} else {
 			// Entity has been updated
+			entity := s.Get(d.EntityId)
 			if _, ok := diff.Updated[entity]; ok {
 				diff.Updated[entity].Merge(d.Diff)
 			} else {
