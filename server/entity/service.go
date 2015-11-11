@@ -2,10 +2,8 @@
 package entity
 
 import (
-	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/delta"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
-	"time"
 )
 
 // A delta (not to be confused with @delthas) stores all data about an entity
@@ -40,11 +38,8 @@ type Service struct {
 	lastFlush message.AbsoluteTick
 }
 
-func (s *Service) List() (entities []*message.Entity) {
-	for _, entity := range s.entities {
-		entities = append(entities, entity)
-	}
-	return
+func (s *Service) List() map[message.EntityId]*message.Entity {
+	return s.entities
 }
 
 func (s *Service) Get(id message.EntityId) *message.Entity {
@@ -142,25 +137,6 @@ func (s *Service) Flush() *message.EntityDiffPool {
 	s.deltas = delta.NewList()
 
 	return diff
-}
-
-func (s *Service) Animate(trn message.Terrain, clk message.ClockService) {
-	mover := NewMover(trn, clk)
-
-	for {
-		start := time.Now().UnixNano()
-		clk.Tick()
-
-		for _, entity := range s.entities {
-			diff := mover.UpdateEntity(entity)
-			if diff != nil {
-				s.Update(entity, diff, clk.GetAbsoluteTick())
-			}
-		}
-
-		end := time.Now().UnixNano()
-		time.Sleep(clock.TickDuration - time.Nanosecond*time.Duration(end-start))
-	}
 }
 
 func NewService() message.EntityService {

@@ -120,7 +120,7 @@ func NewEntityDiffPool() *EntityDiffPool {
 // An entity service.
 type EntityService interface {
 	// Get a list of all entities.
-	List() []*Entity
+	List() map[EntityId]*Entity
 
 	// Get a specific entity.
 	Get(id EntityId) *Entity
@@ -140,8 +140,4 @@ type EntityService interface {
 	// Flush the current diff pool. Return the current one and replace it by a new
 	// empty one.
 	Flush() *EntityDiffPool
-
-	// Run a loop that will animate entities, ie. increment the clock and calculate
-	// their new positions.
-	Animate(trn Terrain, clk ClockService)
 }
