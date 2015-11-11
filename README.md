@@ -17,7 +17,7 @@ An experimental minimalist multiplayer top-down adventure game (en français)
 * go
 * non fonctionnel
 
-## Protocole version *4*
+## Protocole version *5*
 
 ### Généralités
 
@@ -53,9 +53,9 @@ C | 13 | Oui | action_do | bytes action
 S | 14 | Oui | entity_create | uint16 entityid + bytes entity_create
 S | 15 | Oui | entity_destroy | uint16 entityid
 C | 16 | Non | chat_send | str message
-S | 17 | Non | chat_receive | uint16 entityid + str message
+S | 17 | Oui | chat_receive | uint16 entityid + str message
 C | 18 | Non | version | uint16 versionid
-S | 19 | Non | version_response | uint8 versionresponsecode
+S | 19 | Non | config | bytes config
 
 * Si le message possède un tick, il l'envoit avant son contenu : headers puis tick puis contenu. Le tick est un uint16 et est la frame de logique actuelle sur le simulateur du jeu envoyant le message, elle revient à 0 après avoir atteint son maximum (2^16 - 1)
 * [1] : Un tick est envoyé après le `loginresponsecode` si c'est le code "ok".
@@ -70,6 +70,8 @@ Valeur | Signification
 3 | ping_timeout
 4 | client_kicked
 5 | client_banned
+6 | client_outdated
+7 | server_outdated
 
 #### loginresponsecode
 
@@ -106,13 +108,13 @@ Valeur | Signification | Contenu
 
 * identifiant unique de la version du protocole utilisé par le client
 
-#### versionresponsecode
+#### config
 
-Valeur | Signification
---- | ---
-0 | ok
-1 | client_outdated
-2 | server_outdated
+```
+uint16 maxRollbackTicks
+```
+
+* maxRollbackTicks : nombre maximum de ticks où l'on peut revenir dans le passé pour appliquer des actions
 
 ### Terrain
 
@@ -202,6 +204,7 @@ Bit | Signification | Contenu
 
 Valeur | Description de l'animation
 --- | ---
+0 | placeholder
 
 * exemple : 0 | loli_rouge
 
@@ -257,7 +260,7 @@ onefloat | float value
 entitytarget | uint16 targetentityid
 terraintarget | sint16 bx sint16 by uint8 x uint8 y
 
-### Session exemple
+### Session exemple (DEPRECATED, TODO)
 
 ```
 [initiation du ssl, session tcp établie]
