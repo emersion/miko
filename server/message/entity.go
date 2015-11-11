@@ -80,7 +80,7 @@ func (d *EntityDiff) Apply(src *Entity, dst *Entity) {
 	}
 
 	if d.SpeedNorm || d.SpeedAngle && dst.Speed == nil {
-		dst.Speed = &Speed
+		dst.Speed = &Speed{}
 	}
 	if d.SpeedNorm {
 		dst.Speed.Norm = src.Speed.Norm
