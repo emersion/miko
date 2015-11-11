@@ -16,7 +16,7 @@ type Terrain struct {
 }
 
 func (t *Terrain) DrawPoint(x, y int) {
-	ptType := t.Points[x][y]
+	ptType, _ := t.GetPointAt(x, y)
 
 	if int(ptType) == 0 {
 		t.Canvas.ClearRect(x*res, y*res, res, res)
@@ -47,15 +47,17 @@ func (t *Terrain) DrawRegion(x, y, w, h int) {
 }
 
 func (t *Terrain) Draw() {
-	for i := range t.Points {
-		for j := range t.Points[i] {
+	x1, y1, x2, y2 := t.GetBounds()
+
+	for i := x1; i < x2; i++ {
+		for j := y1; j < y2; j++ {
 			t.DrawPoint(i, j)
 		}
 	}
 }
 
-func (t *Terrain) SetBlock(blk *message.Block) error {
-	err := t.Terrain.SetBlock(blk)
+func (t *Terrain) SetBlock(blk *message.Block, tick message.AbsoluteTick) error {
+	err := t.Terrain.SetBlock(blk, tick)
 	if err != nil {
 		return err
 	}

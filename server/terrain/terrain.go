@@ -21,7 +21,7 @@ type delta struct {
 // It is a database of the game map. It offers functions to retrieve specific
 // parts of it.
 type Terrain struct {
-	Points [][]message.PointType
+	points [][]message.PointType
 	tick   message.AbsoluteTick
 	deltas *list.List
 }
@@ -31,9 +31,14 @@ func (t *Terrain) GetTick() message.AbsoluteTick {
 	return t.tick
 }
 
+func (t *Terrain) GetBounds() (int, int, int, int) {
+	return 0, 0, len(t.points), len(t.points[0])
+}
+
 // Check if the terrain has a point at given coordinates.
 func (t *Terrain) hasPointAt(x, y int) bool {
-	return x >= 0 && y >= 0 && x < len(t.Points) && y < len(t.Points[0])
+	x1, y1, x2, y2 := t.GetBounds()
+	return x >= x1 && y >= y1 && x < x2 && y < y2
 }
 
 // Check if the terrain has a block at given coordinates.
@@ -54,7 +59,7 @@ func (t *Terrain) GetBlockAt(bx, by message.BlockCoord) (*message.Block, error) 
 
 	for i := 0; i < message.BlockLen; i++ {
 		for j := 0; j < message.BlockLen; j++ {
-			pts[i][j] = t.Points[int(bx)*message.BlockLen+i][int(by)*message.BlockLen+j]
+			pts[i][j] = t.points[int(bx)*message.BlockLen+i][int(by)*message.BlockLen+j]
 		}
 	}
 
@@ -71,7 +76,7 @@ func (t *Terrain) GetPointAt(x, y int) (message.PointType, error) {
 		return 0, errors.New(fmt.Sprintf("Cannot get point at [%d %d]: out of range", x, y))
 	}
 
-	return t.Points[x][y], nil
+	return t.points[x][y], nil
 }
 
 // Update the map with a new block.
@@ -100,7 +105,7 @@ func (t *Terrain) setPointAt(x, y int, pt message.PointType, tick message.Absolu
 
 	// If tick is set to zero or if the change is too old, do not keep track of it
 	minTick := t.tick - message.MaxRewind
-	if int(tick) != 0 && tick > minTick && t.Points[x][y] != pt {
+	if int(tick) != 0 && tick > minTick && t.points[x][y] != pt {
 		// Cleanup old deltas
 		for e := t.deltas.Front(); e != nil; e = e.Next() {
 			d := e.Value.(*delta)
@@ -116,7 +121,7 @@ func (t *Terrain) setPointAt(x, y int, pt message.PointType, tick message.Absolu
 					X:    x,
 					Y:    y,
 					Tick: tick,
-					From: t.Points[x][y],
+					From: t.points[x][y],
 					To:   pt,
 				}, e)
 				break
@@ -124,7 +129,7 @@ func (t *Terrain) setPointAt(x, y int, pt message.PointType, tick message.Absolu
 		}
 	}
 
-	t.Points[x][y] = pt
+	t.points[x][y] = pt
 }
 
 // Set a point of the terrain.
@@ -140,16 +145,16 @@ func (t *Terrain) SetPointAt(x, y int, pt message.PointType, tick message.Absolu
 // Reset the terrain with a given number of blocks.
 func (t *Terrain) Reset(blkNbr int) {
 	t.tick = 0
-	t.Points = make([][]message.PointType, blkNbr*message.BlockLen)
-	for i := range t.Points {
-		t.Points[i] = make([]message.PointType, blkNbr*message.BlockLen)
+	t.points = make([][]message.PointType, blkNbr*message.BlockLen)
+	for i := range t.points {
+		t.points[i] = make([]message.PointType, blkNbr*message.BlockLen)
 	}
 }
 
 // Auto-generate a new terrain.
 func (t *Terrain) Generate() {
 	for i := 0; i < 20; i++ {
-		t.Points[10][10+i] = message.PointType(1)
+		t.points[10][10+i] = message.PointType(1)
 	}
 }
 
@@ -173,7 +178,7 @@ func (t *Terrain) Rewind(dt message.AbsoluteTick) error {
 			break
 		}
 
-		t.Points[d.X][d.Y] = d.From
+		t.points[d.X][d.Y] = d.From
 	}
 
 	t.tick = target
@@ -195,7 +200,7 @@ func (t *Terrain) FastForward(dt message.AbsoluteTick) error {
 			break
 		}
 
-		t.Points[d.X][d.Y] = d.To
+		t.points[d.X][d.Y] = d.To
 	}
 
 	t.tick = target
