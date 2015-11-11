@@ -30,8 +30,8 @@ func NewTerrain(el *js.Object) *client.Terrain {
 
 	t := client.NewTerrain(el)
 	t.Reset(size)
-	el.Set("width", size*message.BLOCK_LEN*res)
-	el.Set("height", size*message.BLOCK_LEN*res)
+	el.Set("width", size*message.BlockLen*res)
+	el.Set("height", size*message.BlockLen*res)
 
 	var pressing bool
 	var fromX, fromY, lastX, lastY int

@@ -1,17 +1,18 @@
 package message
 
 // The number of rows/columns in a block
-const BLOCK_LEN = 256
+const BlockLen = 256
 
 type BlockCoord int16
 type PointCoord uint8
-type BlockPoints [BLOCK_LEN][BLOCK_LEN]PointType
+type BlockPoints [BlockLen][BlockLen]PointType
 
 // A terrain
 type Terrain interface {
 	GetBlockAt(bx, by BlockCoord) (*Block, error)
 	GetPointAt(x, y int) (PointType, error)
-	SetBlock(blk *Block) error
+	SetBlock(blk *Block, t AbsoluteTick) error
+	SetPointAt(x, y int, pt PointType, t AbsoluteTick) error
 }
 
 // A block
@@ -23,7 +24,7 @@ type Block struct {
 
 // Get the number of points in this block
 func (b *Block) Size() int {
-	return BLOCK_LEN * BLOCK_LEN
+	return BlockLen * BlockLen
 }
 
 // Change all points in this block to a given type

@@ -127,9 +127,9 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["terrain_update"]: func(ctx *message.Context, io *message.IO) error {
-		readTick(io.Reader) // TODO: properly handle this tick
+		t := ctx.Clock.ToAbsoluteTick(readTick(io.Reader))
 		blk := ReadBlock(io.Reader)
-		ctx.Terrain.SetBlock(blk)
+		ctx.Terrain.SetBlock(blk, t)
 		return nil
 	},
 	message.Types["entities_update"]: func(ctx *message.Context, io *message.IO) error {

@@ -16,10 +16,10 @@ type Position struct {
 }
 
 func (p *Position) ToMessage() *message.Position {
-	x := round(p.X) % message.BLOCK_LEN
-	y := round(p.Y) % message.BLOCK_LEN
-	bx := round((p.X - float64(x)) / message.BLOCK_LEN)
-	by := round((p.Y - float64(y)) / message.BLOCK_LEN)
+	x := round(p.X) % message.BlockLen
+	y := round(p.Y) % message.BlockLen
+	bx := round((p.X - float64(x)) / message.BlockLen)
+	by := round((p.Y - float64(y)) / message.BlockLen)
 
 	return &message.Position{
 		BX: message.BlockCoord(bx),
@@ -31,8 +31,8 @@ func (p *Position) ToMessage() *message.Position {
 
 func NewPositionFromMessage(coords *message.Position) *Position {
 	return &Position{
-		X: float64(int(coords.BX)*message.BLOCK_LEN + int(coords.X)),
-		Y: float64(int(coords.BY)*message.BLOCK_LEN + int(coords.Y)),
+		X: float64(int(coords.BX)*message.BlockLen + int(coords.X)),
+		Y: float64(int(coords.BY)*message.BlockLen + int(coords.Y)),
 	}
 }
 
