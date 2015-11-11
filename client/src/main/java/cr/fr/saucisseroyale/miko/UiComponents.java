@@ -14,7 +14,7 @@ import javax.swing.JTextField;
 import javax.swing.text.NumberFormatter;
 
 @SuppressWarnings("serial")
-public class UiComponents {
+class UiComponents {
 
   public static class Connect extends JPanel {
 

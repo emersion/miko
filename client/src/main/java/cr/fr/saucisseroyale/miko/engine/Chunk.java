@@ -2,6 +2,7 @@ package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.protocol.TerrainType;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -53,4 +54,35 @@ public final class Chunk {
     }
     return defaultType;
   }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + Arrays.hashCode(blocks);
+    result = prime * result + (defaultType == null ? 0 : defaultType.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (!(obj instanceof Chunk)) {
+      return false;
+    }
+    Chunk other = (Chunk) obj;
+    if (!Arrays.equals(blocks, other.blocks)) {
+      return false;
+    }
+    if (defaultType != other.defaultType) {
+      return false;
+    }
+    return true;
+  }
+
 }

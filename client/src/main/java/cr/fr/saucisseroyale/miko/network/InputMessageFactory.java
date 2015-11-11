@@ -5,6 +5,7 @@ import cr.fr.saucisseroyale.miko.engine.Chunk;
 import cr.fr.saucisseroyale.miko.protocol.Action;
 import cr.fr.saucisseroyale.miko.protocol.ActionType;
 import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
+import cr.fr.saucisseroyale.miko.protocol.Config;
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
 import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
 import cr.fr.saucisseroyale.miko.protocol.ExitType;
@@ -15,7 +16,6 @@ import cr.fr.saucisseroyale.miko.protocol.MetaActionType;
 import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
 import cr.fr.saucisseroyale.miko.protocol.RegisterResponseType;
 import cr.fr.saucisseroyale.miko.protocol.TerrainType;
-import cr.fr.saucisseroyale.miko.protocol.VersionResponseType;
 import cr.fr.saucisseroyale.miko.util.Pair;
 
 import java.io.DataInputStream;
@@ -150,16 +150,13 @@ class InputMessageFactory {
           handler.entityDestroy(tickRemainder, entityIdDestroy);
         };
       case CHAT_RECEIVE:
+        tickRemainder = dis.readUnsignedShort();
         int entityIdChat = dis.readUnsignedShort();
         String chatMessage = readString(dis);
-        return (handler) -> handler.chatReceived(entityIdChat, chatMessage);
-      case VERSION_RESPONSE:
-        int versionResponseCode = dis.readUnsignedByte();
-        VersionResponseType versionResponseType = VersionResponseType.getType(versionResponseCode);
-        if (versionResponseType == null) {
-          throw newParseException();
-        }
-        return (handler) -> handler.versionResponse(versionResponseType);
+        return (handler) -> handler.chatReceived(tickRemainder, entityIdChat, chatMessage);
+      case CONFIG:
+        Config config = readConfig(dis);
+        return (handler) -> handler.config(config);
       default: // unknown or client-only
         throw newParseException();
     }
@@ -263,6 +260,11 @@ class InputMessageFactory {
     int blockY = dis.readUnsignedByte();
     MapPoint mapPoint = new MapPoint(chunkX, chunkY, blockX, blockY);
     return mapPoint;
+  }
+
+  private static final Config readConfig(DataInputStream dis) throws IOException {
+    int maxRollbackTicks = dis.readUnsignedShort();
+    return new Config(maxRollbackTicks);
   }
 
   // On utilise notre propre méthode de lecture de String au cas où le protocole change (au lieu

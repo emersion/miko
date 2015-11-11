@@ -14,7 +14,7 @@ import java.awt.Point;
 import java.awt.PointerInfo;
 import java.awt.Toolkit;
 import java.awt.Window;
-import java.awt.event.MouseListener;
+import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
@@ -41,23 +41,23 @@ import javax.swing.WindowConstants;
  * <li>Pour afficher les composants sur l'écran, utiliser {@link #render()}.
  * </ul>
  */
-public class UiWindow {
+class UiWindow {
 
   @SuppressWarnings("serial")
-  private static class EventBlockerComponent extends Component {
+  private static class EventCatcherComponent extends Component {
 
-    private MouseListener mouseListener;
+    private KeyListener keyListener;
 
-    public EventBlockerComponent(int width, int height) {
+    public EventCatcherComponent(int width, int height) {
       setSize(width, height);
     }
 
-    public void setMouseListener(MouseListener mouseListener) {
-      if (this.mouseListener != null) {
-        removeMouseListener(this.mouseListener);
+    public void setKeyListener(KeyListener keyListener) {
+      if (this.keyListener != null) {
+        removeKeyListener(this.keyListener);
       }
-      this.mouseListener = mouseListener;
-      addMouseListener(mouseListener);
+      this.keyListener = keyListener;
+      addKeyListener(keyListener);
     }
   }
 
@@ -90,7 +90,7 @@ public class UiWindow {
   private DisplayMode displayMode;
   private BufferStrategy strategy;
   private Consumer<Graphics2D> renderable;
-  private EventBlockerComponent mainComponent;
+  private EventCatcherComponent mainComponent;
   private Object uiLock = new Object();
   private int width;
   private int height;
@@ -136,6 +136,7 @@ public class UiWindow {
         }
       }
     });
+    mainComponent = new EventCatcherComponent(width, height);
   }
 
   /**
@@ -155,7 +156,6 @@ public class UiWindow {
     device.setDisplayMode(displayMode);
     frame.createBufferStrategy(2);
     strategy = frame.getBufferStrategy();
-    mainComponent = new EventBlockerComponent(width, height);
     frame.getLayeredPane().add(mainComponent, MAIN_LAYER);
   }
 
@@ -254,12 +254,12 @@ public class UiWindow {
   }
 
   /**
-   * Définit le listener de souris sur le composant principal.
+   * Définit le listener de clavier sur le composant principal.
    *
-   * @param mouseListener Le listener de souris.
+   * @param keyListener Le listener de clavier.
    */
-  public void setMouseListener(MouseListener mouseListener) {
-    mainComponent.setMouseListener(mouseListener);
+  public void setKeyListener(KeyListener keyListener) {
+    mainComponent.setKeyListener(keyListener);
   }
 
   /**
@@ -331,7 +331,7 @@ public class UiWindow {
           && displayMode.getHeight() == supportedDisplayMode.getHeight()
           && displayMode.getBitDepth() == supportedDisplayMode.getBitDepth()
           && (displayMode.getRefreshRate() == DisplayMode.REFRESH_RATE_UNKNOWN || displayMode.getRefreshRate() == supportedDisplayMode
-              .getRefreshRate())) {
+          .getRefreshRate())) {
         return true;
       }
     }

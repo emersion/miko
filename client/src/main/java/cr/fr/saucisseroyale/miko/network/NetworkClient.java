@@ -107,7 +107,7 @@ public class NetworkClient {
   }
 
   private static SSLSocketFactory createSocketFactory() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException,
-      KeyManagementException {
+  KeyManagementException {
     KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
     try (InputStream keyStoreStream = NetworkClient.class.getResourceAsStream("/keystore")) {
       keyStore.load(keyStoreStream, "keypass".toCharArray());
