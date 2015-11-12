@@ -3,11 +3,11 @@ package cr.fr.saucisseroyale.miko;
 import cr.fr.saucisseroyale.miko.engine.Chunk;
 import cr.fr.saucisseroyale.miko.protocol.Action;
 import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
+import cr.fr.saucisseroyale.miko.protocol.Config;
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
 import cr.fr.saucisseroyale.miko.protocol.ExitType;
 import cr.fr.saucisseroyale.miko.protocol.LoginResponseType;
 import cr.fr.saucisseroyale.miko.protocol.RegisterResponseType;
-import cr.fr.saucisseroyale.miko.protocol.VersionResponseType;
 import cr.fr.saucisseroyale.miko.util.Pair;
 
 import java.util.List;
@@ -21,7 +21,7 @@ public interface MessageHandler {
 
   public void actions(int tickRemainder, List<Pair<Integer, Action>> actions);
 
-  public void chatReceived(int entityIdChat, String chatMessage);
+  public void chatReceived(int tickRemainder, int entityIdChat, String chatMessage);
 
   public void chunkUpdate(int tickRemainder, ChunkPoint chunkPoint, Chunk chunk);
 
@@ -49,6 +49,6 @@ public interface MessageHandler {
 
   public void registerResponse(RegisterResponseType registerResponseType);
 
-  public void versionResponse(VersionResponseType versionResponseType);
+  public void config(Config config);
 
 }

@@ -40,5 +40,34 @@ public final class ChunkPoint {
     return chunkY;
   }
 
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + chunkX;
+    result = prime * result + chunkY;
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (!(obj instanceof ChunkPoint)) {
+      return false;
+    }
+    ChunkPoint other = (ChunkPoint) obj;
+    if (chunkX != other.chunkX) {
+      return false;
+    }
+    if (chunkY != other.chunkY) {
+      return false;
+    }
+    return true;
+  }
 
 }

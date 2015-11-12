@@ -1,39 +1,46 @@
 package cr.fr.saucisseroyale.miko;
 
 import cr.fr.saucisseroyale.miko.engine.Chunk;
+import cr.fr.saucisseroyale.miko.engine.Engine;
 import cr.fr.saucisseroyale.miko.network.FutureInputMessage;
 import cr.fr.saucisseroyale.miko.network.NetworkClient;
 import cr.fr.saucisseroyale.miko.network.OutputMessageFactory;
 import cr.fr.saucisseroyale.miko.protocol.Action;
 import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
+import cr.fr.saucisseroyale.miko.protocol.Config;
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
 import cr.fr.saucisseroyale.miko.protocol.ExitType;
 import cr.fr.saucisseroyale.miko.protocol.LoginResponseType;
 import cr.fr.saucisseroyale.miko.protocol.RegisterResponseType;
-import cr.fr.saucisseroyale.miko.protocol.VersionResponseType;
 import cr.fr.saucisseroyale.miko.util.Pair;
 
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Toolkit;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.IntStream;
 
 public class Miko implements MessageHandler {
 
   private enum MikoState {
-    NETWORK, CONNECTION_REQUEST, CONNECTION, VERSION, LOGIN_REQUEST, REGISTER, LOGIN, JOIN, EXIT;
+    NETWORK, CONNECTION_REQUEST, CONNECTION, CONFIG, LOGIN_REQUEST, REGISTER, LOGIN, JOIN, EXIT;
   }
 
-  public static final int PROTOCOL_VERSION = 4;
+  public static final int PROTOCOL_VERSION = 5;
   private static final String DEFAULT_SERVER_ADDRESS = "miko.emersion.fr";
   private static final int DEFAULT_SERVER_PORT = 9999;
   private static final int TICK_TIME = 20; // milliseconds
+  private String username;
+  private Config config;
+  private Engine engine;
   private UiComponents.Connect uiConnect;
   private UiComponents.Login uiLogin;
   private MikoState state = MikoState.NETWORK;
   private UiWindow window;
   private boolean closeRequested = false;
   private NetworkClient networkClient;
+  private KeyStateManager keyStateManager;
   private float alpha; // for drawing, updated each loop
 
   private void exit() {
@@ -68,11 +75,25 @@ public class Miko implements MessageHandler {
     uiLogin = new UiComponents.Login(this::registerRequested, this::loginRequested);
     window.addUi(uiConnect);
     window.addUi(uiLogin);
+
+    keyStateManager = new KeyStateManager();
+    window.setKeyListener(keyStateManager);
+
     window.initAndShow();
   }
 
   private void logic() {
-    // TODO
+    if (state != MikoState.EXIT) {
+      return;
+    }
+    // calm IDE down with suppressWarnings
+    // engine will use/close it anyway
+    @SuppressWarnings("resource")
+    IntStream pressedKeys = keyStateManager.getPressedKeys();
+    @SuppressWarnings("resource")
+    IntStream newlyPressedKeys = keyStateManager.flush();
+    Point mousePosition = window.getMousePosition();
+    engine.processNextTick(pressedKeys, newlyPressedKeys, mousePosition);
   }
 
   private void loop() {
@@ -119,7 +140,7 @@ public class Miko implements MessageHandler {
       changeStateTo(MikoState.CONNECTION_REQUEST);
       return;
     }
-    changeStateTo(MikoState.VERSION);
+    changeStateTo(MikoState.CONFIG);
     networkClient.putMessage(OutputMessageFactory.version());
   }
 
@@ -137,6 +158,7 @@ public class Miko implements MessageHandler {
       return;
     }
     changeStateTo(MikoState.LOGIN);
+    this.username = username;
     networkClient.putMessage(OutputMessageFactory.login(username, password));
   }
 
@@ -157,7 +179,7 @@ public class Miko implements MessageHandler {
         break;
       case CONNECTION:
         break;
-      case VERSION:
+      case CONFIG:
         break;
       case LOGIN_REQUEST:
         window.showUi(uiLogin);
@@ -194,14 +216,16 @@ public class Miko implements MessageHandler {
     if (state != MikoState.EXIT) {
       return;
     }
+    engine.actions(tickRemainder, actions);
   }
 
   @Override
-  public void chatReceived(int entityIdChat, String chatMessage) {
+  public void chatReceived(int tickRemainder, int entityIdChat, String chatMessage) {
     messageReceived();
     if (state != MikoState.JOIN || state != MikoState.EXIT) {
       return;
     }
+    engine.chatReceived(tickRemainder, entityIdChat, chatMessage);
   }
 
   @Override
@@ -210,6 +234,7 @@ public class Miko implements MessageHandler {
     if (state != MikoState.JOIN || state != MikoState.EXIT) {
       return;
     }
+    engine.chunkUpdate(tickRemainder, chunkPoint, chunk);
   }
 
   @Override
@@ -218,6 +243,7 @@ public class Miko implements MessageHandler {
     if (state != MikoState.JOIN || state != MikoState.EXIT) {
       return;
     }
+    engine.entityCreate(tickRemainder, entityDataUpdate);
   }
 
   @Override
@@ -226,6 +252,7 @@ public class Miko implements MessageHandler {
     if (state != MikoState.JOIN || state != MikoState.EXIT) {
       return;
     }
+    engine.entityDestroy(tickRemainder, entityId);
   }
 
   @Override
@@ -234,6 +261,7 @@ public class Miko implements MessageHandler {
     if (state != MikoState.JOIN || state != MikoState.EXIT) {
       return;
     }
+    engine.entitiesUpdate(tickRemainder, entitiesUpdateList);
   }
 
   @Override
@@ -258,6 +286,12 @@ public class Miko implements MessageHandler {
         break;
       case SERVER_CLOSED:
         statusMessage = "Déconnexion : serveur fermé.";
+        break;
+      case CLIENT_OUTDATED:
+        statusMessage = "Déconnexion : client obsolète.";
+        break;
+      case SERVER_OUTDATED:
+        statusMessage = "Déconnexion : serveur obsolète.";
         break;
       default:
         statusMessage = "Déconnexion : cause de déconnexion inconnue.";
@@ -305,7 +339,7 @@ public class Miko implements MessageHandler {
       return;
     }
     changeStateTo(MikoState.JOIN);
-    // TODO init state with tick
+    engine = new Engine(config, tickRemainder);
   }
 
   @Override
@@ -327,9 +361,12 @@ public class Miko implements MessageHandler {
     if (state != MikoState.JOIN || state != MikoState.EXIT) {
       return;
     }
-    if (state == MikoState.JOIN) {
-      // TODO donner notre entityid au jeu
+    if (state == MikoState.JOIN && pseudo == username) {
+      engine.setPlayerEntityId(entityId);
+      engine.playerJoined(tickRemainder, entityId, pseudo);
       changeStateTo(MikoState.EXIT);
+    } else {
+      engine.playerJoined(tickRemainder, entityId, pseudo);
     }
   }
 
@@ -339,7 +376,7 @@ public class Miko implements MessageHandler {
     if (state != MikoState.EXIT) {
       return;
     }
-
+    engine.playerLeft(tickRemainder, entityId);
   }
 
   @Override
@@ -382,32 +419,13 @@ public class Miko implements MessageHandler {
   }
 
   @Override
-  public void versionResponse(VersionResponseType versionResponseType) {
+  public void config(Config config) {
     messageReceived();
-    if (state != MikoState.VERSION) {
+    if (state != MikoState.CONFIG) {
       return;
     }
-    if (versionResponseType == VersionResponseType.OK) {
-      uiLogin.setStatusText("Connexion réussie, connectez ou enregistrez-vous.");
-      changeStateTo(MikoState.LOGIN_REQUEST);
-      return;
-    }
-    // some version error happened
-    networkClient.disconnect();
-    String statusMessage;
-    switch (versionResponseType) {
-      case CLIENT_OUTDATED:
-        statusMessage = "Erreur de connexion : client obsolète.";
-        break;
-      case SERVER_OUTDATED:
-        statusMessage = "Erreur de connexion : serveur obsolète.";
-        break;
-      default: // assume fail
-        statusMessage = "Erreur de connexion : erreur de version inconnue.";
-        break;
-    }
-    uiConnect.setStatusText(statusMessage);
-    changeStateTo(MikoState.CONNECTION_REQUEST);
+    uiLogin.setStatusText("Connexion réussie, connectez ou enregistrez-vous.");
+    changeStateTo(MikoState.LOGIN_REQUEST);
   }
 
   private void messageReceived() {
