@@ -12,6 +12,8 @@ const (
 type Context struct {
 	contextType
 
+	Config *Config
+
 	Entity  EntityService
 	Terrain Terrain
 	Clock   ClockService

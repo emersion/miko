@@ -72,5 +72,9 @@ func New() *Engine {
 	ctx.Terrain = terrain.New()
 	ctx.Clock = clock.NewService()
 
+	ctx.Config = &message.Config{
+		MaxRollbackTicks: uint16(message.MaxRewind),
+	}
+
 	return e
 }

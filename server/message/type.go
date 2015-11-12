@@ -5,7 +5,7 @@ package message
 type ProtocolVersion uint16
 
 // The current protocol version.
-const CurrentVersion ProtocolVersion = 4
+const CurrentVersion ProtocolVersion = 5
 
 type Type uint8 // A message type.
 type ExitCode uint8
@@ -37,7 +37,7 @@ var Types = map[string]Type{
 	"chat_send":         16,
 	"chat_receive":      17,
 	"version":           18,
-	"version_response":  19,
+	"config":            19,
 }
 
 // Get a message type name from its type.
@@ -51,12 +51,14 @@ func GetTypeName(t Type) string {
 }
 
 var ExitCodes = map[string]ExitCode{
-	"client_quit":   0,
-	"server_closed": 1,
-	"network_error": 2,
-	"ping_timeout":  3,
-	"client_kicked": 4,
-	"client_banned": 5,
+	"client_quit":     0,
+	"server_closed":   1,
+	"network_error":   2,
+	"ping_timeout":    3,
+	"client_kicked":   4,
+	"client_banned":   5,
+	"client_outdated": 6,
+	"server_outdated": 7,
 }
 
 var LoginResponseCodes = map[string]LoginResponseCode{
@@ -80,10 +82,4 @@ var RegisterResponseCodes = map[string]RegisterResponseCode{
 var MetaActionCodes = map[string]MetaActionCode{
 	"player_joined": 0,
 	"player_left":   1,
-}
-
-var VersionResponseCodes = map[string]VersionResponseCode{
-	"ok":              0,
-	"client_outdated": 1,
-	"server_outdated": 2,
 }

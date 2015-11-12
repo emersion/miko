@@ -196,21 +196,20 @@ func SendActionsDone(w io.Writer, t message.Tick, actions []*message.Action) err
 	return nil
 }
 
-func SendChatReceive(w io.Writer, username string, msg string) error {
-	if err := write(w, message.Types["chat_receive"]); err != nil {
-		return err
-	}
-	if err := writeString(w, username); err != nil {
-		return err
-	}
-	return writeString(w, msg)
+func SendChatReceive(w io.Writer, t message.Tick, username string, msg string) error {
+	return writeAll(w, []interface{}{
+		message.Types["chat_receive"],
+		t,
+		username,
+		msg,
+	})
 }
 
-func SendVersionResponse(w io.Writer, code message.VersionResponseCode) error {
-	if err := write(w, message.Types["version_response"]); err != nil {
-		return err
-	}
-	return write(w, code)
+func SendConfig(w io.Writer, config *message.Config) error {
+	return writeAll(w, []interface{}{
+		message.Types["config"],
+		config.MaxRollbackTicks,
+	})
 }
 
 func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.EntityDiffPool) error {

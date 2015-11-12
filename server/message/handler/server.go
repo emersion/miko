@@ -13,21 +13,21 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		read(io.Reader, &version)
 		io.Version = version
 
-		code := message.VersionResponseCodes["ok"]
-
 		if version != message.CurrentVersion {
-			code = message.VersionResponseCodes["client_outdated"]
+			code := message.ExitCodes["client_outdated"]
 			if version > message.CurrentVersion {
-				code = message.VersionResponseCodes["server_outdated"]
+				code = message.ExitCodes["server_outdated"]
 			}
-		}
 
-		if err := builder.SendVersionResponse(io.Writer, code); err != nil {
-			return err
-		}
+			if err := builder.SendExit(io.Writer, code); err != nil {
+				return err
+			}
 
-		if code != message.VersionResponseCodes["ok"] {
 			if err := io.Writer.Close(); err != nil {
+				return err
+			}
+		} else {
+			if err := builder.SendConfig(io.Writer, ctx.Config); err != nil {
 				return err
 			}
 		}
@@ -152,16 +152,15 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	message.Types["chat_send"]: func(ctx *message.Context, io *message.IO) error {
 		msg := readString(io.Reader)
 
-		log.Println("Broadcasting chat message:", msg)
-
-		var username string
-		if ctx.Auth.HasSession(io.Id) {
-			session := ctx.Auth.GetSession(io.Id)
-			username = session.Username
-		} else {
-			username = "[anonymous]"
+		if !ctx.Auth.HasSession(io.Id) {
+			return errors.New("User not authenticated")
 		}
 
-		return builder.SendChatReceive(io.BroadcastWriter, username, msg)
+		session := ctx.Auth.GetSession(io.Id)
+		username := session.Username
+
+		log.Println("Broadcasting chat message:", username, msg)
+
+		return builder.SendChatReceive(io.BroadcastWriter, ctx.Clock.GetRelativeTick(), username, msg)
 	},
 }
