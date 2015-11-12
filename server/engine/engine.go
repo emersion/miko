@@ -7,6 +7,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
+	"log"
 	"time"
 )
 
@@ -29,6 +30,7 @@ func (e *Engine) Start() {
 		minAcceptedTick := e.ctx.Clock.GetAbsoluteTick()
 		accepted := []interface{}{}
 		for {
+			stop := false
 			select {
 			case req := <-entityFrontend.Creates:
 				if req.Tick < minTick {
@@ -55,9 +57,15 @@ func (e *Engine) Start() {
 				}
 				accepted = append(accepted, req)
 			default:
+				stop = true
+			}
+
+			if stop {
 				break
 			}
 		}
+
+		log.Println("TICK", e.ctx.Clock.GetAbsoluteTick(), e.ctx.Clock.GetAbsoluteTick()-minAcceptedTick)
 
 		if minAcceptedTick < e.ctx.Clock.GetAbsoluteTick() {
 			// TODO: initiate lag compensation

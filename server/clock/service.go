@@ -7,7 +7,7 @@ import (
 )
 
 // The duration of a single tick.
-const TickDuration = time.Millisecond * 50
+const TickDuration = time.Millisecond * 500
 
 type Service struct {
 	ticks message.AbsoluteTick
