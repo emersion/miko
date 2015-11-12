@@ -68,17 +68,23 @@ func (f *Frontend) Delete(id message.EntityId, t message.AbsoluteTick) {
 	f.Deletes <- req
 }
 
+// Check if the diff pool is empty. If not, it means that entities updates need
+// to be sent to clients.
 func (f *Frontend) IsDirty() bool {
-	return f.backend.IsDirty()
+	return !f.pool.IsEmpty()
 }
 
+// Flush the diff pool. This returns the current one and replace it by a new one.
 func (f *Frontend) Flush() *message.EntityDiffPool {
-	return f.backend.Flush()
+	pool := f.pool
+	f.pool = message.NewEntityDiffPool()
+	return pool
 }
 
 func newFrontend(backend *Service) *Frontend {
 	return &Frontend{
 		backend: backend,
+		pool:    message.NewEntityDiffPool(),
 		Creates: make(chan *CreateRequest, frontendChanSize),
 		Updates: make(chan *UpdateRequest, frontendChanSize),
 		Deletes: make(chan *DeleteRequest, frontendChanSize),

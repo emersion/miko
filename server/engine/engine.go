@@ -17,7 +17,7 @@ type Engine struct {
 
 func (e *Engine) Start() {
 	entityFrontend := e.entity.Frontend()
-	mover := entity.NewMover(e.ctx.Terrain, e.ctx.Clock)
+	mover := NewMover(e)
 
 	for {
 		start := time.Now().UnixNano()

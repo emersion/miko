@@ -70,9 +70,14 @@ func NewSpeedFromMessage(speed *message.Speed) *Speed {
 	}
 }
 
+// A route step.
 type RouteStep [2]int
+
+// A route. Contains all points that must be reached to go from one point to
+// another one.
 type Route []RouteStep
 
+// Calculate the route between two points.
 func GetRouteBetween(from, to *Position) (route Route) {
 	// Distance between points
 	dx := math.Abs(to.X - from.X)

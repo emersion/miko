@@ -1,11 +1,9 @@
 package client
 
 import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"github.com/emersion/go-js-canvas"
 	"github.com/gopherjs/gopherjs/js"
-
-	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
-	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 type EntityService struct {
@@ -41,5 +39,6 @@ func (s *EntityService) Delete(id message.EntityId, t message.AbsoluteTick) {
 }
 
 func NewEntityService(el *js.Object) *EntityService {
-	return &EntityService{entity.NewService(), canvas.New(el)}
+	//return &EntityService{entity.NewService(), canvas.New(el)}
+	return &EntityService{nil, canvas.New(el)}
 }

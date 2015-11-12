@@ -105,49 +105,12 @@ func (s *Service) Delete(id message.EntityId, t message.AbsoluteTick) {
 	})
 }
 
-// Check if the diff pool is empty. If not, it means that entities updates need
-// to be sent to clients.
-func (s *Service) IsDirty() bool {
-	return s.deltas.Len() > 0
-}
-
-// Flush the diff pool. This returns the current one and replace it by a new one.
-func (s *Service) Flush() *message.EntityDiffPool {
-	diff := message.NewEntityDiffPool()
-
-	maxTick := s.lastFlush
-	for e := s.deltas.FirstAfter(s.lastFlush); e != nil; e = e.Next() {
-		d := e.Value.(Delta)
-
-		if d.From == nil {
-			diff.Created = append(diff.Created, s.Get(d.EntityId))
-		} else if d.To == nil {
-			diff.Deleted = append(diff.Deleted, d.EntityId)
-		} else {
-			// Entity has been updated
-			entity := s.Get(d.EntityId)
-			if _, ok := diff.Updated[entity]; ok {
-				diff.Updated[entity].Merge(d.Diff)
-			} else {
-				diff.Updated[entity] = d.Diff
-			}
-		}
-
-		maxTick = d.tick
-	}
-
-	s.lastFlush = maxTick + 1
-	s.deltas.Cleanup(maxTick) // Current tick >= maxTick
-
-	return diff
-}
-
 func (s *Service) Frontend() *Frontend {
-	if s.frontend != nil {
-		return s.frontend
+	if s.frontend == nil {
+		s.frontend = newFrontend(s)
 	}
 
-	return newFrontend(s)
+	return s.frontend
 }
 
 func NewService() *Service {

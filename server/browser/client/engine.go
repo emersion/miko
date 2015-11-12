@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
-	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"github.com/gopherjs/gopherjs/js"
@@ -91,7 +90,7 @@ type Engine struct {
 }
 
 func (e *Engine) Start() {
-	mover := entity.NewMover(e.ctx.Terrain, e.ctx.Clock)
+	//mover := entity.NewMover(e.ctx.Terrain, e.ctx.Clock)
 
 	var step func(timestampObj *js.Object)
 	var lastTick time.Duration
@@ -131,13 +130,13 @@ func (e *Engine) Start() {
 			}
 		}
 
-		for _, entity := range e.ctx.Entity.List() {
+		/*for _, entity := range e.ctx.Entity.List() {
 			diff := mover.UpdateEntity(entity)
 			if diff != nil {
 				e.ctx.Entity.Update(entity, diff, e.ctx.Clock.GetAbsoluteTick())
 			}
 		}
-		e.ctx.Entity.Flush()
+		e.ctx.Entity.Flush()*/
 
 		js.Global.Call("requestAnimationFrame", step)
 	}
