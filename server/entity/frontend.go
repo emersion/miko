@@ -28,6 +28,7 @@ type DeleteRequest struct {
 
 type Frontend struct {
 	backend *Service
+	pool    *message.EntityDiffPool
 
 	Creates chan *CreateRequest
 	Updates chan *UpdateRequest

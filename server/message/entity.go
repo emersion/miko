@@ -112,6 +112,10 @@ type EntityDiffPool struct {
 	Deleted []EntityId
 }
 
+func (dp *EntityDiffPool) IsEmpty() bool {
+	return len(dp.Created) == 0 && len(dp.Updated) == 0 && len(dp.Deleted) == 0
+}
+
 // Create a new diff pool.
 func NewEntityDiffPool() *EntityDiffPool {
 	return &EntityDiffPool{Updated: map[*Entity]*EntityDiff{}}
