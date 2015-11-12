@@ -30,7 +30,12 @@ class EntityManager {
   }
 
   public void createEntity(long tick, EntityDataUpdate entityDataUpdate) {
-    getEntity(entityDataUpdate.getEntityId()).applyFullUpdate(tick, entityDataUpdate);
+    Entity entity = getEntity(entityDataUpdate.getEntityId());
+    if (entity == null) {
+      entity = new Entity();
+      map.put(entityDataUpdate.getEntityId(), entity);
+    }
+    entity.applyFullUpdate(tick, entityDataUpdate);
   }
 
   public void destroyEntity(long tick, int entityId) {
