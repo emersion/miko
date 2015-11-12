@@ -1,3 +1,4 @@
+// Handles incoming messages from remotes.
 package handler
 
 import (
@@ -71,7 +72,8 @@ func (h *Handler) Listen(clientIO *message.IO) {
 		}
 
 		if session != nil && session.Entity != nil {
-			h.ctx.Entity.Delete(session.Entity.Id) // TODO: move this elsewhere
+			// TODO: move this elsewhere
+			h.ctx.Entity.Delete(session.Entity.Id, h.ctx.Clock.GetAbsoluteTick())
 		}
 	})()
 

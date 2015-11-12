@@ -1,3 +1,4 @@
+// Provides a TCP server, with TLS.
 package server
 
 import (

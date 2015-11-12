@@ -6,11 +6,26 @@ import (
 	"time"
 )
 
+func CheckRoute(route Route, entity *message.Entity, trn message.Terrain) *Position {
+	var last RouteStep
+	for _, step := range route {
+		t, err := trn.GetPointAt(step[0], step[1])
+
+		if err != nil || t != message.PointType(0) {
+			return &Position{float64(last[0]), float64(last[1])}
+		}
+
+		last = step
+	}
+
+	return nil
+}
+
 // A service that moves entities
 type Mover struct {
 	terrain     message.Terrain
 	clock       message.ClockService
-	lastUpdates map[message.EntityId]uint64
+	lastUpdates map[message.EntityId]message.AbsoluteTick
 	positions   map[message.EntityId]*Position
 }
 
@@ -19,7 +34,7 @@ type Mover struct {
 func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
 	now := m.clock.GetAbsoluteTick()
 
-	var last uint64
+	var last message.AbsoluteTick
 	var ok bool
 	if last, ok = m.lastUpdates[entity.Id]; !ok {
 		last = now
@@ -43,20 +58,12 @@ func (m *Mover) UpdateEntity(entity *message.Entity) *message.EntityDiff {
 	}
 
 	// Check terrain
-	pts := GetRouteBetween(pos, nextPos)
-	var lastPt [2]int
-	for _, pt := range pts {
-		t, err := m.terrain.GetPointAt(pt[0], pt[1])
-		if err != nil {
-			return nil // TODO: trigger a more severe error
-		}
+	route := GetRouteBetween(pos, nextPos)
 
-		if t != message.PointType(0) {
-			nextPos = &Position{float64(lastPt[0]), float64(lastPt[1])}
-			break
-		}
-
-		lastPt = pt
+	stoppedAt := CheckRoute(route, entity, m.terrain)
+	if stoppedAt != nil {
+		// The entity could has been stopped while moving
+		nextPos = stoppedAt
 	}
 
 	m.positions[entity.Id] = nextPos
@@ -69,7 +76,7 @@ func NewMover(trn message.Terrain, clk message.ClockService) *Mover {
 	return &Mover{
 		terrain:     trn,
 		clock:       clk,
-		lastUpdates: map[message.EntityId]uint64{},
+		lastUpdates: map[message.EntityId]message.AbsoluteTick{},
 		positions:   map[message.EntityId]*Position{},
 	}
 }

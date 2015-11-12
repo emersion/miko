@@ -1,3 +1,4 @@
+// Provides functions to manage users authentication.
 package auth
 
 import (

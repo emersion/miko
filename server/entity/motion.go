@@ -16,10 +16,10 @@ type Position struct {
 }
 
 func (p *Position) ToMessage() *message.Position {
-	x := round(p.X) % message.BLOCK_LEN
-	y := round(p.Y) % message.BLOCK_LEN
-	bx := round((p.X - float64(x)) / message.BLOCK_LEN)
-	by := round((p.Y - float64(y)) / message.BLOCK_LEN)
+	x := round(p.X) % message.BlockLen
+	y := round(p.Y) % message.BlockLen
+	bx := round((p.X - float64(x)) / message.BlockLen)
+	by := round((p.Y - float64(y)) / message.BlockLen)
 
 	return &message.Position{
 		BX: message.BlockCoord(bx),
@@ -31,8 +31,8 @@ func (p *Position) ToMessage() *message.Position {
 
 func NewPositionFromMessage(coords *message.Position) *Position {
 	return &Position{
-		X: float64(int(coords.BX)*message.BLOCK_LEN + int(coords.X)),
-		Y: float64(int(coords.BY)*message.BLOCK_LEN + int(coords.Y)),
+		X: float64(int(coords.BX)*message.BlockLen + int(coords.X)),
+		Y: float64(int(coords.BY)*message.BlockLen + int(coords.Y)),
 	}
 }
 
@@ -70,7 +70,10 @@ func NewSpeedFromMessage(speed *message.Speed) *Speed {
 	}
 }
 
-func GetRouteBetween(from, to *Position) (route [][2]int) {
+type RouteStep [2]int
+type Route []RouteStep
+
+func GetRouteBetween(from, to *Position) (route Route) {
 	// Distance between points
 	dx := math.Abs(to.X - from.X)
 	dy := math.Abs(to.Y - from.Y)
@@ -108,7 +111,7 @@ func GetRouteBetween(from, to *Position) (route [][2]int) {
 		x := round(from.X + float64(xSign*t)*kx)
 		y := round(from.Y + float64(ySign*t)*ky)
 
-		route = append(route, [2]int{x, y})
+		route = append(route, RouteStep{x, y})
 	}
 
 	return

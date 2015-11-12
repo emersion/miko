@@ -121,11 +121,11 @@ func (e *Engine) Start() {
 			}
 
 			e.ctx.Me.Entity.Speed = speed
-			e.ctx.Entity.Update(e.ctx.Me.Entity, diff)
+			e.ctx.Entity.Update(e.ctx.Me.Entity, diff, e.ctx.Clock.GetAbsoluteTick())
 		}
 
 		if e.ctx.Entity.IsDirty() {
-			err := builder.SendEntitiesDiffToServer(e.w, e.ctx.Clock.GetTick(), e.ctx.Entity.Flush())
+			err := builder.SendEntitiesDiffToServer(e.w, e.ctx.Clock.GetRelativeTick(), e.ctx.Entity.Flush())
 			if err != nil {
 				log.Println("Could not send entities update to server", err)
 			}
@@ -134,7 +134,7 @@ func (e *Engine) Start() {
 		for _, entity := range e.ctx.Entity.List() {
 			diff := mover.UpdateEntity(entity)
 			if diff != nil {
-				e.ctx.Entity.Update(entity, diff)
+				e.ctx.Entity.Update(entity, diff, e.ctx.Clock.GetAbsoluteTick())
 			}
 		}
 		e.ctx.Entity.Flush()
