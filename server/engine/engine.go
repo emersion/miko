@@ -25,17 +25,53 @@ func (e *Engine) Start() {
 
 		// Process requests from clients
 		// TODO: security checks
-		// TODO: initiate lag compensation
+		minTick := e.ctx.Clock.GetAbsoluteTick() - message.MaxRewind
+		minAcceptedTick := e.ctx.Clock.GetAbsoluteTick()
+		accepted := []interface{}{}
 		for {
 			select {
 			case req := <-entityFrontend.Creates:
-				e.entity.Add(req.Entity, req.Tick)
+				if req.Tick < minTick {
+					continue
+				}
+				if req.Tick < minAcceptedTick {
+					minAcceptedTick = req.Tick
+				}
+				accepted = append(accepted, req)
 			case req := <-entityFrontend.Updates:
-				e.entity.Update(req.Entity, req.Diff, req.Tick)
+				if req.Tick < minTick {
+					continue
+				}
+				if req.Tick < minAcceptedTick {
+					minAcceptedTick = req.Tick
+				}
+				accepted = append(accepted, req)
 			case req := <-entityFrontend.Deletes:
-				e.entity.Delete(req.EntityId, req.Tick)
+				if req.Tick < minTick {
+					continue
+				}
+				if req.Tick < minAcceptedTick {
+					minAcceptedTick = req.Tick
+				}
+				accepted = append(accepted, req)
 			default:
 				break
+			}
+		}
+
+		if minAcceptedTick < e.ctx.Clock.GetAbsoluteTick() {
+			// TODO: initiate lag compensation
+		}
+
+		// Pass all accepted requests to entity service
+		for _, item := range accepted {
+			switch req := item.(type) {
+			case entity.CreateRequest:
+				e.entity.Add(req.Entity, req.Tick)
+			case entity.UpdateRequest:
+				e.entity.Update(req.Entity, req.Diff, req.Tick)
+			case entity.DeleteRequest:
+				e.entity.Delete(req.EntityId, req.Tick)
 			}
 		}
 
