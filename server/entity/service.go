@@ -2,6 +2,8 @@
 package entity
 
 import (
+	"errors"
+	"fmt"
 	"git.emersion.fr/saucisse-royale/miko.git/server/delta"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
@@ -10,8 +12,9 @@ import (
 // change: not only its diff if it has been updated, but also the time when the
 // change has been made and the entity itself.
 type Delta struct {
-	tick     message.AbsoluteTick
-	EntityId message.EntityId
+	tick      message.AbsoluteTick
+	requested bool
+	EntityId  message.EntityId
 
 	Diff *message.EntityDiff
 	From *message.Entity
@@ -20,6 +23,30 @@ type Delta struct {
 
 func (d *Delta) GetTick() message.AbsoluteTick {
 	return d.tick
+}
+
+func (d *Delta) Requested() bool {
+	return d.requested
+}
+
+func (d *Delta) Request() Request {
+	req := newRequest(d.tick)
+	req.requested = d.requested
+	req.accepted = true
+
+	if d.From != nil && d.To != nil { // Update
+		if d.Diff == nil {
+			panic("Cannot build update request from delta: no diff available")
+		}
+
+		return &UpdateRequest{req, d.To, d.Diff}
+	} else if d.To != nil { // Create
+		return &CreateRequest{req, d.To}
+	} else if d.From != nil { // Delete
+		return &DeleteRequest{req, d.From.Id}
+	}
+
+	panic("Cannot build request from delta: from and to are empty")
 }
 
 func copyFromDiff(src *message.Entity, diff *message.EntityDiff) *message.Entity {
@@ -33,10 +60,14 @@ func copyFromDiff(src *message.Entity, diff *message.EntityDiff) *message.Entity
 // diff pool keeps track of created, updated and deleted entities to send
 // appropriate messages to clients.
 type Service struct {
-	entities  map[message.EntityId]*message.Entity
-	deltas    *delta.List
-	lastFlush message.AbsoluteTick
-	frontend  *Frontend
+	entities map[message.EntityId]*message.Entity
+	deltas   *delta.List
+	tick     message.AbsoluteTick
+	frontend *Frontend
+}
+
+func (s *Service) GetTick() message.AbsoluteTick {
+	return s.tick
 }
 
 func (s *Service) List() map[message.EntityId]*message.Entity {
@@ -50,7 +81,22 @@ func (s *Service) Get(id message.EntityId) *message.Entity {
 	return nil
 }
 
-func (s *Service) Add(entity *message.Entity, t message.AbsoluteTick) {
+func (s *Service) AcceptRequest(req Request) error {
+	switch r := req.(type) {
+	case *CreateRequest:
+		return s.acceptCreate(r)
+	case *UpdateRequest:
+		return s.acceptUpdate(r)
+	case *DeleteRequest:
+		return s.acceptDelete(r)
+	default:
+		panic("Cannot accept request: not a request")
+	}
+}
+
+func (s *Service) acceptCreate(req *CreateRequest) error {
+	entity := req.Entity
+
 	if int(entity.Id) == 0 {
 		nextId := len(s.entities)
 		if nextId == 0 {
@@ -58,51 +104,176 @@ func (s *Service) Add(entity *message.Entity, t message.AbsoluteTick) {
 		}
 		entity.Id = message.EntityId(nextId)
 	} else if s.Get(entity.Id) != nil {
-		return // TODO: error handling?
+		return errors.New("Cannot create entity: entity already exists")
 	}
 
 	s.entities[entity.Id] = entity
 
-	s.deltas.Insert(&Delta{
-		tick:     t,
-		EntityId: entity.Id,
-		From:     nil,
-		To:       entity,
-	})
+	if !req.accepted {
+		s.deltas.Insert(&Delta{
+			tick:      req.tick,
+			requested: req.requested,
+			EntityId:  entity.Id,
+			From:      nil,
+			To:        entity,
+		})
+	}
+
+	s.tick = req.tick
+	req.accepted = true
+
+	return nil
 }
 
-func (s *Service) Update(entity *message.Entity, diff *message.EntityDiff, t message.AbsoluteTick) {
+func (s *Service) acceptUpdate(req *UpdateRequest) error {
+	entity := req.Entity
+	diff := req.Diff
+
 	current := s.Get(entity.Id)
 	if current == nil {
-		return // TODO: error handling?
+		return errors.New("Cannot create entity: no such entity")
 	}
 
 	// Calculate delta
-	d := &Delta{
-		tick:     t,
-		EntityId: entity.Id,
-		Diff:     diff,
-		From:     copyFromDiff(current, diff),
-		To:       entity,
+	var d *Delta
+	if !req.accepted {
+		d = &Delta{
+			tick:      req.tick,
+			requested: req.requested,
+			EntityId:  entity.Id,
+			Diff:      diff,
+			From:      copyFromDiff(current, diff),
+			To:        entity,
+		}
 	}
 
 	// Apply diff
 	diff.Apply(entity, current)
 
 	// Add delta to history
-	s.deltas.Insert(d)
+	if d != nil {
+		s.deltas.Insert(d)
+	}
+
+	s.tick = req.tick
+	req.accepted = true
+
+	return nil
 }
 
-func (s *Service) Delete(id message.EntityId, t message.AbsoluteTick) {
-	entity := s.entities[id]
+func (s *Service) acceptDelete(req *DeleteRequest) error {
+	id := req.EntityId
+
+	entity := s.Get(id)
+	if entity == nil {
+		return errors.New("Cannot delete entity: no such entity")
+	}
+
 	delete(s.entities, id)
 
 	s.deltas.Insert(&Delta{
-		tick:     t,
-		EntityId: entity.Id,
-		From:     entity,
-		To:       nil,
+		tick:      req.tick,
+		requested: req.requested,
+		EntityId:  entity.Id,
+		From:      entity,
+		To:        nil,
 	})
+
+	s.tick = req.tick
+	req.accepted = true
+
+	return nil
+}
+
+func (s *Service) Rewind(dt message.AbsoluteTick) error {
+	if dt > s.tick {
+		return errors.New(fmt.Sprintf("Cannot rewind by %d: negative tick", dt))
+	} else if dt < 0 {
+		return errors.New(fmt.Sprintf("Cannot rewind by %d: negative rewind", dt))
+	} else if dt == 0 {
+		return nil
+	}
+
+	target := s.tick - dt
+
+	// Browse deltas list backward (from newer to older)
+	for e := s.deltas.LastBefore(s.tick); e != nil; e = e.Prev() {
+		d := e.Value.(*Delta)
+
+		if d.tick < target {
+			// Reached target, stop here
+			break
+		}
+
+		// Revert delta
+		if d.From != nil {
+			current := s.Get(d.EntityId)
+
+			if current != nil {
+				// The entity has been updated, revert update
+				diff := d.Diff
+				if diff == nil {
+					diff = &message.EntityDiff{true, true, true, true}
+				}
+
+				diff.Apply(d.From, current)
+			} else {
+				// The entity has been deleted, restore it
+				s.entities[d.EntityId] = d.From
+			}
+		} else {
+			// The entity has been created, delete it
+			delete(s.entities, d.EntityId)
+		}
+	}
+
+	s.tick = target
+	return nil
+}
+
+func (s *Service) Deltas() *delta.List {
+	return s.deltas
+}
+
+// TODO: remove this method
+func (s *Service) Redo(d *Delta) error {
+	if d.tick > s.tick {
+		// Newer delta, update internal tick
+		s.tick = d.tick
+	} else if d.tick < s.tick {
+		return errors.New("Cannot redo an action in the past, rewind before")
+	}
+
+	if d.To != nil {
+		if d.From != nil {
+			// Update the entity
+			current := s.Get(d.EntityId)
+			if current == nil {
+				return errors.New("Cannot update entity: no such entity")
+			}
+			if d.Diff == nil {
+				return errors.New("Cannot update entity: no diff provided")
+			}
+
+			d.Diff.Apply(d.To, current)
+		} else {
+			// Create the entity
+			if s.Get(d.EntityId) == nil {
+				s.entities[d.EntityId] = d.To
+			} else {
+				return errors.New("Cannot create entity: entity already exists")
+			}
+		}
+	} else {
+		// Delete the entity
+		if s.Get(d.EntityId) != nil {
+			delete(s.entities, d.EntityId)
+		} else {
+			return errors.New("Cannot delete entity: no such entity")
+		}
+	}
+
+	return nil
 }
 
 func (s *Service) Frontend() *Frontend {

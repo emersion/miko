@@ -154,6 +154,10 @@ func (t *Terrain) Generate() {
 func (t *Terrain) Rewind(dt message.AbsoluteTick) error {
 	if dt > t.tick {
 		return errors.New(fmt.Sprintf("Cannot rewind by %d: negative tick", dt))
+	} else if dt < 0 {
+		return errors.New(fmt.Sprintf("Cannot rewind by %d: negative rewind", dt))
+	} else if dt == 0 {
+		return nil
 	}
 
 	target := t.tick - dt

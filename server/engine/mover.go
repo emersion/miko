@@ -31,9 +31,8 @@ type Mover struct {
 
 // Compute an entity's new position.
 // Returns an EntityDiff if the entity has changed, nil otherwise.
-func (m *Mover) UpdateEntity(ent *message.Entity) *message.EntityDiff {
-	now := m.engine.ctx.Clock.GetAbsoluteTick()
-
+func (m *Mover) UpdateEntity(ent *message.Entity, now message.AbsoluteTick) *entity.UpdateRequest {
+	// TODO: remove Mover.positions and Mover.lastUpdates?
 	var last message.AbsoluteTick
 	var ok bool
 	if last, ok = m.lastUpdates[ent.Id]; !ok {
@@ -67,9 +66,12 @@ func (m *Mover) UpdateEntity(ent *message.Entity) *message.EntityDiff {
 	}
 
 	m.positions[ent.Id] = nextPos
-	ent.Position = nextPos.ToMessage()
 
-	return &message.EntityDiff{Position: true}
+	newEnt := message.NewEntity()
+	newEnt.Position = nextPos.ToMessage()
+	diff := &message.EntityDiff{Position: true}
+
+	return entity.NewUpdateRequest(now, newEnt, diff)
 }
 
 func NewMover(engine *Engine) *Mover {

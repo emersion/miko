@@ -6,23 +6,50 @@ import (
 
 const frontendChanSize = 48
 
-type Request struct {
-	Tick message.AbsoluteTick
+type request struct {
+	tick      message.AbsoluteTick
+	requested bool
+	accepted  bool
+}
+
+func (r *request) GetTick() message.AbsoluteTick {
+	return r.tick
+}
+
+func newRequest(t message.AbsoluteTick) *request {
+	return &request{
+		tick: t,
+	}
+}
+
+func newClientRequest(t message.AbsoluteTick) *request {
+	req := newRequest(t)
+	req.requested = true
+	return req
+}
+
+// TODO: move this somewhere else?
+func NewUpdateRequest(t message.AbsoluteTick, entity *message.Entity, diff *message.EntityDiff) *UpdateRequest {
+	return &UpdateRequest{newRequest(t), entity, diff}
+}
+
+type Request interface {
+	GetTick() message.AbsoluteTick
 }
 
 type CreateRequest struct {
-	Request
+	*request
 	Entity *message.Entity
 }
 
 type UpdateRequest struct {
-	Request
+	*request
 	Entity *message.Entity
 	Diff   *message.EntityDiff
 }
 
 type DeleteRequest struct {
-	Request
+	*request
 	EntityId message.EntityId
 }
 
@@ -44,27 +71,17 @@ func (f *Frontend) Get(id message.EntityId) *message.Entity {
 }
 
 func (f *Frontend) Add(entity *message.Entity, t message.AbsoluteTick) {
-	req := &CreateRequest{}
-	req.Tick = t
-	req.Entity = entity
-
+	req := &CreateRequest{newClientRequest(t), entity}
 	f.Creates <- req
 }
 
 func (f *Frontend) Update(entity *message.Entity, diff *message.EntityDiff, t message.AbsoluteTick) {
-	req := &UpdateRequest{}
-	req.Tick = t
-	req.Entity = entity
-	req.Diff = diff
-
+	req := &UpdateRequest{newClientRequest(t), entity, diff}
 	f.Updates <- req
 }
 
 func (f *Frontend) Delete(id message.EntityId, t message.AbsoluteTick) {
-	req := &DeleteRequest{}
-	req.Tick = t
-	req.EntityId = id
-
+	req := &DeleteRequest{newClientRequest(t), id}
 	f.Deletes <- req
 }
 
