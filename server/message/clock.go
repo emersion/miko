@@ -1,7 +1,8 @@
 package message
 
-// An absolute tick. It starts at 0 when the server is ready, and is incremented
-// each time a tick is performed.
+// An absolute tick. It starts at 1 when the server is ready, and is incremented
+// each time a tick is performed. The special value 0 indicates that the field
+// is not set.
 type AbsoluteTick uint64
 
 // A relative tick. Absolute ticks are not designed to be sent over the network
@@ -13,7 +14,7 @@ type Tick uint16
 // The maximum value for a relative tick.
 const MaxTick = 65536
 
-// The maximum interval of time that can be rewinded by Rewindable.
+// The maximum interval of time that can be rewinded by a Rewindable.
 const MaxRewind AbsoluteTick = 20
 
 // A clock service keeps track of the server's current in-game time.

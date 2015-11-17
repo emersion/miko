@@ -31,7 +31,7 @@ type Mover struct {
 // Compute an entity's new position.
 // Returns an EntityDiff if the entity has changed, nil otherwise.
 func (m *Mover) UpdateEntity(ent *entity.Entity, now message.AbsoluteTick) *entity.UpdateRequest {
-	// TODO: remove Mover.positions and Mover.lastUpdates?
+	// TODO: remove Mover.lastUpdates?
 	var last message.AbsoluteTick
 	var ok bool
 	if last, ok = m.lastUpdates[ent.Id]; !ok {

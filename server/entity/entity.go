@@ -4,12 +4,16 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
+// An entity.
+// Entities properties such as position and speed are stored here with a greater
+// precision than in the package message.
 type Entity struct {
 	Id       message.EntityId
 	Position *Position
 	Speed    *Speed
 }
 
+// Convert this entity to a message.Entity.
 func (e *Entity) ToMessage() *message.Entity {
 	return &message.Entity{
 		Id:       e.Id,
@@ -18,6 +22,9 @@ func (e *Entity) ToMessage() *message.Entity {
 	}
 }
 
+// Apply a diff from a source entity to a destination entity.
+// Changed properties will be copied from the source and overwrite the
+// destination's ones.
 func (e *Entity) ApplyDiff(d *message.EntityDiff, src *Entity) {
 	if d.Position {
 		e.Position = src.Position
@@ -34,6 +41,7 @@ func (e *Entity) ApplyDiff(d *message.EntityDiff, src *Entity) {
 	}
 }
 
+// Create a new empty entity.
 func New() *Entity {
 	return &Entity{
 		Position: &Position{},
@@ -41,6 +49,7 @@ func New() *Entity {
 	}
 }
 
+// Create an entity from a message.Entity.
 func NewFromMessage(src *message.Entity) *Entity {
 	return &Entity{
 		Id:       src.Id,
