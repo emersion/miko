@@ -17,8 +17,8 @@ type Delta struct {
 	EntityId  message.EntityId
 
 	Diff *message.EntityDiff
-	From *message.Entity
-	To   *message.Entity
+	From *Entity
+	To   *Entity
 }
 
 func (d *Delta) GetTick() message.AbsoluteTick {
@@ -49,9 +49,9 @@ func (d *Delta) Request() Request {
 	panic("Cannot build request from delta: from and to are empty")
 }
 
-func copyFromDiff(src *message.Entity, diff *message.EntityDiff) *message.Entity {
-	dst := &message.Entity{}
-	diff.Apply(src, dst)
+func copyFromDiff(src *Entity, diff *message.EntityDiff) *Entity {
+	dst := &Entity{}
+	dst.ApplyDiff(diff, src)
 	return dst
 }
 
@@ -60,7 +60,7 @@ func copyFromDiff(src *message.Entity, diff *message.EntityDiff) *message.Entity
 // diff pool keeps track of created, updated and deleted entities to send
 // appropriate messages to clients.
 type Service struct {
-	entities map[message.EntityId]*message.Entity
+	entities map[message.EntityId]*Entity
 	deltas   *delta.List
 	tick     message.AbsoluteTick
 	frontend *Frontend
@@ -70,11 +70,11 @@ func (s *Service) GetTick() message.AbsoluteTick {
 	return s.tick
 }
 
-func (s *Service) List() map[message.EntityId]*message.Entity {
+func (s *Service) List() map[message.EntityId]*Entity {
 	return s.entities
 }
 
-func (s *Service) Get(id message.EntityId) *message.Entity {
+func (s *Service) Get(id message.EntityId) *Entity {
 	if entity, ok := s.entities[id]; ok {
 		return entity
 	}
@@ -148,7 +148,7 @@ func (s *Service) acceptUpdate(req *UpdateRequest) error {
 	}
 
 	// Apply diff
-	diff.Apply(entity, current)
+	current.ApplyDiff(diff, entity)
 
 	// Add delta to history
 	if d != nil {
@@ -216,7 +216,7 @@ func (s *Service) Rewind(dt message.AbsoluteTick) error {
 					diff = &message.EntityDiff{true, true, true, true}
 				}
 
-				diff.Apply(d.From, current)
+				current.ApplyDiff(diff, d.From)
 			} else {
 				// The entity has been deleted, restore it
 				s.entities[d.EntityId] = d.From
@@ -255,7 +255,7 @@ func (s *Service) Redo(d *Delta) error {
 				return errors.New("Cannot update entity: no diff provided")
 			}
 
-			d.Diff.Apply(d.To, current)
+			current.ApplyDiff(d.Diff, d.To)
 		} else {
 			// Create the entity
 			if s.Get(d.EntityId) == nil {
@@ -286,7 +286,7 @@ func (s *Service) Frontend() *Frontend {
 
 func NewService() *Service {
 	return &Service{
-		entities: map[message.EntityId]*message.Entity{},
+		entities: map[message.EntityId]*Entity{},
 		deltas:   delta.NewList(),
 	}
 }

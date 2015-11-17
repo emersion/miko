@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func CheckRoute(route entity.Route, ent *message.Entity, trn message.Terrain) *entity.Position {
+func CheckRoute(route entity.Route, ent *entity.Entity, trn message.Terrain) *entity.Position {
 	var last entity.RouteStep
 	for _, step := range route {
 		t, err := trn.GetPointAt(step[0], step[1])
@@ -26,12 +26,11 @@ func CheckRoute(route entity.Route, ent *message.Entity, trn message.Terrain) *e
 type Mover struct {
 	engine      *Engine
 	lastUpdates map[message.EntityId]message.AbsoluteTick
-	positions   map[message.EntityId]*entity.Position // TODO: positions may be outdated, refresh from entity.Service!
 }
 
 // Compute an entity's new position.
 // Returns an EntityDiff if the entity has changed, nil otherwise.
-func (m *Mover) UpdateEntity(ent *message.Entity, now message.AbsoluteTick) *entity.UpdateRequest {
+func (m *Mover) UpdateEntity(ent *entity.Entity, now message.AbsoluteTick) *entity.UpdateRequest {
 	// TODO: remove Mover.positions and Mover.lastUpdates?
 	var last message.AbsoluteTick
 	var ok bool
@@ -45,11 +44,8 @@ func (m *Mover) UpdateEntity(ent *message.Entity, now message.AbsoluteTick) *ent
 		return nil
 	}
 
-	speed := entity.NewSpeedFromMessage(ent.Speed)
-	var pos *entity.Position
-	if pos, ok = m.positions[ent.Id]; !ok {
-		pos = entity.NewPositionFromMessage(ent.Position)
-	}
+	speed := ent.Speed
+	pos := ent.Position
 
 	nextPos := speed.GetNextPosition(pos, dt)
 	if nextPos == nil {
@@ -65,10 +61,8 @@ func (m *Mover) UpdateEntity(ent *message.Entity, now message.AbsoluteTick) *ent
 		nextPos = stoppedAt
 	}
 
-	m.positions[ent.Id] = nextPos
-
-	newEnt := message.NewEntity()
-	newEnt.Position = nextPos.ToMessage()
+	newEnt := entity.New()
+	newEnt.Position = nextPos
 	diff := &message.EntityDiff{Position: true}
 
 	return entity.NewUpdateRequest(now, newEnt, diff)
@@ -78,6 +72,5 @@ func NewMover(engine *Engine) *Mover {
 	return &Mover{
 		engine:      engine,
 		lastUpdates: map[message.EntityId]message.AbsoluteTick{},
-		positions:   map[message.EntityId]*entity.Position{},
 	}
 }

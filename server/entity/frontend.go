@@ -29,7 +29,7 @@ func newClientRequest(t message.AbsoluteTick) *request {
 }
 
 // TODO: move this somewhere else?
-func NewUpdateRequest(t message.AbsoluteTick, entity *message.Entity, diff *message.EntityDiff) *UpdateRequest {
+func NewUpdateRequest(t message.AbsoluteTick, entity *Entity, diff *message.EntityDiff) *UpdateRequest {
 	return &UpdateRequest{newRequest(t), entity, diff}
 }
 
@@ -39,12 +39,12 @@ type Request interface {
 
 type CreateRequest struct {
 	*request
-	Entity *message.Entity
+	Entity *Entity
 }
 
 type UpdateRequest struct {
 	*request
-	Entity *message.Entity
+	Entity *Entity
 	Diff   *message.EntityDiff
 }
 
@@ -62,21 +62,17 @@ type Frontend struct {
 	Deletes chan *DeleteRequest
 }
 
-func (f *Frontend) List() map[message.EntityId]*message.Entity {
-	return f.backend.List()
-}
-
 func (f *Frontend) Get(id message.EntityId) *message.Entity {
-	return f.backend.Get(id)
+	return f.backend.Get(id).ToMessage()
 }
 
 func (f *Frontend) Add(entity *message.Entity, t message.AbsoluteTick) {
-	req := &CreateRequest{newClientRequest(t), entity}
+	req := &CreateRequest{newClientRequest(t), NewFromMessage(entity)}
 	f.Creates <- req
 }
 
 func (f *Frontend) Update(entity *message.Entity, diff *message.EntityDiff, t message.AbsoluteTick) {
-	req := &UpdateRequest{newClientRequest(t), entity, diff}
+	req := &UpdateRequest{newClientRequest(t), NewFromMessage(entity), diff}
 	f.Updates <- req
 }
 
