@@ -106,32 +106,52 @@ func (e *Engine) Start() {
 		}
 
 		// Redo all deltas until now
-		deltas := e.entity.Deltas()
-		for el := deltas.FirstAfter(acceptedMinTick); el != nil; el = el.Next() {
-			d := el.Value.(*entity.Delta)
+		entDeltas := e.entity.Deltas()
+		trnDeltas := e.terrain.Deltas()
+		entEl := entDeltas.FirstAfter(acceptedMinTick)
+		trnEl := trnDeltas.FirstAfter(acceptedMinTick)
+		for entEl != nil || trnEl != nil {
+			ed := entEl.Value.(*entity.Delta)
+			td := trnEl.Value.(*terrain.Delta)
 
-			// Do not redo deltas not triggered by the user
-			// These are the ones that will be computed again
-			if !d.Requested() {
-				continue
+			// TODO: replace terain history by actions history
+			if entEl == nil || ed.GetTick() >= td.GetTick() {
+				// Process terrain delta
+				trnEl = trnEl.Next()
+
+				// Compute new entities positions just before the terrain change
+				e.moveEntities(td.GetTick() - 1)
+
+				// Redo terrain change
+				e.terrain.Redo(td)
 			}
+			if trnEl == nil || ed.GetTick() <= td.GetTick() {
+				// Process entity delta
+				entEl = entEl.Next()
 
-			// Compute new entities positions
-			e.moveEntities(d.GetTick())
-
-			// Accept new requests at the correct tick
-			for el := accepted.Front(); el != nil; el = el.Next() {
-				req := el.Value.(entity.Request)
-
-				if req.GetTick() >= d.GetTick() {
-					break
+				// Do not redo deltas not triggered by the user
+				// These are the ones that will be computed again
+				if !ed.Requested() {
+					continue
 				}
 
-				e.processRequest(req)
-				accepted.Remove(el)
-			}
+				// Compute new entities positions
+				e.moveEntities(ed.GetTick())
 
-			e.processRequest(d.Request())
+				// Accept new requests at the correct tick
+				for el := accepted.Front(); el != nil; el = el.Next() {
+					req := el.Value.(entity.Request)
+
+					if req.GetTick() >= ed.GetTick() {
+						break
+					}
+
+					e.processRequest(req)
+					accepted.Remove(el)
+				}
+
+				e.processRequest(ed.Request())
+			}
 		}
 
 		// Accept requests whose tick is > last delta tick

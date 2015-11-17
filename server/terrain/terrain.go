@@ -178,21 +178,14 @@ func (t *Terrain) Rewind(dt message.AbsoluteTick) error {
 	return nil
 }
 
-func (t *Terrain) FastForward(dt message.AbsoluteTick) error {
-	target := t.tick + dt
+func (t *Terrain) Deltas() *delta.List {
+	return t.deltas
+}
 
-	for e := t.deltas.FirstAfter(t.tick); e != nil; e = e.Next() {
-		d := e.Value.(*Delta)
+func (t *Terrain) Redo(d *Delta) error {
+	t.points[d.X][d.Y] = d.To
+	t.tick = d.tick
 
-		if d.tick > target {
-			// Reached target, stop here
-			break
-		}
-
-		t.points[d.X][d.Y] = d.To
-	}
-
-	t.tick = target
 	return nil
 }
 
