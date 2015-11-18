@@ -17,7 +17,7 @@ An experimental minimalist multiplayer top-down adventure game (en français)
 * go
 * non fonctionnel
 
-## Protocole version *5*
+## Protocole version *6*
 
 ### Généralités
 
@@ -31,6 +31,17 @@ An experimental minimalist multiplayer top-down adventure game (en français)
 * messsage : headers + contenu
 * header : uint8, type du message
 * le stream est fermé après réception ou envoi d'un exit
+
+### Type (utilisé pour action et objectattributes)
+
+Signification | Types de params
+--- | ---
+void |
+onefloat | float value
+oneshort | uint16 value
+oneentity | uint16 targetentityid
+oneterrain | sint16 bx sint16 by uint8 x uint8 y
+
 
 ### Messages
 
@@ -112,9 +123,17 @@ Valeur | Signification | Contenu
 
 ```
 uint16 maxRollbackTicks
+float defaultPlayerSpeed
+uint16 playerBallCooldown
+float defaultBallSpeed
+uint16 defaultBallLifespan
 ```
 
 * maxRollbackTicks : nombre maximum de ticks où l'on peut revenir dans le passé pour appliquer des actions
+* defaultPlayerSpeed : vitesse par défaut des joueurs
+* playerBallCooldown : cooldown de lancer de boules par les joueurs
+* defaultBallSpeed : vitesse par défaut des boules
+* defaultBallLifespan : temps de vie des boules
 
 ### Terrain
 
@@ -194,9 +213,18 @@ Bit | Signification | Contenu
 2 | speednorm | float norm
 3 |
 4 |
-5 |
+5 | entitytype | uint16 entitytype
 6 | sprite | uint16 sprite
-7 | object | uint8 size + uint8...objectattributes
+7 | object | bytes objectattributes
+
+#### entitytype
+
+* un identifiant unique du type de l'entité
+
+Valeur | Description du type
+--- | ---
+0 | player
+1 | ball
 
 #### sprite
 
@@ -205,28 +233,33 @@ Bit | Signification | Contenu
 Valeur | Description de l'animation
 --- | ---
 0 | placeholder
+1 | player
+2 | ball
 
-* exemple : 0 | loli_rouge
+#### objectattributes
 
-#### objectattribute
+* Paires de (type;valeur) correspondants à des attributes spécifiques à des entités
+* Un message object ne va que mettre à jour la paire qu'il spécifie
 
-* liste de uint8 indépendants entre eux
-* pas de paramètres supplémentaires associés aux bytes
+```
+uint16 size
+size times:
+    uint16 attribute
+    bytes value
+```
 
-Valeur | Signification | Détail
---- | --- | ---
-0 | disabled | objet désactivé (interrupteur, ...)
-1 | enabled | object activé (inteerrupteur, ...)
+Valeur | Type | Signification | Détail
+--- | --- | --- | ---
+0 | oneshort | ticks_left | Temps en ticks avant la destruction d'un objet éphémère
+1 | oneshort | health | Nombre de points de vie d'une entité
+2 | oneentity | sender | entity_id du créateur de l'entité
+30000 | oneshort | cooldown_one | Cooldown en ticks (numéro 1)
 
 ### Actions
 
 #### Description
 
-* action caractérisée par id et a paramètres optionnels
-* entityid envoyée que par le serveur/avec actions car toutes les actions envoyées par le client sont forcément avec son entityid
-* paramètres spécifiés par type de action, type de action<==>type de params
-* on n'envoit pas l'actiontype parce que le peer sait le type de chaque action (fixée)
-* spells à channel: envoyer un action pour début channel et un pour fin channel
+* action caractérisée par id et paramètres optionnels
 
 #### action_do
 
@@ -246,21 +279,12 @@ size times:
 
 #### actionid
 
-Valeur | Signification | actiontype
+Valeur | Type | Signification
 --- | --- | ---
+0 | onefloat | Envoit une boule dans la direction spécifiée
 
-* exemple possible: 0 | heal | entitytarget
 
-#### actiontype
-
-Signification | Types de params
---- | ---
-paramless |
-onefloat | float value
-entitytarget | uint16 targetentityid
-terraintarget | sint16 bx sint16 by uint8 x uint8 y
-
-### Session exemple (DEPRECATED, TODO)
+### Session exemple (OUTDATED, TODO)
 
 ```
 [initiation du ssl, session tcp établie]
@@ -300,27 +324,7 @@ S (broadcast) entities_destroy(id)
 S (broadcast) player_meta(id, left)
 ```
 
-## Fonctionnement (todo)
+## Notes de fonctionnement
 
-* on garde une liste d'entités, créées et supprimées sur demande du serveur.
-* chaque entité est identifiée de manière unique grâce à un "entityid" (envoyable sous forme de unsigned short)
-* il y a un nombre fini d'actions possibles de la part des entités, on envoit action avec entityid et byte d'action (params supplémentaires éventuellement)
-* on envoit assez souvent des updates des entités (plus précisément sans doute pos+vitesse)
-* ainsi, le niveau d'interaction des clients avec le serveur est pos et actions, qui est assez haut niveau, il faudra prendre des mesures de protection au niveau du serveur (par exemple vérifier si l'entité a la capacité de se déplacer là/d'utiliser telle action (cooldown, etc))
-* pour l'envoi du terrain, normalement ça se fait automatiquement, mais le client peut request du terrain en particulier
-* on va peut etre devoir, si besoin, en fonction du jeu, envoyer une requete explicite depuis le serveur pour supprimer du terrain pour aider le client à poubeller le terrain inutile au fur et à mesure
-* niveau implémentation, il faudra trouver moyen d'associer connection/compte à chaque socket ouvert, pour gérer envois de ping et fermeture de session de manière objet/jolie, etc.
-* c'est assez général comme protocole, mais il faudra assez spécifier les bytes de action/terrain/entité
 * le ping peut se résumer à j'envois un ping si j'ai pas reçu de message depuis 5 secondes, et si j'ai rien pendant 10 secondes d'affilée (en tout) je exit(ping timeout)
-* paramètres à faire varier: fréquence d'envoi de entitiesupdate/entityupdate, du terrain (même si il est invariant, on peut dire qu'on envoit par plus petits morceaux mais plus souvent, voir plus précisément en testant), timeout du ping, et quelques autres trucs plus précis dont il faudra parler liés à l'optimisation du multijoueur
-* le serveur attend avant d'envoyer des entitiesupdate, par exemple il le fait toutes les n frames, il ne l'envoit pas dès qu'il reçoit une update
-* chaque entité a un entityid, une position
-* éventuellement une vitesse (négligeons l'accélération pour l'instant)
-* la position sera envoyée en coordonnées cartésiennes, la vitesse en coordonnées _polaires_ ie (x,y,normevitesse,anglevitesse) (on a besoin d'envoyer la vitesse pour faire l'extrapolation (et l'interpolation) des coordonnées des entités entre chaque frame reçue)
-* on a pas besoin de précision extrême sur l'angle de la vitesse ou sur sa norme, on enverra donc des _float_
-* note d'implémentation: il vaudrait mieux stocker l'angle et la norme sous forme de double pour mieux gérer une accélération éventuelle, mais pas besoin d'autant de précision dans l'envoi puisqu'on mettra à jour suffisament souvent pour corriger les défauts de trajectoire liées aux imprécisions ie (short, short, float, float)
-* notes d'implémentation: comment représenter une entité, avec son image et toutes les caractéristiques supplémentaires ? on peut pour l'instant associer un unsgined byte à chaque entité qui correspond à une image, et un unsigned byte qui correspond à son TYPE (joueur ? ennemi ? piège ? interrupteur ? ... ). clairement on aura besoin de caractéristiques supplémentaires pour certains types d'entités, on pourra utiliser éventuellement un système d'héritage avec des classes, mais ça risque de devenir assez lourd, peut etre un héritage par interface? mais ça reste lourd, il faudra aviser.
-* Puisque le type d'entité restera constant tout au long de son temps de vie, on enverra son type avec ses caractéristiques supplémentaires pendant entitycreate.
-* pour spécifier plus loin, il faudrait donner les types d'entités, et les caractéristiques supplémentaires de chaque type d'entités, et alors on spécifierait entitycreate assez facilement
-* pour entitesdestroy, il faudrait peut etre garder ça assez minimal, par exemple si la mort d'un personnage crée une explosion, il faudrait peut etre faire spawn une entité explosion, en tous cas déléguer les taches complexes à d'autres choses que entitiesdestroy qui devrait vraiment être minimaliste et générique
-* les objets liront un set de objectupdatetype pour s'update et ne s'intéresseront qu'aux bytes qui les concerne, en les interprétant comme ils le veulent
+* spells à channel: envoyer un action pour début channel et un pour fin channel
