@@ -11,10 +11,18 @@ type Position struct {
 	Y  PointCoord
 }
 
+func (p *Position) Equals(other *Position) bool {
+	return (p.BX == other.BX && p.BY == other.BY && p.X == other.X && p.Y == other.Y)
+}
+
 // A speed contains an angle and a norm.
 type Speed struct {
 	Angle float32
 	Norm  float32
+}
+
+func (s *Speed) Equals(other *Speed) bool {
+	return (s.Angle == other.Angle && s.Norm == other.Norm)
 }
 
 // A sprite index.
@@ -27,6 +35,22 @@ type Entity struct {
 	Position *Position
 	Speed    *Speed
 	Sprite   Sprite
+}
+
+func (e *Entity) EqualsWithDiff(other *Entity, diff *EntityDiff) bool {
+	if diff.Position && !e.Position.Equals(other.Position) {
+		return false
+	}
+	if diff.SpeedAngle && e.Speed.Angle != other.Speed.Angle {
+		return false
+	}
+	if diff.SpeedNorm && e.Speed.Norm != other.Speed.Norm {
+		return false
+	}
+	if diff.Sprite && e.Sprite != other.Sprite {
+		return false
+	}
+	return true
 }
 
 // Initialize a new entity.
@@ -64,11 +88,12 @@ func (d *EntityDiff) GetBitfield() uint8 {
 }
 
 // Merge two diffs.
-func (d *EntityDiff) Merge(other *EntityDiff) {
+func (d *EntityDiff) Merge(other *EntityDiff) *EntityDiff {
 	d.Position = d.Position || other.Position
 	d.SpeedAngle = d.SpeedAngle || other.SpeedAngle
 	d.SpeedNorm = d.SpeedNorm || other.SpeedNorm
 	d.Sprite = d.Sprite || other.Sprite
+	return d
 }
 
 // Apply a diff from a source entity to a destination entity.
@@ -92,6 +117,10 @@ func (d *EntityDiff) Apply(src *Entity, dst *Entity) {
 	if d.Sprite {
 		dst.Sprite = src.Sprite
 	}
+}
+
+func NewEntityDiff() *EntityDiff {
+	return &EntityDiff{}
 }
 
 // Parse a diff bitfield.

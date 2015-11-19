@@ -8,51 +8,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
-// A delta (not to be confused with @delthas) stores all data about an entity
-// change: not only its diff if it has been updated, but also the time when the
-// change has been made and the entity itself.
-type Delta struct {
-	tick      message.AbsoluteTick
-	requested bool
-	EntityId  message.EntityId
-
-	Diff *message.EntityDiff
-	From *Entity
-	To   *Entity
-}
-
-func (d *Delta) GetTick() message.AbsoluteTick {
-	return d.tick
-}
-
-func (d *Delta) Requested() bool {
-	return d.requested
-}
-
-func (d *Delta) Request() Request {
-	req := newRequest(d.tick)
-	req.requested = d.requested
-
-	// This delta has been created when a request was accepted. Set accepted to
-	// true to prevent it to create another delta.
-	req.accepted = true
-
-	if d.From != nil && d.To != nil { // Update
-		if d.Diff == nil {
-			panic("Cannot build update request from delta: no diff available")
-		}
-
-		return &UpdateRequest{req, d.To, d.Diff}
-	} else if d.To != nil { // Create
-		return &CreateRequest{req, d.To}
-	} else if d.From != nil { // Delete
-		return &DeleteRequest{req, d.From.Id}
-	}
-
-	panic("Cannot build request from delta: from and to are empty")
-}
-
-func copyFromDiff(src *Entity, diff *message.EntityDiff) *Entity {
+func copyEntityFromDiff(src *Entity, diff *message.EntityDiff) *Entity {
 	dst := &Entity{}
 	dst.ApplyDiff(diff, src)
 	return dst
@@ -112,14 +68,18 @@ func (s *Service) acceptCreate(req *CreateRequest) error {
 
 	s.entities[entity.Id] = entity
 
+	d := &Delta{
+		tick:      req.tick,
+		requested: req.requested,
+		EntityId:  entity.Id,
+		From:      nil,
+		To:        entity,
+	}
 	if !req.accepted {
-		s.deltas.Insert(&Delta{
-			tick:      req.tick,
-			requested: req.requested,
-			EntityId:  entity.Id,
-			From:      nil,
-			To:        entity,
-		})
+		s.deltas.Insert(d)
+	}
+	if s.frontend != nil {
+		s.frontend.deltas = append(s.frontend.deltas, d)
 	}
 
 	s.tick = req.tick
@@ -138,24 +98,24 @@ func (s *Service) acceptUpdate(req *UpdateRequest) error {
 	}
 
 	// Calculate delta
-	var d *Delta
-	if !req.accepted {
-		d = &Delta{
-			tick:      req.tick,
-			requested: req.requested,
-			EntityId:  entity.Id,
-			Diff:      diff,
-			From:      copyFromDiff(current, diff),
-			To:        entity,
-		}
+	d := &Delta{
+		tick:      req.tick,
+		requested: req.requested,
+		EntityId:  entity.Id,
+		Diff:      diff,
+		From:      copyEntityFromDiff(current, diff),
+		To:        entity,
 	}
 
 	// Apply diff
 	current.ApplyDiff(diff, entity)
 
 	// Add delta to history
-	if d != nil {
+	if req.requested {
 		s.deltas.Insert(d)
+	}
+	if s.frontend != nil {
+		s.frontend.deltas = append(s.frontend.deltas, d)
 	}
 
 	s.tick = req.tick
@@ -174,13 +134,19 @@ func (s *Service) acceptDelete(req *DeleteRequest) error {
 
 	delete(s.entities, id)
 
-	s.deltas.Insert(&Delta{
+	d := &Delta{
 		tick:      req.tick,
 		requested: req.requested,
 		EntityId:  entity.Id,
 		From:      entity,
 		To:        nil,
-	})
+	}
+	if req.requested {
+		s.deltas.Insert(d)
+	}
+	if s.frontend != nil {
+		s.frontend.deltas = append(s.frontend.deltas, d)
+	}
 
 	s.tick = req.tick
 	req.accepted = true
@@ -228,18 +194,24 @@ func (s *Service) Rewind(dt message.AbsoluteTick) error {
 			// The entity has been created, delete it
 			delete(s.entities, d.EntityId)
 		}
+
+		if s.frontend != nil {
+			s.frontend.deltas = append(s.frontend.deltas, d.Inverse())
+		}
 	}
 
 	s.tick = target
+
 	return nil
 }
 
+// Get this service's deltas.
 func (s *Service) Deltas() *delta.List {
 	return s.deltas
 }
 
 // TODO: remove this method
-func (s *Service) Redo(d *Delta) error {
+func (s *Service) redo(d *Delta) error {
 	if d.tick > s.tick {
 		// Newer delta, update internal tick
 		s.tick = d.tick
@@ -279,6 +251,7 @@ func (s *Service) Redo(d *Delta) error {
 	return nil
 }
 
+// Get this service's frontend.
 func (s *Service) Frontend() *Frontend {
 	if s.frontend == nil {
 		s.frontend = newFrontend(s)
@@ -287,6 +260,7 @@ func (s *Service) Frontend() *Frontend {
 	return s.frontend
 }
 
+// Create a new entity service.
 func NewService() *Service {
 	return &Service{
 		entities: map[message.EntityId]*Entity{},

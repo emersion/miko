@@ -20,6 +20,7 @@ type Engine struct {
 	ctx     *message.Context
 
 	mover *Mover
+	stop  chan bool
 }
 
 func (e *Engine) checkRequest(req entity.Request) bool {
@@ -50,6 +51,13 @@ func (e *Engine) Start() {
 	for {
 		start := time.Now().UnixNano()
 		e.clock.Tick()
+
+		// Stop the engine?
+		select {
+		case <-e.stop:
+			break
+		default:
+		}
 
 		// Process requests from clients
 		minTick := e.clock.GetAbsoluteTick() - message.MaxRewind
@@ -170,6 +178,10 @@ func (e *Engine) Start() {
 	}
 }
 
+func (e *Engine) Stop() {
+	e.stop <- true
+}
+
 func (e *Engine) Context() *message.Context {
 	return e.ctx
 }
@@ -185,6 +197,8 @@ func New() *Engine {
 		clock:   clock.NewService(),
 		entity:  entity.NewService(),
 		terrain: terrain.New(),
+
+		stop: make(chan bool),
 	}
 
 	// Populate context
