@@ -32,6 +32,9 @@ func (d *Delta) Requested() bool {
 func (d *Delta) Request() Request {
 	req := newRequest(d.tick)
 	req.requested = d.requested
+
+	// This delta has been created when a request was accepted. Set accepted to
+	// true to prevent it to create another delta.
 	req.accepted = true
 
 	if d.From != nil && d.To != nil { // Update
@@ -97,7 +100,7 @@ func (s *Service) AcceptRequest(req Request) error {
 func (s *Service) acceptCreate(req *CreateRequest) error {
 	entity := req.Entity
 
-	if int(entity.Id) == 0 {
+	if entity.Id == 0 {
 		nextId := len(s.entities)
 		if nextId == 0 {
 			nextId = 1
@@ -200,7 +203,7 @@ func (s *Service) Rewind(dt message.AbsoluteTick) error {
 	for e := s.deltas.LastBefore(s.tick); e != nil; e = e.Prev() {
 		d := e.Value.(*Delta)
 
-		if d.tick < target {
+		if d.tick <= target {
 			// Reached target, stop here
 			break
 		}

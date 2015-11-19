@@ -132,6 +132,7 @@ func (e *Engine) Start() {
 				// Do not redo deltas not triggered by the user
 				// These are the ones that will be computed again
 				if !ed.Requested() {
+					entDeltas.Remove(entEl.Prev())
 					continue
 				}
 

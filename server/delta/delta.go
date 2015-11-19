@@ -82,11 +82,15 @@ func (l *List) FirstAfter(t message.AbsoluteTick) *list.Element {
 	for e := l.First(); e != nil; e = e.Next() {
 		d := e.Value.(Delta)
 
-		if d.GetTick() >= t {
+		if d.GetTick() > t {
 			return e
 		}
 	}
 	return nil
+}
+
+func (l *List) Remove(e *list.Element) Delta {
+	return l.deltas.Remove(e).(Delta)
 }
 
 // Create a new list of deltas.
