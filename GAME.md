@@ -37,6 +37,9 @@ Valeur | Description de l'animation
 
 Valeur | Type | Signification | Détail
 --- | --- | --- | ---
+0 | oneshort | ticks_left | Temps en ticks avant la destruction d'un objet éphémère
+1 | oneshort | health | Nombre de points de vie d'une entité
+2 | oneentity | sender | entity_id du créateur de l'entité
 30000 | oneshort | cooldown_one | Cooldown en ticks (numéro 1)
 
 ## action
