@@ -42,7 +42,6 @@ oneshort | uint16 value
 oneentity | uint16 targetentityid
 oneterrain | sint16 bx sint16 by uint8 x uint8 y
 
-
 ### Messages
 
 Envoyeur | Valeur | Tick | Nom | Contenu
@@ -95,7 +94,7 @@ Valeur | Signification
 4 | already_connected
 5 | player_limit_reached
 
-Un tick est envoyé après le code si le code est "ok".
+Un tick est envoyé après le code si celui-ci est "ok".
 
 #### registerresponsecode
 
@@ -117,23 +116,15 @@ Valeur | Signification | Contenu
 
 #### versionid
 
-* identifiant unique de la version du protocole utilisé par le client
+Identifiant unique de la version du protocole utilisé par le client.
 
 #### config
 
 ```
 uint16 maxRollbackTicks
-float defaultPlayerSpeed
-uint16 playerBallCooldown
-float defaultBallSpeed
-uint16 defaultBallLifespan
 ```
 
 * maxRollbackTicks : nombre maximum de ticks où l'on peut revenir dans le passé pour appliquer des actions
-* defaultPlayerSpeed : vitesse par défaut des joueurs
-* playerBallCooldown : cooldown de lancer de boules par les joueurs
-* defaultBallSpeed : vitesse par défaut des boules
-* defaultBallLifespan : temps de vie des boules
 
 ### Terrain
 
@@ -154,7 +145,7 @@ uint8 defaultvalue
 uint16 size
 size times:
 	uint8 x + uint8 y
-    uint8 value
+	uint8 value
 ```
 
 * bx, by : coordonnées du bloc
@@ -177,7 +168,7 @@ size times:
 
 ### Entités
 
-* le client peut envoyer plusieurs entity_update si interaction d'objets différents de lui
+Le client peut envoyer plusieurs entity_update si interaction d'objets différents de lui.
 
 #### entity_update
 
@@ -204,7 +195,7 @@ size times:
 
 #### bitfield
 
-* les bits sont lus de gauche à droite : 01234567
+Les bits sont lus de gauche à droite : 01234567.
 
 Bit | Signification | Contenu
 --- | --- | ---
@@ -219,22 +210,11 @@ Bit | Signification | Contenu
 
 #### entitytype
 
-* un identifiant unique du type de l'entité
-
-Valeur | Description du type
---- | ---
-0 | player
-1 | ball
+Un identifiant unique du type de l'entité.
 
 #### sprite
 
-* un identifiant unique de l'animation (graphique) d'une entité
-
-Valeur | Description de l'animation
---- | ---
-0 | placeholder
-1 | player
-2 | ball
+Un identifiant unique de l'animation (graphique) d'une entité.
 
 #### objectattributes
 
@@ -253,13 +233,12 @@ Valeur | Type | Signification | Détail
 0 | oneshort | ticks_left | Temps en ticks avant la destruction d'un objet éphémère
 1 | oneshort | health | Nombre de points de vie d'une entité
 2 | oneentity | sender | entity_id du créateur de l'entité
-30000 | oneshort | cooldown_one | Cooldown en ticks (numéro 1)
 
 ### Actions
 
 #### Description
 
-* action caractérisée par id et paramètres optionnels
+Action caractérisée par un id et des paramètres optionnels.
 
 #### action_do
 
@@ -276,13 +255,6 @@ size times:
 	uint16 entityid
 	action_do
 ```
-
-#### actionid
-
-Valeur | Type | Signification
---- | --- | ---
-0 | onefloat | Envoit une boule dans la direction spécifiée
-
 
 ### Session exemple (OUTDATED, TODO)
 
