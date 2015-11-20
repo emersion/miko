@@ -67,7 +67,7 @@ func (e *Engine) Start() {
 		acceptedMinTick := e.clock.GetAbsoluteTick()
 		accepted := list.New()
 		for {
-			stop := false
+			noMore := false
 
 			var req entity.Request
 
@@ -77,10 +77,10 @@ func (e *Engine) Start() {
 			case req = <-entityFrontend.Updates:
 			case req = <-entityFrontend.Deletes:
 			default:
-				stop = true
+				noMore = true
 			}
 
-			if stop {
+			if noMore {
 				break
 			}
 
