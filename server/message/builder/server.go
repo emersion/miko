@@ -116,7 +116,6 @@ func SendTerrainUpdate(w io.Writer, t message.Tick, blk *message.Block) error {
 	return nil
 }
 
-// TODO: check proto
 func SendEntityCreate(w io.Writer, t message.Tick, entity *message.Entity) error {
 	if err := write(w, message.Types["entity_create"]); err != nil {
 		return err

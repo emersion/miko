@@ -6,33 +6,6 @@ import (
 	"log"
 )
 
-func ReadEntity(r io.Reader) (*message.Entity, *message.EntityDiff) {
-	entity := message.NewEntity()
-
-	var bitfield uint8
-	read(r, &entity.Id)
-	read(r, &bitfield)
-
-	diff := message.NewEntityDiffFromBitfield(bitfield)
-
-	if diff.Position {
-		read(r, &entity.Position.BX)
-		read(r, &entity.Position.BY)
-		read(r, &entity.Position.X)
-		read(r, &entity.Position.Y)
-	}
-	if diff.SpeedAngle {
-		read(r, &entity.Speed.Angle)
-	}
-	if diff.SpeedNorm {
-		read(r, &entity.Speed.Norm)
-	}
-
-	// TODO: entity.Data
-
-	return entity, diff
-}
-
 func ReadBlock(r io.Reader) *message.Block {
 	blk := &message.Block{}
 

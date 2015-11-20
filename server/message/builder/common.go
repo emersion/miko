@@ -40,11 +40,12 @@ func sendEntityUpdateBody(w io.Writer, entity *message.Entity, diff *message.Ent
 		data = append(data, entity.Speed.Norm)
 	}
 
-	// TODO: entity.Data
-
-	if err := writeAll(w, data); err != nil {
-		return err
+	if diff.Type {
+		data = append(data, entity.Type)
+	}
+	if diff.Sprite {
+		data = append(data, entity.Sprite)
 	}
 
-	return nil
+	return writeAll(w, data)
 }

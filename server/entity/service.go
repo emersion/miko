@@ -182,7 +182,7 @@ func (s *Service) Rewind(dt message.AbsoluteTick) error {
 				// The entity has been updated, revert update
 				diff := d.Diff
 				if diff == nil {
-					diff = &message.EntityDiff{true, true, true, true}
+					diff = message.NewFilledEntityDiff(true)
 				}
 
 				current.ApplyDiff(diff, d.From)

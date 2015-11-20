@@ -9,14 +9,18 @@ import (
 // precision than in the package message.
 type Entity struct {
 	Id       message.EntityId
+	Type     message.EntityType
 	Position *Position
 	Speed    *Speed
+	Sprite   message.Sprite
 }
 
 // Convert this entity to a message.Entity.
 func (e *Entity) ToMessage() *message.Entity {
 	ent := &message.Entity{
-		Id: e.Id,
+		Id:     e.Id,
+		Type:   e.Type,
+		Sprite: e.Sprite,
 	}
 
 	if e.Position != nil {
@@ -33,6 +37,10 @@ func (e *Entity) ToMessage() *message.Entity {
 // Changed properties will be copied from the source and overwrite the
 // destination's ones.
 func (e *Entity) ApplyDiff(d *message.EntityDiff, src *Entity) {
+	if d.Type {
+		e.Type = src.Type
+	}
+
 	if d.Position {
 		e.Position = src.Position
 	}
@@ -45,6 +53,10 @@ func (e *Entity) ApplyDiff(d *message.EntityDiff, src *Entity) {
 	}
 	if d.SpeedAngle {
 		e.Speed.Angle = src.Speed.Angle
+	}
+
+	if d.Sprite {
+		e.Sprite = src.Sprite
 	}
 }
 
@@ -60,7 +72,9 @@ func New() *Entity {
 func NewFromMessage(src *message.Entity) *Entity {
 	return &Entity{
 		Id:       src.Id,
+		Type:     src.Type,
 		Position: NewPositionFromMessage(src.Position),
 		Speed:    NewSpeedFromMessage(src.Speed),
+		Sprite:   src.Sprite,
 	}
 }

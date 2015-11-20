@@ -120,8 +120,6 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["entity_update"]: func(ctx *message.Context, io *message.IO) error {
-		// TODO: security checks
-
 		t := ctx.Clock.ToAbsoluteTick(readTick(io.Reader))
 
 		entity, diff := ReadEntity(io.Reader)
