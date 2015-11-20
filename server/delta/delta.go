@@ -10,9 +10,6 @@ import (
 type Delta interface {
 	// The time when the change occured.
 	GetTick() message.AbsoluteTick
-
-	//Prev(current interface{}) interface{}
-	//Next(current interface{}) interface{}
 }
 
 // A list of deltas.
@@ -39,7 +36,9 @@ func (l *List) Len() int {
 func (l *List) Cleanup(t message.AbsoluteTick) {
 	minTick := t - message.MaxRewind
 
-	for e := l.First(); e != nil; e = e.Next() {
+	var next *list.Element
+	for e := l.First(); e != nil; e = next {
+		next = e.Next()
 		d := e.Value.(Delta)
 
 		if d.GetTick() < minTick {
