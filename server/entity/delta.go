@@ -81,16 +81,22 @@ func flattenDeltas(deltas []*Delta) []*Delta {
 		} else {
 			m[d.EntityId] = &Delta{
 				EntityId: d.EntityId,
-				Diff:     message.NewEntityDiff().Merge(d.Diff),
+				Diff:     message.NewEntityDiff(),
 				From:     d.From,
 				To:       d.To,
+			}
+
+			if d.Diff != nil {
+				m[d.EntityId].Diff.Merge(d.Diff)
 			}
 		}
 	}
 
 	l := make([]*Delta, len(m))
+	i := 0
 	for _, d := range m {
-		l = append(l, d)
+		l[i] = d
+		i++
 	}
 
 	return l

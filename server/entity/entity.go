@@ -15,11 +15,18 @@ type Entity struct {
 
 // Convert this entity to a message.Entity.
 func (e *Entity) ToMessage() *message.Entity {
-	return &message.Entity{
-		Id:       e.Id,
-		Position: e.Position.ToMessage(),
-		Speed:    e.Speed.ToMessage(),
+	ent := &message.Entity{
+		Id: e.Id,
 	}
+
+	if e.Position != nil {
+		ent.Position = e.Position.ToMessage()
+	}
+	if e.Speed != nil {
+		ent.Speed = e.Speed.ToMessage()
+	}
+
+	return ent
 }
 
 // Apply a diff from a source entity to a destination entity.

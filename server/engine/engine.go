@@ -61,6 +61,9 @@ func (e *Engine) Start() {
 
 		// Process requests from clients
 		minTick := e.clock.GetAbsoluteTick() - message.MaxRewind
+		if message.MaxRewind > e.clock.GetAbsoluteTick() {
+			minTick = 0
+		}
 		acceptedMinTick := e.clock.GetAbsoluteTick()
 		accepted := list.New()
 		for {
@@ -118,12 +121,22 @@ func (e *Engine) Start() {
 		trnDeltas := e.terrain.Deltas()
 		entEl := entDeltas.FirstAfter(acceptedMinTick)
 		trnEl := trnDeltas.FirstAfter(acceptedMinTick)
+		var ed *entity.Delta
+		var td *terrain.Delta
 		for entEl != nil || trnEl != nil {
-			ed := entEl.Value.(*entity.Delta)
-			td := trnEl.Value.(*terrain.Delta)
+			if entEl != nil {
+				ed = entEl.Value.(*entity.Delta)
+			} else {
+				ed = nil
+			}
+			if trnEl != nil {
+				td = trnEl.Value.(*terrain.Delta)
+			} else {
+				td = nil
+			}
 
 			// TODO: replace terain history by actions history
-			if entEl == nil || ed.GetTick() >= td.GetTick() {
+			if ed == nil || (td != nil && ed.GetTick() >= td.GetTick()) {
 				// Process terrain delta
 				trnEl = trnEl.Next()
 
@@ -133,7 +146,7 @@ func (e *Engine) Start() {
 				// Redo terrain change
 				e.terrain.Redo(td)
 			}
-			if trnEl == nil || ed.GetTick() <= td.GetTick() {
+			if td == nil || (ed != nil && ed.GetTick() <= td.GetTick()) {
 				// Process entity delta
 				entEl = entEl.Next()
 
