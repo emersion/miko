@@ -128,8 +128,13 @@ func NewEntityDiffFromBitfield(bitfield uint8) *EntityDiff {
 	}
 }
 
+// Create a new diff filled with one value.
 func NewFilledEntityDiff(val bool) *EntityDiff {
-	return &EntityDiff{val, val, val, val, val}
+	var bitfield uint8
+	if val {
+		bitfield = ^bitfield
+	}
+	return NewEntityDiffFromBitfield(bitfield)
 }
 
 // An entity diff pool.
