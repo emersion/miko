@@ -32,18 +32,11 @@ type server struct {
 func (c *Client) listen() {
 	log.Println("New client:", c.id)
 
-	reader := bufio.NewReader(c.conn)
-
-	clientIO := &message.IO{
-		Reader:          reader,
-		Writer:          c.conn,
-		BroadcastWriter: c.Server,
-		Id:              c.id,
-	}
-
 	defer c.Close()
 
-	c.Server.handler.Listen(clientIO)
+	reader := bufio.NewReader(c.conn)
+	io := message.NewIO(c.id, reader, c.conn, c.Server)
+	c.Server.handler.Listen(io)
 }
 
 func (c *Client) Close() error {

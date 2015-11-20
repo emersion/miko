@@ -10,7 +10,7 @@ import (
 var serverHandlers = &map[message.Type]TypeHandler{
 	message.Types["version"]: func(ctx *message.Context, io *message.IO) error {
 		var version message.ProtocolVersion
-		read(io.Reader, &version)
+		read(io, &version)
 		io.Version = version
 
 		if version != message.CurrentVersion {
@@ -19,15 +19,15 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				code = message.ExitCodes["server_outdated"]
 			}
 
-			if err := builder.SendExit(io.Writer, code); err != nil {
+			if err := builder.SendExit(io, code); err != nil {
 				return err
 			}
 
-			if err := io.Writer.Close(); err != nil {
+			if err := io.Close(); err != nil {
 				return err
 			}
 		} else {
-			if err := builder.SendConfig(io.Writer, ctx.Config); err != nil {
+			if err := builder.SendConfig(io, ctx.Config); err != nil {
 				return err
 			}
 		}
@@ -35,21 +35,21 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
-		code := ReadExit(io.Reader)
+		code := ReadExit(io)
 		log.Println("Client disconnected with code:", code)
 
-		if err := io.Writer.Close(); err != nil {
+		if err := io.Close(); err != nil {
 			return err
 		}
 
 		return nil
 	},
 	message.Types["login"]: func(ctx *message.Context, io *message.IO) error {
-		username := readString(io.Reader)
-		password := readString(io.Reader)
+		username := readString(io)
+		password := readString(io)
 
 		code := ctx.Auth.Login(io.Id, username, password)
-		if err := builder.SendLoginResp(io.Writer, code, ctx.Clock.GetRelativeTick()); err != nil {
+		if err := builder.SendLoginResp(io, code, ctx.Clock.GetRelativeTick()); err != nil {
 			return err
 		}
 
@@ -71,47 +71,47 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return err
 			}
 
-			err = builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetRelativeTick(), blk)
+			err = builder.SendTerrainUpdate(io, ctx.Clock.GetRelativeTick(), blk)
 			if err != nil {
 				return err
 			}
 
 			// Broadcast new entity
-			err = builder.SendEntitiesDiffToClients(io.BroadcastWriter, ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
+			err = builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
 			if err != nil {
 				return err
 			}
 
-			return builder.SendPlayerJoined(io.BroadcastWriter, ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
+			return builder.SendPlayerJoined(io.Broadcaster(), ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
 		} else {
 			return nil
 		}
 	},
 	message.Types["register"]: func(ctx *message.Context, io *message.IO) error {
-		username := readString(io.Reader)
-		password := readString(io.Reader)
+		username := readString(io)
+		password := readString(io)
 
 		code := ctx.Auth.Register(io.Id, username, password)
 
 		log.Println("Client registered:", username, code)
 
-		return builder.SendRegisterResp(io.Writer, code)
+		return builder.SendRegisterResp(io, code)
 	},
 	message.Types["terrain_request"]: func(ctx *message.Context, io *message.IO) error {
 		var size uint8
-		read(io.Reader, &size)
+		read(io, &size)
 
 		for i := 0; i < int(size); i++ {
 			var x, y message.BlockCoord
-			read(io.Reader, &x)
-			read(io.Reader, &y)
+			read(io, &x)
+			read(io, &y)
 
 			blk, err := ctx.Terrain.GetBlockAt(x, y)
 			if err != nil {
 				return err
 			}
 
-			err = builder.SendTerrainUpdate(io.Writer, ctx.Clock.GetRelativeTick(), blk)
+			err = builder.SendTerrainUpdate(io, ctx.Clock.GetRelativeTick(), blk)
 			if err != nil {
 				return err
 			}
@@ -120,9 +120,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["entity_update"]: func(ctx *message.Context, io *message.IO) error {
-		t := ctx.Clock.ToAbsoluteTick(readTick(io.Reader))
+		t := ctx.Clock.ToAbsoluteTick(readTick(io))
 
-		entity, diff := ReadEntity(io.Reader)
+		entity, diff := ReadEntity(io)
 		ctx.Entity.Update(entity, diff, t)
 
 		return nil
@@ -139,16 +139,16 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			Initiator: session.Entity.Id,
 		}
 
-		readTick(io.Reader) // TODO: properly handle this tick
-		read(io.Reader, &action.Id)
+		readTick(io) // TODO: properly handle this tick
+		read(io, &action.Id)
 		// TODO: action params
 
 		log.Println("Client triggered action:", action.Id)
 
-		return builder.SendActionsDone(io.BroadcastWriter, ctx.Clock.GetRelativeTick(), []*message.Action{action})
+		return builder.SendActionsDone(io.Broadcaster(), ctx.Clock.GetRelativeTick(), []*message.Action{action})
 	},
 	message.Types["chat_send"]: func(ctx *message.Context, io *message.IO) error {
-		msg := readString(io.Reader)
+		msg := readString(io)
 
 		if !ctx.Auth.HasSession(io.Id) {
 			return errors.New("User not authenticated")
@@ -159,6 +159,6 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		log.Println("Broadcasting chat message:", username, msg)
 
-		return builder.SendChatReceive(io.BroadcastWriter, ctx.Clock.GetRelativeTick(), username, msg)
+		return builder.SendChatReceive(io.Broadcaster(), ctx.Clock.GetRelativeTick(), username, msg)
 	},
 }

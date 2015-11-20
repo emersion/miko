@@ -34,34 +34,31 @@ func main() {
 	}
 
 	reader := bufio.NewReader(c)
-	clientIO := &message.IO{
-		Reader: reader,
-		Writer: c,
-	}
+	clientIO := message.NewIO(0, reader, c, nil)
 
 	go hdlr.Listen(clientIO)
 
 	engine := client.NewEngine(ctx, c)
 
-	err = builder.SendVersion(clientIO.Writer)
+	err = builder.SendVersion(clientIO)
 	if err != nil {
 		panic("SendVersion: " + err.Error())
 	}
 
-	/*err = builder.SendPing(clientIO.Writer)
+	/*err = builder.SendPing(clientIO)
 	if err != nil {
 		panic("SendPing: " + err.Error())
 	}*/
 
 	// TODO: wait for login response
-	err = builder.SendLogin(clientIO.Writer, "root", "root")
+	err = builder.SendLogin(clientIO, "root", "root")
 	if err != nil {
 		panic("SendLogin: " + err.Error())
 	}
 
 	engine.Start()
 
-	/*err = builder.SendChatSend(clientIO.Writer, "Hello World!")
+	/*err = builder.SendChatSend(clientIO, "Hello World!")
 	if err != nil {
 		panic("SendChatSend: " + err.Error())
 	}*/

@@ -59,13 +59,13 @@ func ReadVersionResponse(r io.Reader) (code message.VersionResponseCode) {
 
 var clientHandlers = &map[message.Type]TypeHandler{
 	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
-		code := ReadExit(io.Reader)
+		code := ReadExit(io)
 		log.Println("Server closed connection, reason:", code)
 
-		return io.Writer.Close()
+		return io.Close()
 	},
 	message.Types["login_response"]: func(ctx *message.Context, io *message.IO) error {
-		code, t := ReadLoginResponse(io.Reader)
+		code, t := ReadLoginResponse(io)
 
 		if code == message.LoginResponseCodes["ok"] {
 			ctx.Clock.Sync(t)
@@ -78,12 +78,12 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		var entityId message.EntityId
 		var code message.MetaActionCode
 
-		readTick(io.Reader) // TODO: properly handle this tick
-		read(io.Reader, &entityId)
-		read(io.Reader, &code)
+		readTick(io) // TODO: properly handle this tick
+		read(io, &entityId)
+		read(io, &code)
 
 		if code == message.MetaActionCodes["player_joined"] {
-			username := readString(io.Reader)
+			username := readString(io)
 			log.Println("Player joined:", entityId, username)
 
 			if username == ctx.Me.Username {
@@ -100,19 +100,19 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["terrain_update"]: func(ctx *message.Context, io *message.IO) error {
-		t := ctx.Clock.ToAbsoluteTick(readTick(io.Reader))
-		blk := ReadBlock(io.Reader)
+		t := ctx.Clock.ToAbsoluteTick(readTick(io))
+		blk := ReadBlock(io)
 		ctx.Terrain.SetBlock(blk, t)
 		return nil
 	},
 	message.Types["entities_update"]: func(ctx *message.Context, io *message.IO) error {
-		t := ctx.Clock.ToAbsoluteTick(readTick(io.Reader))
+		t := ctx.Clock.ToAbsoluteTick(readTick(io))
 
 		var size uint16
-		read(io.Reader, &size)
+		read(io, &size)
 
 		for i := 0; i < int(size); i++ {
-			entity, diff := ReadEntity(io.Reader)
+			entity, diff := ReadEntity(io)
 			// TODO: do something with entity
 			log.Println("Received entity update with ID:", entity.Id)
 
@@ -126,9 +126,9 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["entity_create"]: func(ctx *message.Context, io *message.IO) error {
-		t := ctx.Clock.ToAbsoluteTick(readTick(io.Reader))
+		t := ctx.Clock.ToAbsoluteTick(readTick(io))
 
-		entity, _ := ReadEntity(io.Reader)
+		entity, _ := ReadEntity(io)
 		ctx.Entity.Add(entity, t)
 		ctx.Entity.Flush()
 
@@ -136,10 +136,10 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["entity_destroy"]: func(ctx *message.Context, io *message.IO) error {
-		t := ctx.Clock.ToAbsoluteTick(readTick(io.Reader))
+		t := ctx.Clock.ToAbsoluteTick(readTick(io))
 
 		var entityId message.EntityId
-		read(io.Reader, &entityId)
+		read(io, &entityId)
 		ctx.Entity.Delete(entityId, t)
 		ctx.Entity.Flush()
 
@@ -147,13 +147,13 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["actions_done"]: func(ctx *message.Context, io *message.IO) error {
-		readTick(io.Reader) // TODO: properly handle this tick
+		readTick(io) // TODO: properly handle this tick
 
 		var size uint16
-		read(io.Reader, &size)
+		read(io, &size)
 
 		for i := 0; i < int(size); i++ {
-			action := ReadActionDone(io.Reader)
+			action := ReadActionDone(io)
 			// TODO: do something with this action
 			log.Println("Received action with ID", action.Id, "from", action.Initiator)
 		}
@@ -161,14 +161,14 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["chat_receive"]: func(ctx *message.Context, io *message.IO) error {
-		username := readString(io.Reader)
-		msg := readString(io.Reader)
+		username := readString(io)
+		msg := readString(io)
 
 		log.Println("Chat:", username, msg)
 		return nil
 	},
 	message.Types["version_response"]: func(ctx *message.Context, io *message.IO) error {
-		code := ReadVersionResponse(io.Reader)
+		code := ReadVersionResponse(io)
 		log.Println("Version response:", code)
 		return nil
 	},

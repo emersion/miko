@@ -25,10 +25,10 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 	if h.ctx.IsServer() {
 		if t != message.Types["version"] && io.Version == 0 {
 			// Client didn't send his version number
-			if err := builder.SendExit(io.Writer, message.ExitCodes["client_outdated"]); err != nil {
+			if err := builder.SendExit(io.Writer(), message.ExitCodes["client_outdated"]); err != nil {
 				return err
 			}
-			return io.Writer.Close()
+			return io.Close()
 		}
 	}
 
@@ -44,7 +44,7 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 	if h.ctx.IsServer() {
 		// No errors, send updates
 		if h.ctx.Entity.IsDirty() {
-			err := builder.SendEntitiesDiffToClients(io.BroadcastWriter, h.ctx.Clock.GetRelativeTick(), h.ctx.Entity.Flush())
+			err := builder.SendEntitiesDiffToClients(io.Broadcaster(), h.ctx.Clock.GetRelativeTick(), h.ctx.Entity.Flush())
 			if err != nil {
 				return err
 			}
@@ -64,7 +64,7 @@ func (h *Handler) Listen(clientIO *message.IO) {
 			session = h.ctx.Auth.GetSession(clientIO.Id)
 			if session != nil {
 				h.ctx.Auth.Logout(clientIO.Id)
-				builder.SendPlayerLeft(clientIO.BroadcastWriter, h.ctx.Clock.GetRelativeTick(), session.Entity.Id)
+				builder.SendPlayerLeft(clientIO.Broadcaster(), h.ctx.Clock.GetRelativeTick(), session.Entity.Id)
 			}
 		}
 		if h.ctx.IsClient() {
@@ -79,12 +79,12 @@ func (h *Handler) Listen(clientIO *message.IO) {
 
 	var msg_type message.Type
 	for {
-		err := read(clientIO.Reader, &msg_type)
+		err := read(clientIO.Reader(), &msg_type)
 		if err == io.EOF {
 			log.Println("Connection closed.")
 			return
 		} else if err != nil {
-			//clientIO.Writer.Close()
+			//clientIO.Close()
 			log.Println("binary.Read failed:", err)
 			return
 		}
