@@ -61,6 +61,10 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			if session == nil {
 				return errors.New("Cannot get newly logged in user's session")
 			}
+
+			session.Entity.Type = 0   // player
+			session.Entity.Sprite = 1 // player
+
 			ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere
 
 			// Send initial terrain
