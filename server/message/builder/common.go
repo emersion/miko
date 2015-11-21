@@ -47,5 +47,10 @@ func sendEntityUpdateBody(w io.Writer, entity *message.Entity, diff *message.Ent
 		data = append(data, entity.Sprite)
 	}
 
+	if diff.Attributes {
+		// TODO
+		data = append(data, uint16(0))
+	}
+
 	return writeAll(w, data)
 }

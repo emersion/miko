@@ -46,6 +46,15 @@ func ReadEntity(r io.Reader) (*message.Entity, *message.EntityDiff) {
 		read(r, &entity.Sprite)
 	}
 
+	if diff.Attributes {
+		var size uint16
+		read(r, &size)
+
+		if size != 0 {
+			log.Println("Warning: entity attributes not implemented!")
+		}
+	}
+
 	return entity, diff
 }
 
