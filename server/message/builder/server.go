@@ -208,6 +208,10 @@ func SendConfig(w io.Writer, config *message.Config) error {
 	return writeAll(w, []interface{}{
 		message.Types["config"],
 		config.MaxRollbackTicks,
+		config.DefaultPlayerSpeed,
+		config.PlayerBallCooldown,
+		config.DefaultBallSpeed,
+		config.DefaultBallLifespan,
 	})
 }
 
