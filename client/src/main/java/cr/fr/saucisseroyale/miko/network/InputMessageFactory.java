@@ -6,15 +6,18 @@ import cr.fr.saucisseroyale.miko.protocol.Action;
 import cr.fr.saucisseroyale.miko.protocol.ActionType;
 import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
 import cr.fr.saucisseroyale.miko.protocol.Config;
+import cr.fr.saucisseroyale.miko.protocol.DataType;
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
+import cr.fr.saucisseroyale.miko.protocol.EntityType;
 import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
 import cr.fr.saucisseroyale.miko.protocol.ExitType;
 import cr.fr.saucisseroyale.miko.protocol.LoginResponseType;
-import cr.fr.saucisseroyale.miko.protocol.MapPoint;
 import cr.fr.saucisseroyale.miko.protocol.MessageType;
 import cr.fr.saucisseroyale.miko.protocol.MetaActionType;
 import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
 import cr.fr.saucisseroyale.miko.protocol.RegisterResponseType;
+import cr.fr.saucisseroyale.miko.protocol.SpriteType;
+import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
 import cr.fr.saucisseroyale.miko.protocol.TerrainType;
 import cr.fr.saucisseroyale.miko.util.Pair;
 
@@ -166,30 +169,17 @@ class InputMessageFactory {
     return (handler) -> handler.networkError(e);
   }
 
-  private static final Action readAction(DataInputStream dis) throws MessageParseException, IOException {
+  private static final Action readAction(DataInputStream dis) throws IOException {
     int actionCode = dis.readUnsignedShort();
     ActionType actionType = ActionType.getType(actionCode);
     if (actionType == null) {
       throw newParseException();
     }
-    switch (actionType.getParametersType()) {
-      case VOID:
-        return new Action(actionType);
-      case FLOAT:
-        float floatValue = dis.readFloat();
-        return new Action(actionType, floatValue);
-      case ENTITY_ID:
-        int entityId = dis.readUnsignedShort();
-        return new Action(actionType, entityId);
-      case MAP_POINT:
-        MapPoint mapPoint = readMapPoint(dis);
-        return new Action(actionType, mapPoint);
-      default:
-        throw newParseException();
-    }
+    Object value = readObject(dis, actionType.getDataType());
+    return new Action(actionType, value);
   }
 
-  private static final Block readBlock(DataInputStream dis) throws MessageParseException, IOException {
+  private static final Block readBlock(DataInputStream dis) throws IOException {
     int x = dis.readUnsignedByte();
     int y = dis.readUnsignedByte();
     int code = dis.readUnsignedByte();
@@ -201,14 +191,14 @@ class InputMessageFactory {
     return block;
   }
 
-  private static final ChunkPoint readChunkPoint(DataInputStream dis) throws MessageParseException, IOException {
+  private static final ChunkPoint readChunkPoint(DataInputStream dis) throws IOException {
     int chunkX = dis.readShort();
     int chunkY = dis.readShort();
     ChunkPoint chunkPoint = new ChunkPoint(chunkX, chunkY);
     return chunkPoint;
   }
 
-  private static final EntityDataUpdate readEntityDataUpdate(DataInputStream dis) throws MessageParseException, IOException {
+  private static final EntityDataUpdate readEntityDataUpdate(DataInputStream dis) throws IOException {
     int entityId = dis.readUnsignedShort();
     EntityDataUpdate.Builder builder = new EntityDataUpdate.Builder(entityId);
     byte bitfield = dis.readByte();
@@ -222,8 +212,8 @@ class InputMessageFactory {
       }
       switch (type) {
         case POSITION:
-          MapPoint mapPoint = readMapPoint(dis);
-          builder.position(mapPoint);
+          TerrainPoint terrainPoint = readTerrainPoint(dis);
+          builder.position(terrainPoint);
           break;
         case SPEED_ANGLE:
           float speedAngle = dis.readFloat();
@@ -233,18 +223,33 @@ class InputMessageFactory {
           float speedNorm = dis.readFloat();
           builder.speedNorm(speedNorm);
           break;
+        case ENTITY_TYPE:
+          int entityTypeCode = dis.readUnsignedShort();
+          EntityType entityType = EntityType.getType(entityTypeCode);
+          if (entityType == null) {
+            throw newParseException();
+          }
+          builder.entityType(entityType);
+          break;
+        case SPRITE_TYPE:
+          int spriteTypeCode = dis.readUnsignedShort();
+          SpriteType spriteType = SpriteType.getType(spriteTypeCode);
+          if (spriteType == null) {
+            throw newParseException();
+          }
+          builder.spriteType(spriteType);
+          break;
         case OBJECT_DATA:
-          int objectDataUpdateSize = dis.readUnsignedByte();
-          List<ObjectAttribute> attributes = new ArrayList<>();
+          int objectDataUpdateSize = dis.readUnsignedShort();
           for (int j = 0; j < objectDataUpdateSize; j++) {
-            int objectDataUpdateCode = dis.readUnsignedByte();
-            ObjectAttribute objectDataUpdateType = ObjectAttribute.getType(objectDataUpdateCode);
-            if (objectDataUpdateType == null) {
+            int objectAttributeCode = dis.readUnsignedShort();
+            ObjectAttribute objectAttribute = ObjectAttribute.getType(objectAttributeCode);
+            if (objectAttribute == null) {
               throw newParseException();
             }
-            attributes.add(objectDataUpdateType);
+            Object objectAttributeData = readObject(dis, objectAttribute.getDataType());
+            builder.objectAttribute(objectAttribute, objectAttributeData);
           }
-          builder.objectAttributes(attributes);
           break;
         default:
           throw newParseException();
@@ -253,22 +258,42 @@ class InputMessageFactory {
     return builder.build();
   }
 
-  private static final MapPoint readMapPoint(DataInputStream dis) throws MessageParseException, IOException {
+  private static final Object readObject(DataInputStream dis, DataType type) throws IOException {
+    switch (type) {
+      case VOID:
+        return null;
+      case ONE_FLOAT:
+        return dis.readFloat();
+      case ONE_SHORT:
+      case ONE_ENTITY:
+        return dis.readUnsignedShort();
+      case ONE_TERRAIN:
+        return readTerrainPoint(dis);
+      default:
+        throw newParseException();
+    }
+  }
+
+  private static final TerrainPoint readTerrainPoint(DataInputStream dis) throws IOException {
     int chunkX = dis.readShort();
     int chunkY = dis.readShort();
     int blockX = dis.readUnsignedByte();
     int blockY = dis.readUnsignedByte();
-    MapPoint mapPoint = new MapPoint(chunkX, chunkY, blockX, blockY);
-    return mapPoint;
+    TerrainPoint terrainPoint = new TerrainPoint(chunkX, chunkY, blockX, blockY);
+    return terrainPoint;
   }
 
   private static final Config readConfig(DataInputStream dis) throws IOException {
     int maxRollbackTicks = dis.readUnsignedShort();
-    return new Config(maxRollbackTicks);
+    float defaultPlayerSpeed = dis.readFloat();
+    int playerBallCooldown = dis.readUnsignedShort();
+    float defaultBallSpeed = dis.readFloat();
+    int defaultBallLifespan = dis.readUnsignedShort();
+    return new Config(maxRollbackTicks, defaultPlayerSpeed, playerBallCooldown, defaultBallSpeed, defaultBallLifespan);
   }
 
   // On utilise notre propre méthode de lecture de String au cas où le protocole change (au lieu
-  // d'utiliser dis.readInputStream() qui par coïncidence utilise la même méthode que nous)
+  // d'utiliser dis.readUTF() qui par coïncidence utilise la même méthode que nous)
   private static final String readString(DataInputStream dis) throws IOException {
     int length = dis.readUnsignedShort();
     byte[] data = new byte[length];

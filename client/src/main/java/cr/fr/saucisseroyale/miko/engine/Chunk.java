@@ -1,6 +1,7 @@
 package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.protocol.TerrainType;
+import cr.fr.saucisseroyale.miko.util.ArrayIterable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +53,26 @@ public final class Chunk {
         return block.getType();
       }
     }
+    return defaultType;
+  }
+
+  public TerrainType getBlock(BlockPoint blockPoint) {
+    for (Block block : blocks) {
+      if (block.getX() == blockPoint.getBlockX() && block.getY() == blockPoint.getBlockY()) {
+        return block.getType();
+      }
+    }
+    return defaultType;
+  }
+
+  public Iterable<Block> getDefinedBlocks() {
+    return new ArrayIterable<>(blocks);
+  }
+
+  /**
+   * @return Le type de terrain par défaut.
+   */
+  public TerrainType getDefaultType() {
     return defaultType;
   }
 

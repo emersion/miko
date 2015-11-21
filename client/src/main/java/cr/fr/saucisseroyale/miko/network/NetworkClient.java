@@ -59,7 +59,7 @@ public class NetworkClient {
   }
 
   /**
-   * Déconnecte définitivement le client du serveur.
+   * Déconnecte le client du serveur.
    * <p>
    * Le client peut se reconnecter ensuite à un serveur avec {@link #connect(String, int)}. Si des
    * messages sont encores reçus ou ajoutés à la liste d'envoi, ils seront ignorés.

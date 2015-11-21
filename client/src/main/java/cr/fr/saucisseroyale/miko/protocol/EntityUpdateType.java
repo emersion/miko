@@ -14,7 +14,8 @@ public enum EntityUpdateType implements UniquelyIdentifiable {
   POSITION(0),
   SPEED_ANGLE(1),
   SPEED_NORM(2),
-  SPRITE(6),
+  ENTITY_TYPE(5),
+  SPRITE_TYPE(6),
   OBJECT_DATA(7);
   // @formatting
 

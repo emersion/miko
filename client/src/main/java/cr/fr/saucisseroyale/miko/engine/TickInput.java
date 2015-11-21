@@ -1,9 +1,14 @@
 package cr.fr.saucisseroyale.miko.engine;
 
+import cr.fr.saucisseroyale.miko.util.MikoMath;
+import cr.fr.saucisseroyale.miko.util.Triplet;
+
 import java.awt.Point;
 import java.awt.event.KeyEvent;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.prefs.Preferences;
-import java.util.stream.IntStream;
 
 /**
  * Un input pour un tick d'engine de Miko.
@@ -13,6 +18,7 @@ class TickInput {
 
   private static final Preferences prefsNode = Preferences.userRoot().node("miko.input");
 
+  private static final int ballSendKeycode = prefsNode.getInt("ballSend", KeyEvent.VK_SPACE);
   private static final int moveLeftKeycode = prefsNode.getInt("left", KeyEvent.VK_Q);
   private static final int moveRightKeycode = prefsNode.getInt("right", KeyEvent.VK_D);
   private static final int moveUpKeycode = prefsNode.getInt("up", KeyEvent.VK_Z);
@@ -23,48 +29,85 @@ class TickInput {
   private boolean moveUp;
   private boolean moveDown;
 
-  private final boolean mouseOver;
-  private final int mouseX;
-  private final int mouseY;
+  // list of ball send requests represented by send direction
+  private List<Float> ballSendRequests = new LinkedList<>();
 
-  public TickInput(TickInput previous, IntStream pressedKeys, IntStream newlyPressedKeys, Point mousePosition) {
-    pressedKeys.forEach((keyCode) -> {
-      if (keyCode == moveLeftKeycode) {
-        moveLeft = true;
-        return;
-      }
-      if (keyCode == moveRightKeycode) {
-        moveRight = true;
-        return;
-      }
-      if (keyCode == moveUpKeycode) {
-        moveUp = true;
-        return;
-      }
-      if (keyCode == moveDownKeycode) {
-        moveDown = true;
-        return;
-      }
-    });
+  public TickInput(TickInput previous, List<Triplet<Boolean, Integer, Point>> eventList) {
 
-    newlyPressedKeys.forEach((keyCode) -> {
+    int lastLeftRightPressed = 0;
+    int lastUpDownPressed = 0;
 
-    });
+    boolean newLeft = false, newRight = false, newUp = false, newDown = false;
 
-    if (mousePosition != null) {
-      mouseOver = true;
-      mouseX = mousePosition.x;
-      mouseY = mousePosition.y;
-    } else {
-      mouseOver = false;
-      if (previous != null) {
-        mouseX = previous.mouseX;
-        mouseY = previous.mouseY;
+    for (Triplet<Boolean, Integer, Point> event : eventList) {
+      int key = event.getSecond();
+      if (event.getFirst()) {
+        if (key == ballSendKeycode) {
+          // angle can be calculated from screen middle because the render translation (offset based
+          // on mouse position) has the same direction
+          Point mousePosition = event.getThird();
+          if (mousePosition == null) {
+            continue;
+          }
+          float angle = MikoMath.atan2(mousePosition);
+          ballSendRequests.add(angle);
+        }
+        if (key == moveLeftKeycode) {
+          lastLeftRightPressed = -1;
+          newLeft = true;
+          continue;
+        }
+        if (key == moveRightKeycode) {
+          lastLeftRightPressed = 1;
+          newRight = true;
+          continue;
+        }
+        if (key == moveUpKeycode) {
+          lastUpDownPressed = -1;
+          newUp = true;
+          continue;
+        }
+        if (key == moveDownKeycode) {
+          lastUpDownPressed = 1;
+          newDown = true;
+          continue;
+        }
       } else {
-        mouseX = 0;
-        mouseY = 0;
+        if (key == moveLeftKeycode) {
+          newLeft = false;
+          continue;
+        }
+        if (key == moveRightKeycode) {
+          newRight = false;
+          continue;
+        }
+        if (key == moveUpKeycode) {
+          newUp = false;
+          continue;
+        }
+        if (key == moveDownKeycode) {
+          newDown = false;
+          continue;
+        }
       }
     }
+
+    if (newLeft && newRight) {
+      moveLeft = lastLeftRightPressed < 0;
+      moveRight = lastLeftRightPressed > 0;
+    } else {
+      moveLeft = newLeft;
+      moveRight = newRight;
+    }
+
+    if (newUp && newDown) {
+      moveUp = lastUpDownPressed < 0;
+      moveDown = lastUpDownPressed > 0;
+    } else {
+      moveUp = newUp;
+      moveDown = newDown;
+    }
+
   }
 
   /**
@@ -96,24 +139,10 @@ class TickInput {
   }
 
   /**
-   * @return true si la souris est au-dessus du composant de jeu.
+   * @return La liste des requêtes de lancement de balles.
    */
-  public boolean isMouseOver() {
-    return mouseOver;
-  }
-
-  /**
-   * @return La position en X de la souris.
-   */
-  public int getMouseX() {
-    return mouseX;
-  }
-
-  /**
-   * @return La position en Y de la souris.
-   */
-  public int getMouseY() {
-    return mouseY;
+  public Iterable<Float> getBallSendRequests() {
+    return ballSendRequests;
   }
 
   /**
@@ -123,7 +152,7 @@ class TickInput {
    * @return Un input par défaut basé sur l'input passé en paramètre.
    */
   public static TickInput getNextFrom(TickInput previous) {
-    return new TickInput(previous, IntStream.empty(), IntStream.empty(), null);
+    return new TickInput(previous, Collections.emptyList());
   }
 
 }

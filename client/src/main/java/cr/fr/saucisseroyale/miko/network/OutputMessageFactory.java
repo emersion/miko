@@ -4,11 +4,12 @@ import cr.fr.saucisseroyale.miko.Miko;
 import cr.fr.saucisseroyale.miko.protocol.Action;
 import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
+import cr.fr.saucisseroyale.miko.protocol.EntityType;
 import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
 import cr.fr.saucisseroyale.miko.protocol.ExitType;
-import cr.fr.saucisseroyale.miko.protocol.MapPoint;
 import cr.fr.saucisseroyale.miko.protocol.MessageType;
 import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
+import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -16,7 +17,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 
 /**
@@ -95,15 +96,14 @@ public class OutputMessageFactory {
         if (updateType == null) {
           throw new IllegalArgumentException("Unknown parameters set in entityDataUpdate");
         }
-
         switch (updateType) {
           case POSITION:
             if (!entityDataUpdate.hasPosition()) {
               break;
             }
             updateTypes[b] = true;
-            MapPoint point = entityDataUpdate.getPosition();
-            writeMapPoint(buffer, point);
+            TerrainPoint point = entityDataUpdate.getPosition().toTerrainPoint();
+            writeTerrainPoint(buffer, point);
             break;
           case SPEED_ANGLE:
             if (!entityDataUpdate.hasSpeedAngle()) {
@@ -121,14 +121,45 @@ public class OutputMessageFactory {
             float speedNorm = entityDataUpdate.getSpeedNorm();
             buffer.writeFloat(speedNorm);
             break;
+          case ENTITY_TYPE:
+            if (!entityDataUpdate.hasEntityType()) {
+              break;
+            }
+            updateTypes[b] = true;
+            EntityType entityType = entityDataUpdate.getEntityType();
+            buffer.writeShort(entityType.getId());
+            break;
           case OBJECT_DATA:
             if (!entityDataUpdate.hasObjectAttributes()) {
               break;
             }
             updateTypes[b] = true;
-            Set<ObjectAttribute> attributes = entityDataUpdate.getObjectAttributes();
-            for (ObjectAttribute attribute : attributes) {
-              buffer.writeByte(attribute.getId());
+            Map<ObjectAttribute, Object> attributes = entityDataUpdate.getObjectAttributes();
+            int size = attributes.size();
+            if (size >= 1 << 16) {
+              throw new IllegalArgumentException("The attributes list is too long, max size : 65535 attributes");
+            }
+            buffer.writeShort(size);
+            for (Map.Entry<ObjectAttribute, Object> attribute : attributes.entrySet()) {
+              ObjectAttribute type = attribute.getKey();
+              Object value = attribute.getValue();
+              buffer.writeShort(type.getId());
+              switch (type.getDataType()) {
+                case VOID:
+                  break;
+                case ONE_SHORT:
+                case ONE_ENTITY:
+                  buffer.writeShort((int) value);
+                  break;
+                case ONE_FLOAT:
+                  buffer.writeFloat((float) value);
+                  break;
+                case ONE_TERRAIN:
+                  writeTerrainPoint(buffer, (TerrainPoint) value);
+                  break;
+                default:
+                  throw new IllegalArgumentException("Unknown parameters set in entityDataUpdate objectattributes");
+              }
             }
             break;
           default:
@@ -186,28 +217,29 @@ public class OutputMessageFactory {
 
   private static void writeAction(DataOutputStream dos, Action action) throws IOException {
     dos.writeByte(action.getType().getId());
-    switch (action.getParameterType()) {
+    switch (action.getDataType()) {
       case VOID:
         break;
-      case FLOAT:
+      case ONE_FLOAT:
         dos.writeFloat(action.getFloatValue());
         break;
-      case ENTITY_ID:
+      case ONE_SHORT:
+      case ONE_ENTITY:
         dos.writeShort(action.getEntityIdValue());
         break;
-      case MAP_POINT:
-        writeMapPoint(dos, action.getMapPointValue());
+      case ONE_TERRAIN:
+        writeTerrainPoint(dos, action.getTerrainPointValue());
         break;
       default:
         throw new IllegalArgumentException("Unknown parameters type set in action");
     }
   }
 
-  private static void writeMapPoint(DataOutputStream dos, MapPoint mapPoint) throws IOException {
-    dos.writeShort(mapPoint.getChunkX());
-    dos.writeShort(mapPoint.getChunkY());
-    dos.writeByte(mapPoint.getBlockX());
-    dos.writeByte(mapPoint.getBlockY());
+  private static void writeTerrainPoint(DataOutputStream dos, TerrainPoint terrainPoint) throws IOException {
+    dos.writeShort(terrainPoint.getChunkX());
+    dos.writeShort(terrainPoint.getChunkY());
+    dos.writeByte(terrainPoint.getBlockX());
+    dos.writeByte(terrainPoint.getBlockY());
   }
 
   private static void writeString(DataOutputStream dos, String string) throws IOException {

@@ -1,33 +1,36 @@
 package cr.fr.saucisseroyale.miko;
 
+import cr.fr.saucisseroyale.miko.util.Triplet;
+
+import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
 
 /**
- * Un gestionnaire de l'état des touches du clavier, disposant des touches actuellement pressées, ou
- * pressées depuis le dernier flush.
+ * Un gestionnaire de l'état des touches du clavier, disposant des touches pressées (avec la
+ * position de la souris) depuis le dernier flush.
  *
  */
 class KeyStateManager implements KeyListener {
 
-  private Map<Integer, Long> keyMap = new HashMap<>();
-  private long lastFlushTime = 0;
+  // additional synchronization to ensure no event gets lost
+  private List<Triplet<Boolean, Integer, Point>> eventList = new ArrayList<>();
 
-  public IntStream getPressedKeys() {
-    return keyMap.entrySet().stream().filter((e) -> (e.getValue() > 0)).mapToInt((e) -> e.getKey());
+  private final Supplier<Point> mousePositionSupplier;
+
+  public KeyStateManager(Supplier<Point> mousePositionSupplier) {
+    this.mousePositionSupplier = mousePositionSupplier;
   }
 
-  public IntStream flush() {
-    long time = System.nanoTime();
-    IntStream stream =
-        keyMap.entrySet().stream().filter((e) -> (Math.abs(e.getValue()) > lastFlushTime))
-        .sorted(Comparator.comparingLong((e) -> Math.abs(e.getValue()))).mapToInt((e) -> e.getKey());
-    lastFlushTime = time;
-    return stream;
+  public List<Triplet<Boolean, Integer, Point>> getEventsAndFlush() {
+    List<Triplet<Boolean, Integer, Point>> lastFrameList = eventList;
+    synchronized (eventList) {
+      eventList = new ArrayList<>();
+    }
+    return lastFrameList;
   }
 
   @Override
@@ -37,17 +40,16 @@ class KeyStateManager implements KeyListener {
 
   @Override
   public void keyPressed(KeyEvent e) {
-    long time = System.nanoTime();
-    keyMap.put(e.getKeyCode(), time);
+    synchronized (eventList) {
+      eventList.add(new Triplet<>(Boolean.TRUE, e.getKeyCode(), mousePositionSupplier.get()));
+    }
   }
 
   @Override
   public void keyReleased(KeyEvent e) {
-    Long time = keyMap.get(e.getKeyCode());
-    if (time == null || time <= 0) {
-      return;
+    synchronized (eventList) {
+      eventList.add(new Triplet<>(Boolean.FALSE, e.getKeyCode(), mousePositionSupplier.get()));
     }
-    keyMap.put(e.getKeyCode(), -time);
   }
 
 }

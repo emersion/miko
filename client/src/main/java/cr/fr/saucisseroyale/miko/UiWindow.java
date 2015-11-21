@@ -13,6 +13,7 @@ import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.PointerInfo;
 import java.awt.Toolkit;
+import java.awt.Transparency;
 import java.awt.Window;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
@@ -118,6 +119,7 @@ class UiWindow {
     }
     this.device = device;
     this.displayMode = displayMode;
+    System.out.println(device.getDefaultConfiguration().getColorModel(Transparency.OPAQUE));
     width = displayMode.getWidth();
     height = displayMode.getHeight();
     eventQueue = new SynchronizedEventQueue(uiLock);
@@ -277,6 +279,19 @@ class UiWindow {
   }
 
   /**
+   * @return Le device sur lequel la frame est affichée.
+   */
+  public GraphicsDevice getDevice() {
+    return device;
+  }
+
+  /**
+   * Retourne la position de la souris au-dessus du composant principal.
+   * <p>
+   * La position de la souris est renvoyée avec un système de coordonnées <b>différent</b> de celui
+   * de Swing : les coordonnées sont dans le sens X vers la droite, et Y vers le haut, avec (0;0) au
+   * <b>centre</b> du composant principal.
+   *
    * @return La position de la souris par rapport au composant principal, ou null si la souris n'est
    *         pas au-dessus.
    */
@@ -293,7 +308,9 @@ class UiWindow {
         return null;
       }
     }
-    return mousePoint;
+    // change coordinate system
+    Point offsetMousePoint = new Point(mousePoint.x - width / 2, height / 2 - mousePoint.y);
+    return offsetMousePoint;
   }
 
   private void paintComponents(Graphics2D graphics) {

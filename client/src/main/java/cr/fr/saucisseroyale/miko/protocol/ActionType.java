@@ -10,7 +10,7 @@ import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 public enum ActionType implements UniquelyIdentifiable {
 
   // @noformatting
-  ;
+  SEND_BALL(0, DataType.ONE_FLOAT);
   // @formatting
 
   static {
@@ -18,13 +18,13 @@ public enum ActionType implements UniquelyIdentifiable {
   }
 
   private final int id;
-  private final ActionParametersType parametersType;
+  private final DataType dataType;
 
-  private ActionType(int id, ActionParametersType parametersType) {
+  private ActionType(int id, DataType dataType) {
     assert id < 1 << 16 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
-    assert parametersType != null : "les paramètres doivent être définis";
+    assert dataType != null : "le type de données doivent être définis";
     this.id = id;
-    this.parametersType = parametersType;
+    this.dataType = dataType;
   }
 
   /**
@@ -36,10 +36,10 @@ public enum ActionType implements UniquelyIdentifiable {
   }
 
   /**
-   * @return Le type de paramètres pour ce type d'action.
+   * @return Le type de données pour ce type d'action.
    */
-  public ActionParametersType getParametersType() {
-    return parametersType;
+  public DataType getDataType() {
+    return dataType;
   }
 
   /**

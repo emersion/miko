@@ -11,83 +11,95 @@ public final class Action {
   private final ActionType type;
   private final Object parameter;
 
-  public Action(ActionType type) {
-    if (type.getParametersType() != ActionParametersType.VOID) {
-      throw newConstructorValueException();
-    }
+  public Action(ActionType type, Object value) {
     this.type = type;
-    parameter = null;
-  }
-
-  public Action(ActionType type, float value) {
-    if (type.getParametersType() != ActionParametersType.FLOAT) {
-      throw newConstructorValueException();
+    switch (type.getDataType()) {
+      case VOID:
+        if (value != null) {
+          throw newConstructorValueException();
+        }
+        parameter = null;
+        break;
+      case ONE_FLOAT:
+        if (!(value instanceof Float)) {
+          throw newConstructorValueException();
+        }
+        parameter = value;
+        break;
+      case ONE_SHORT:
+      case ONE_ENTITY:
+        if (!(value instanceof Integer)) {
+          throw newConstructorValueException();
+        }
+        int intValue = (int) value;
+        if (type.getDataType() == DataType.ONE_ENTITY && intValue < 0 || intValue >= 1 << 16) {
+          throw new IllegalArgumentException("entityId must be between 0 and 65535 inclusive");
+        }
+        parameter = value;
+        break;
+      case ONE_TERRAIN:
+        if (!(value instanceof TerrainPoint)) {
+          throw newConstructorValueException();
+        }
+        parameter = value;
+        break;
+      default:
+        throw new IllegalArgumentException("unknown data type: " + type);
     }
-    this.type = type;
-    parameter = value;
-  }
-
-  public Action(ActionType type, int entityId) {
-    if (type.getParametersType() != ActionParametersType.ENTITY_ID) {
-      throw newConstructorValueException();
-    }
-    if (entityId < 0 || entityId >= 1 << 16) {
-      throw new IllegalArgumentException("entityId must be between 0 and 65535 inclusive");
-    }
-    this.type = type;
-    parameter = entityId;
-  }
-
-  public Action(ActionType type, MapPoint mapPoint) {
-    if (type.getParametersType() != ActionParametersType.MAP_POINT) {
-      throw newConstructorValueException();
-    }
-    this.type = type;
-    parameter = mapPoint;
   }
 
   /**
-   * @return The type of this action.
+   * @return Le type de cette action.
    */
   public ActionType getType() {
     return type;
   }
 
   /**
-   * @return The type of the parameters of this action.
+   * @return Le type de données de cette action.
    */
-  public ActionParametersType getParameterType() {
-    return type.getParametersType();
+  public DataType getDataType() {
+    return type.getDataType();
   }
 
   /**
-   * @return The float value stored in this action.
+   * @return La valeur float de cette action.
    */
   public float getFloatValue() {
-    if (type.getParametersType() != ActionParametersType.FLOAT) {
+    if (type.getDataType() != DataType.ONE_FLOAT) {
       throw newGetFieldException();
     }
     return (float) parameter;
   }
 
   /**
-   * @return The entityId value stored in this action.
+   * @return La valeur entityId de cette action.
    */
   public int getEntityIdValue() {
-    if (type.getParametersType() != ActionParametersType.ENTITY_ID) {
+    if (type.getDataType() != DataType.ONE_ENTITY) {
       throw newGetFieldException();
     }
     return (int) parameter;
   }
 
   /**
-   * @return The map point value stored in this action.
+   * @return La valeur short de cette action.
    */
-  public MapPoint getMapPointValue() {
-    if (type.getParametersType() != ActionParametersType.MAP_POINT) {
+  public int getShortValue() {
+    if (type.getDataType() != DataType.ONE_SHORT) {
       throw newGetFieldException();
     }
-    return (MapPoint) parameter;
+    return (int) parameter;
+  }
+
+  /**
+   * @return La valeur TerrainPoint de cette action.
+   */
+  public TerrainPoint getTerrainPointValue() {
+    if (type.getDataType() != DataType.ONE_TERRAIN) {
+      throw newGetFieldException();
+    }
+    return (TerrainPoint) parameter;
   }
 
   private static final RuntimeException newConstructorValueException() {

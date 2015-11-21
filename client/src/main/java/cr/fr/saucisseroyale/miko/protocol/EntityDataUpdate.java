@@ -1,11 +1,11 @@
 package cr.fr.saucisseroyale.miko.protocol;
 
+import cr.fr.saucisseroyale.miko.engine.MapPoint;
+
+import java.util.Collections;
 import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 
 /**
  * Un objet immutable stockant des valeurs pour mettre à jour une entité. Suit la pattern Builder.
@@ -22,6 +22,7 @@ public final class EntityDataUpdate {
   public static class Builder {
     private final int entityId;
     private final Map<EntityUpdateType, Object> data = new EnumMap<>(EntityUpdateType.class);
+    private final Map<ObjectAttribute, Object> objectAttributes = new EnumMap<>(ObjectAttribute.class);
     private boolean built = false;
 
     /**
@@ -32,6 +33,15 @@ public final class EntityDataUpdate {
         throw new IllegalArgumentException("entityId must be between 0 and 65535 inclusive");
       }
       this.entityId = entityId;
+    }
+
+    /**
+     *
+     * @param position La nouvelle position de l'entité.
+     * @return self
+     */
+    public Builder position(TerrainPoint position) {
+      return position(new MapPoint(position));
     }
 
     /**
@@ -69,23 +79,36 @@ public final class EntityDataUpdate {
 
     /**
      *
-     * @param sprite Le nouveau sprite de l'entité.
+     * @param entityType Le nouveau type d'entité.
      * @return self
      */
-    public Builder sprite(Sprite sprite) {
+
+    public Builder entityType(EntityType entityType) {
       ensureNotBuilt();
-      data.put(EntityUpdateType.SPRITE, sprite);
+      data.put(EntityUpdateType.ENTITY_TYPE, entityType);
       return this;
     }
 
     /**
      *
-     * @param attributes Les nouveaux attributs de l'objet.
+     * @param spriteType Le nouveau type de sprite de l'entité.
      * @return self
      */
-    public Builder objectAttributes(List<ObjectAttribute> attributes) {
+    public Builder spriteType(SpriteType spriteType) {
       ensureNotBuilt();
-      data.put(EntityUpdateType.OBJECT_DATA, EnumSet.copyOf(attributes));
+      data.put(EntityUpdateType.SPRITE_TYPE, spriteType);
+      return this;
+    }
+
+    /**
+     *
+     * @param type Le type de l'attribut à ajouter.
+     * @param value Le valeur de l'attribut à ajouter.
+     * @return self
+     */
+    public Builder objectAttribute(ObjectAttribute type, Object value) {
+      ensureNotBuilt();
+      objectAttributes.put(type, value);
       return this;
     }
 
@@ -107,10 +130,12 @@ public final class EntityDataUpdate {
 
   private final int entityId;
   private final Map<EntityUpdateType, Object> data;
+  private final Map<ObjectAttribute, Object> objectAttributes;
 
   private EntityDataUpdate(Builder builder) {
     entityId = builder.entityId;
     data = builder.data;
+    objectAttributes = builder.objectAttributes;
   }
 
   /**
@@ -144,23 +169,28 @@ public final class EntityDataUpdate {
     return (float) speedNorm;
   }
 
-  public Sprite getSprite() {
-    Object sprite = data.get(EntityUpdateType.SPRITE);
+  public EntityType getEntityType() {
+    Object entityType = data.get(EntityUpdateType.ENTITY_TYPE);
+    if (entityType == null) {
+      throw new NoSuchElementException("entityType has not been set");
+    }
+    return (EntityType) entityType;
+  }
+
+  public SpriteType getSpriteType() {
+    Object sprite = data.get(EntityUpdateType.SPRITE_TYPE);
     if (sprite == null) {
       throw new NoSuchElementException("sprite has not been set");
     }
-    return (Sprite) sprite;
+    return (SpriteType) sprite;
   }
 
-  public Set<ObjectAttribute> getObjectAttributes() {
-    Object attributesRaw = data.get(EntityUpdateType.OBJECT_DATA);
-    if (attributesRaw == null) {
-      throw new NoSuchElementException("objectAttributes has not been set");
-    }
-    // on sait que c'est du bon type
-    @SuppressWarnings("unchecked")
-    Set<ObjectAttribute> attributes = (Set<ObjectAttribute>) attributesRaw;
-    return attributes;
+  public Object getObjectAttribute(ObjectAttribute type) {
+    return objectAttributes.get(type);
+  }
+
+  public Map<ObjectAttribute, Object> getObjectAttributes() {
+    return Collections.unmodifiableMap(objectAttributes);
   }
 
   public boolean hasPosition() {
@@ -175,8 +205,12 @@ public final class EntityDataUpdate {
     return data.containsKey(EntityUpdateType.SPEED_NORM);
   }
 
+  public boolean hasEntityType() {
+    return data.containsKey(EntityUpdateType.ENTITY_TYPE);
+  }
+
   public boolean hasSprite() {
-    return data.containsKey(EntityUpdateType.SPRITE);
+    return data.containsKey(EntityUpdateType.SPRITE_TYPE);
   }
 
   public boolean hasObjectAttributes() {

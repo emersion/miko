@@ -5,7 +5,7 @@ package cr.fr.saucisseroyale.miko.engine;
  * sans répéter (x,y).
  *
  */
-final class BlockPoint {
+public final class BlockPoint {
 
   private final float blockX;
   private final float blockY;

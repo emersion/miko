@@ -17,9 +17,9 @@ import cr.fr.saucisseroyale.miko.util.Pair;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.IntStream;
 
 public class Miko implements MessageHandler {
 
@@ -27,10 +27,14 @@ public class Miko implements MessageHandler {
     NETWORK, CONNECTION_REQUEST, CONNECTION, CONFIG, LOGIN_REQUEST, REGISTER, LOGIN, JOIN, EXIT;
   }
 
-  public static final int PROTOCOL_VERSION = 5;
+  public static final int PROTOCOL_VERSION = 6;
   private static final String DEFAULT_SERVER_ADDRESS = "miko.emersion.fr";
   private static final int DEFAULT_SERVER_PORT = 9999;
-  private static final int TICK_TIME = 20; // milliseconds
+  public static final int TICK_TIME = 20; // milliseconds
+  private static final int SERVER_TIMEOUT = 10 * 1000000000; // seconds
+  private long lastMessageReceived;
+  private boolean pingSent;
+  private AffineTransform graphicsTransform;
   private String username;
   private Config config;
   private Engine engine;
@@ -76,8 +80,12 @@ public class Miko implements MessageHandler {
     window.addUi(uiConnect);
     window.addUi(uiLogin);
 
-    keyStateManager = new KeyStateManager();
+    keyStateManager = new KeyStateManager(window::getMousePosition);
     window.setKeyListener(keyStateManager);
+
+    graphicsTransform = new AffineTransform();
+    graphicsTransform.translate(0, window.getHeight());
+    graphicsTransform.scale(1.0, -1.0);
 
     window.initAndShow();
   }
@@ -86,14 +94,7 @@ public class Miko implements MessageHandler {
     if (state != MikoState.EXIT) {
       return;
     }
-    // calm IDE down with suppressWarnings
-    // engine will use/close it anyway
-    @SuppressWarnings("resource")
-    IntStream pressedKeys = keyStateManager.getPressedKeys();
-    @SuppressWarnings("resource")
-    IntStream newlyPressedKeys = keyStateManager.flush();
-    Point mousePosition = window.getMousePosition();
-    engine.processNextTick(pressedKeys, newlyPressedKeys, mousePosition);
+    engine.processNextTick(keyStateManager.getEventsAndFlush());
   }
 
   private void loop() {
@@ -111,6 +112,7 @@ public class Miko implements MessageHandler {
       }
       alpha = (float) accumulator / (TICK_TIME * 1000000);
       window.render(); // calls render(graphics)
+      postLoop();
       Toolkit.getDefaultToolkit().sync(); // vsync
     }
     exit();
@@ -128,7 +130,27 @@ public class Miko implements MessageHandler {
   }
 
   private void render(Graphics2D graphics) {
-    // TODO render w/ alpha
+    AffineTransform saveTransform = graphics.getTransform();
+    graphics.transform(graphicsTransform);
+    Point mousePosition = window.getMousePosition();
+    engine.render(graphics, alpha, mousePosition);
+    graphics.setTransform(saveTransform);
+  }
+
+  private void postLoop() {
+    if (state != MikoState.NETWORK && state != MikoState.CONNECTION_REQUEST) {
+      long currentTime = System.nanoTime();
+      if (currentTime - lastMessageReceived > SERVER_TIMEOUT) {
+        exit(ExitType.PING_TIMEOUT);
+      }
+      if (currentTime - lastMessageReceived > SERVER_TIMEOUT / 2 && !pingSent) {
+        pingSent = true;
+        networkClient.putMessage(OutputMessageFactory.ping());
+      }
+    }
+    if (state == MikoState.EXIT) {
+      engine.freeTime();
+    }
   }
 
   private void connect(String address, int port) {
@@ -339,7 +361,14 @@ public class Miko implements MessageHandler {
       return;
     }
     changeStateTo(MikoState.JOIN);
-    engine = new Engine(config, tickRemainder);
+    try {
+      engine =
+          new Engine(config, window.getDevice().getDefaultConfiguration(), networkClient::putMessage, window.getWidth(), window.getHeight(),
+              tickRemainder);
+    } catch (IOException e) {
+      uiConnect.setStatusText("Erreur lors de la création du jeu : erreur de lecture de données.");
+      changeStateTo(MikoState.CONNECTION_REQUEST);
+    }
   }
 
   @Override
@@ -382,6 +411,7 @@ public class Miko implements MessageHandler {
   @Override
   public void pong() {
     messageReceived();
+    pingSent = false;
   }
 
   @Override
@@ -430,5 +460,6 @@ public class Miko implements MessageHandler {
 
   private void messageReceived() {
     // called when any message is received
+    lastMessageReceived = System.nanoTime();
   }
 }

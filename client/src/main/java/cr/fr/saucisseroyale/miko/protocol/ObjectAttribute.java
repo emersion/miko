@@ -4,14 +4,16 @@ import cr.fr.saucisseroyale.miko.util.IdSaver;
 import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 
 /**
- * Une caractéristique d'un objet lors d'une mise à jour.
+ * Un attribut d'un objet lors d'une mise à jour d'attributs.
  *
  */
 public enum ObjectAttribute implements UniquelyIdentifiable {
 
   // @noformatting
-  DISABLED(0),
-  ENABLED(1);
+  TICKS_LEFT(0, DataType.ONE_SHORT),
+  HEALTH(1, DataType.ONE_SHORT),
+  SENDER(2, DataType.ONE_ENTITY),
+  COOLDOWN_ONE(30000, DataType.ONE_SHORT);
   // @formatting
 
   static {
@@ -19,14 +21,17 @@ public enum ObjectAttribute implements UniquelyIdentifiable {
   }
 
   private final int id;
+  private final DataType dataType;
 
-  private ObjectAttribute(int id) {
+  private ObjectAttribute(int id, DataType dataType) {
     assert id < 1 << 8 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
+    assert dataType != null : "le type de données doivent être définis";
     this.id = id;
+    this.dataType = dataType;
   }
 
   /**
-   * @return L'identifiant correspondant à la caractéristique.
+   * @return L'identifiant correspondant à l'attribut.
    */
   @Override
   public int getId() {
@@ -34,10 +39,17 @@ public enum ObjectAttribute implements UniquelyIdentifiable {
   }
 
   /**
-   * Renvoit la valeur d'un identifiant de caractéristique.
+   * @return Le type de données de l'attribut.
+   */
+  public DataType getDataType() {
+    return dataType;
+  }
+
+  /**
+   * Renvoit la valeur d'un identifiant d'attribut.
    *
-   * @param id L'identifiant correspondant à la caractéristique.
-   * @return La caractéristique, ou null s'il n'y a pas de caractéristique correspondante.
+   * @param id L'identifiant correspondant à l'attribut.
+   * @return L'attribut, ou null s'il n'y a pas d'attribut correspondante.
    */
   public static ObjectAttribute getType(int id) {
     return IdSaver.getValue(ObjectAttribute.class, id);

@@ -1,5 +1,6 @@
 package cr.fr.saucisseroyale.miko.protocol;
 
+import cr.fr.saucisseroyale.miko.engine.Hitbox;
 import cr.fr.saucisseroyale.miko.util.IdSaver;
 import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 
@@ -10,21 +11,26 @@ import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
  * au rendu de l'animation.
  *
  */
-public enum Sprite implements UniquelyIdentifiable {
+public enum SpriteType implements UniquelyIdentifiable {
 
   // @noformatting
-  ;
+  PLACEHOLDER(0, Hitbox.newNullHitbox()),
+  PLAYER(1, Hitbox.newCircleHitbox(10)),
+  BALL(2, Hitbox.newCircleHitbox(10));
   // @formatting
 
   static {
-    IdSaver.register(Sprite.class);
+    IdSaver.register(SpriteType.class);
   }
 
   private final int id;
+  private final Hitbox hitbox;
 
-  private Sprite(int id) {
+  private SpriteType(int id, Hitbox hitbox) {
     assert id < 1 << 16 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
+    assert hitbox != null : "la hitbox doit être définie";
     this.id = id;
+    this.hitbox = hitbox;
   }
 
   /**
@@ -36,12 +42,19 @@ public enum Sprite implements UniquelyIdentifiable {
   }
 
   /**
+   * @return La hitbox correspondant au sprite.
+   */
+  public Hitbox getHitbox() {
+    return hitbox;
+  }
+
+  /**
    * Renvoit la valeur d'un code de sprite.
    *
    * @param id L'identifiant correspondant au sprite.
    * @return Le sprite, ou null s'il n'y a pas de sprite correspondant.
    */
-  public static Sprite getType(int id) {
-    return IdSaver.getValue(Sprite.class, id);
+  public static SpriteType getType(int id) {
+    return IdSaver.getValue(SpriteType.class, id);
   }
 }

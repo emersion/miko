@@ -11,9 +11,8 @@ public enum TerrainType implements UniquelyIdentifiable {
 
 
   // @noformatting
-  // TODO
-  NORMAL(0),
-  ANORMAL(1);
+  WHITE_GROUND(0,255,255,255),
+  BLACK_WALL(1,0,0,0);
   // @formatting
 
   static {
@@ -21,10 +20,12 @@ public enum TerrainType implements UniquelyIdentifiable {
   }
 
   private final int id;
+  private final int color;
 
-  private TerrainType(int id) {
+  private TerrainType(int id, int red, int green, int blue) {
     assert id < 1 << 8 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
     this.id = id;
+    color = red << 16 | green << 8 | blue;
   }
 
   /**
@@ -33,6 +34,13 @@ public enum TerrainType implements UniquelyIdentifiable {
   @Override
   public int getId() {
     return id;
+  }
+
+  /**
+   * @return L'entier représentant la couleur de cette case sous la forme 0x00RRGGBB.
+   */
+  public int getColor() {
+    return color;
   }
 
   /**

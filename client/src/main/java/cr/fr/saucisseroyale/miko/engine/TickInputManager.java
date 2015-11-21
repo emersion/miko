@@ -1,10 +1,12 @@
 package cr.fr.saucisseroyale.miko.engine;
 
+import cr.fr.saucisseroyale.miko.util.Triplet;
+
 import java.awt.Point;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.IntStream;
 
 /**
  * Un gestionnaire des inputs à chaque tick de jeu.
@@ -15,9 +17,9 @@ class TickInputManager {
   private Map<Long, TickInput> map;
   private long firstTick = Long.MAX_VALUE;
 
-  public void addInput(long tick, IntStream pressedKeys, IntStream newlyPressedKeys, Point mousePosition) {
+  public void addInput(long tick, List<Triplet<Boolean, Integer, Point>> eventList) {
     TickInput previousInput = getInput(tick - 1);
-    TickInput newInput = new TickInput(previousInput, pressedKeys, newlyPressedKeys, mousePosition);
+    TickInput newInput = new TickInput(previousInput, eventList);
     map.put(tick, newInput);
   }
 
