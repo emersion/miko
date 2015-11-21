@@ -3,6 +3,7 @@ package engine
 
 import (
 	"container/list"
+	"git.emersion.fr/saucisse-royale/miko.git/server/action"
 	"git.emersion.fr/saucisse-royale/miko.git/server/auth"
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
@@ -16,6 +17,7 @@ type Engine struct {
 	auth    *auth.Service
 	clock   *clock.Service
 	entity  *entity.Service
+	action  *action.Service
 	terrain *terrain.Terrain
 	ctx     *message.Context
 
@@ -209,6 +211,7 @@ func New() *Engine {
 		auth:    auth.NewService(),
 		clock:   clock.NewService(),
 		entity:  entity.NewService(),
+		action:  action.NewService(),
 		terrain: terrain.New(),
 
 		stop: make(chan bool),
@@ -217,6 +220,7 @@ func New() *Engine {
 	// Populate context
 	ctx.Auth = e.auth
 	ctx.Entity = e.entity.Frontend()
+	ctx.Action = e.action.Frontend()
 	ctx.Terrain = e.terrain
 	ctx.Clock = e.clock
 

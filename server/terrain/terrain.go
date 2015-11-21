@@ -21,6 +21,16 @@ func (d *Delta) GetTick() message.AbsoluteTick {
 	return d.tick
 }
 
+func (d *Delta) Inverse() delta.Delta {
+	return &Delta{
+		tick: d.tick,
+		X:    d.X,
+		Y:    d.Y,
+		From: d.To,
+		To:   d.From,
+	}
+}
+
 // The terrain.
 // It is a database of the game map. It offers functions to retrieve specific
 // parts of it.

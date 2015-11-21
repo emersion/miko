@@ -196,7 +196,7 @@ func (s *Service) Rewind(dt message.AbsoluteTick) error {
 		}
 
 		if s.frontend != nil {
-			s.frontend.deltas = append(s.frontend.deltas, d.Inverse())
+			s.frontend.deltas = append(s.frontend.deltas, d.Inverse().(*Delta))
 		}
 	}
 

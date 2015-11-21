@@ -15,6 +15,7 @@ type Context struct {
 	Config *Config
 
 	Entity  EntityService
+	Action  ActionService
 	Terrain Terrain
 	Clock   ClockService
 

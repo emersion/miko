@@ -10,6 +10,9 @@ import (
 type Delta interface {
 	// The time when the change occured.
 	GetTick() message.AbsoluteTick
+
+	// Get the inverse of this delta.
+	Inverse() Delta
 }
 
 // A list of deltas.

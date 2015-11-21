@@ -14,6 +14,10 @@ func (d *mockDelta) GetTick() message.AbsoluteTick {
 	return d.tick
 }
 
+func (d *mockDelta) Inverse() delta.Delta {
+	return d
+}
+
 func TestList(t *testing.T) {
 	l := delta.NewList()
 

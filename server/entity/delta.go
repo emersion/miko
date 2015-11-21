@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/delta"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
@@ -53,7 +54,7 @@ func (d *Delta) Request() Request {
 }
 
 // Get the inverse of this delta.
-func (d *Delta) Inverse() *Delta {
+func (d *Delta) Inverse() delta.Delta {
 	return &Delta{
 		tick:      d.tick,
 		requested: d.requested,
