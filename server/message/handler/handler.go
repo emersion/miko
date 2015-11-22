@@ -69,7 +69,7 @@ func (h *Handler) Listen(clientIO *message.IO) {
 
 	var msg_type message.Type
 	for {
-		err := read(clientIO.Reader(), &msg_type)
+		err := read(clientIO, &msg_type)
 		if err == io.EOF {
 			log.Println("Connection closed.")
 			return
