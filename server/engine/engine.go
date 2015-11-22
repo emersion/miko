@@ -299,7 +299,7 @@ func New(srv *server.Server) *Engine {
 	ctx.Config = &message.Config{
 		MaxRollbackTicks:    uint16(message.MaxRewind),
 		DefaultPlayerSpeed:  7,
-		PlayerBallCooldown:  40,
+		PlayerBallCooldown:  20,
 		DefaultBallSpeed:    9,
 		DefaultBallLifespan: 100,
 	}
