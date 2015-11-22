@@ -32,7 +32,16 @@ func (e *Engine) processEntityRequest(req entity.Request) bool {
 
 func (e *Engine) processActionRequest(req action.Request) bool {
 	if req.Action.Id == 0 { // throw_ball
-		// TODO
+		initiator := e.entity.Get(req.Action.Initiator)
+		ball := entity.New()
+		ball.Type = 1 // ball
+		ball.Position = initiator.Position
+		ball.Speed.Norm = float64(e.ctx.Config.DefaultBallSpeed)
+		ball.Speed.Angle = float64(req.Action.Params[0].(float32))
+		r := entity.NewCreateRequest(req.GetTick(), ball)
+		e.entity.AcceptRequest(r)
+
+		// TODO: req.Action.Params[1] = temporary entity id
 	}
 
 	return true

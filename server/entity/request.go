@@ -28,6 +28,11 @@ func newClientRequest(t message.AbsoluteTick) *request {
 }
 
 // TODO: move this somewhere else?
+func NewCreateRequest(t message.AbsoluteTick, entity *Entity) *CreateRequest {
+	return &CreateRequest{newRequest(t), entity}
+}
+
+// TODO: move this somewhere else?
 func NewUpdateRequest(t message.AbsoluteTick, entity *Entity, diff *message.EntityDiff) *UpdateRequest {
 	return &UpdateRequest{newRequest(t), entity, diff}
 }
