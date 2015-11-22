@@ -1,4 +1,4 @@
-# Protocole version *6*
+# Protocole version *7*
 
 ## Généralités
 
@@ -47,6 +47,7 @@ C | 16 | Non | chat_send | str message
 S | 17 | Oui | chat_receive | uint16 entityid + str message
 C | 18 | Non | version | uint16 versionid
 S | 19 | Non | config | bytes config
+S | 20 | Non | entity_id_change | uint16 oldentityid + uint16 newentityid
 
 * Si le message possède un tick, il l'envoit avant son contenu : headers puis tick puis contenu. Le tick est un uint16 et est la frame de logique actuelle sur le simulateur du jeu envoyant le message, elle revient à 0 après avoir atteint son maximum (2^16 - 1)
 * [1] : Un tick est envoyé après le `loginresponsecode` si c'est le code "ok".
@@ -150,6 +151,14 @@ size times:
 ## Entités
 
 Le client peut envoyer plusieurs entity_update si interaction d'objets différents de lui.
+
+### entityid
+
+Un identifiant unique de l'entité, représenté par un uint16. Les 1000 dernières valeurs possibles (de 64536 à 65535 inclus) sont réservées pour des ids temporaires générés par le client et ne doivent jamais être générées par le serveur.
+
+### entity_id_change
+
+Un action peut provoquer la création d'une entité. Si tel est le cas, le client va générer un entityid temporaire. Lorsque le serveur va créer l'entité, un entityid permanent sera attribué. Le serveur doit alors envoyer un entity_id_change au client qui a provoqué l'action.
 
 ### entity_update
 
