@@ -30,6 +30,7 @@ type Client struct {
 // TCP server
 type Server struct {
 	clients []*Client
+	ios     []*message.IO
 	address string        // Address to open connection, e.g. localhost:9999
 	joins   chan net.Conn // Channel for new connections
 	Joins   chan *message.IO
@@ -64,6 +65,8 @@ func (s *Server) newClient(conn net.Conn) {
 	reader := bufio.NewReader(c.conn)
 	brd := &broadcaster{c.id, c.Server}
 	io := message.NewIO(c.id, reader, c, brd)
+
+	s.ios = append(s.ios, io)
 	c.Server.Joins <- io
 }
 
@@ -110,6 +113,9 @@ func (s *Server) broadcast(data []byte, from int) (n int, err error) {
 	for _, c := range s.clients {
 		if c == nil {
 			continue
+		}
+		if from != c.id {
+
 		}
 
 		n, err = c.conn.Write(data)
