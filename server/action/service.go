@@ -19,9 +19,9 @@ func (s *Service) GetTick() message.AbsoluteTick {
 	return s.tick
 }
 
-func (s *Service) Accept(a Action) error {
-	s.actions.Insert(a)
-	s.tick = a.GetTick()
+func (s *Service) AcceptRequest(req Request) error {
+	s.actions.Insert(req.Action)
+	s.tick = req.GetTick()
 	return nil
 }
 

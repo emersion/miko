@@ -25,16 +25,27 @@ type Engine struct {
 	stop  chan bool
 }
 
-func (e *Engine) checkRequest(req entity.Request) bool {
+func (e *Engine) processEntityRequest(req entity.Request) bool {
+	return true
+}
+
+func (e *Engine) processActionRequest(req action.Request) bool {
 	return true
 }
 
 func (e *Engine) processRequest(req entity.Request) {
-	if !e.checkRequest(req) {
-		return
+	switch r := req.(type) {
+	case action.Request:
+		if !e.processActionRequest(r) {
+			return
+		}
+		e.action.AcceptRequest(r)
+	case entity.Request:
+		if !e.processEntityRequest(r) {
+			return
+		}
+		e.entity.AcceptRequest(r)
 	}
-
-	e.entity.AcceptRequest(req)
 }
 
 func (e *Engine) moveEntities(t message.AbsoluteTick) {
@@ -49,6 +60,7 @@ func (e *Engine) moveEntities(t message.AbsoluteTick) {
 
 func (e *Engine) Start() {
 	entityFrontend := e.entity.Frontend()
+	actionFrontend := e.action.Frontend()
 
 	for {
 		start := time.Now().UnixNano()
@@ -69,19 +81,18 @@ func (e *Engine) Start() {
 		acceptedMinTick := e.clock.GetAbsoluteTick()
 		accepted := list.New()
 		for {
-			noMore := false
-
 			var req entity.Request
 
 			// Get last request
+			noMore := false
 			select {
 			case req = <-entityFrontend.Creates:
 			case req = <-entityFrontend.Updates:
 			case req = <-entityFrontend.Deletes:
+			case req = <-actionFrontend.Executes:
 			default:
 				noMore = true
 			}
-
 			if noMore {
 				break
 			}

@@ -41,16 +41,6 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 		return fmt.Errorf("Unknown message type: %d", t)
 	}
 
-	if h.ctx.IsServer() {
-		// No errors, send updates
-		if h.ctx.Entity.IsDirty() {
-			err := builder.SendEntitiesDiffToClients(io.Broadcaster(), h.ctx.Clock.GetRelativeTick(), h.ctx.Entity.Flush())
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 

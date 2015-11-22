@@ -28,6 +28,10 @@ func (a *action) Inverse() delta.Delta {
 	return &inversedAction{a}
 }
 
+func (a *action) ToMessage() *message.Action {
+	return a.Action
+}
+
 func NewFromMessage(src *message.Action, t message.AbsoluteTick) *action {
 	return &action{
 		Action: src,
