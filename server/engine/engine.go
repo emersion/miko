@@ -176,10 +176,9 @@ func (e *Engine) Start() {
 			}
 		}
 
-		log.Println("TICK", e.clock.GetAbsoluteTick(), e.clock.GetAbsoluteTick()-acceptedMinTick)
-
 		// Initiate lag compensation if necessary
 		if acceptedMinTick < e.ctx.Clock.GetAbsoluteTick() {
+			log.Println("Back to the past!", e.clock.GetAbsoluteTick(), e.clock.GetAbsoluteTick()-acceptedMinTick)
 			e.terrain.Rewind(e.terrain.GetTick() - acceptedMinTick)
 			e.entity.Rewind(e.entity.GetTick() - acceptedMinTick)
 		}
