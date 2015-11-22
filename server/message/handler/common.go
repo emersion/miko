@@ -52,23 +52,34 @@ func ReadEntity(r io.Reader) (*message.Entity, *message.EntityDiff) {
 
 		// TODO: move this somewhere else
 		for i := 0; i < int(size); i++ {
-			var attrId uint16
+			var attrId message.EntityAttrId
 			read(r, &attrId)
 
 			// TODO: do something of the data
+			var attrVal interface{}
 			switch attrId {
 			case 0:
 				var ticksLeft uint16
 				read(r, &ticksLeft)
+				attrVal = ticksLeft
 			case 1:
 				var health uint16
 				read(r, &health)
+				attrVal = health
 			case 2:
 				var sender message.EntityId
 				read(r, &sender)
+				attrVal = sender
 			case 30000:
 				var cooldownOne uint16
 				read(r, &cooldownOne)
+				attrVal = cooldownOne
+			default:
+				attrVal = nil
+			}
+
+			if attrVal != nil {
+				entity.Attributes[attrId] = attrVal
 			}
 		}
 	}

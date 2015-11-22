@@ -33,14 +33,18 @@ type EntityType uint16
 // A sprite index.
 type Sprite uint16
 
+// An entity attribute id.
+type EntityAttrId uint16
+
 // An entity.
 // Can be a player, an object, a monster, and so on.
 type Entity struct {
-	Id       EntityId
-	Type     EntityType
-	Position *Position
-	Speed    *Speed
-	Sprite   Sprite
+	Id         EntityId
+	Type       EntityType
+	Position   *Position
+	Speed      *Speed
+	Sprite     Sprite
+	Attributes map[EntityAttrId]interface{}
 }
 
 // Check if this entity is the same as another one. Only attributes specified in
@@ -60,6 +64,9 @@ func (e *Entity) EqualsWithDiff(other *Entity, diff *EntityDiff) bool {
 	}
 	if diff.Sprite && e.Sprite != other.Sprite {
 		return false
+	}
+	if diff.Attributes {
+		// TODO
 	}
 	return true
 }
