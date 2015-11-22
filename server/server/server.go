@@ -93,7 +93,6 @@ func (s *Server) Listen() {
 
 	for {
 		conn, _ := listener.Accept()
-		log.Println(conn.(*tls.Conn).ConnectionState())
 		s.joins <- conn
 	}
 }
