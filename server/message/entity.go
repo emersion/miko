@@ -74,8 +74,9 @@ func (e *Entity) EqualsWithDiff(other *Entity, diff *EntityDiff) bool {
 // Initialize a new entity.
 func NewEntity() *Entity {
 	return &Entity{
-		Position: &Position{},
-		Speed:    &Speed{},
+		Position:   &Position{},
+		Speed:      &Speed{},
+		Attributes: make(map[EntityAttrId]interface{}),
 	}
 }
 
