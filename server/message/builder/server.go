@@ -227,18 +227,20 @@ func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.Entity
 	}
 
 	// Updated entities
-	entities := make([]*message.Entity, len(pool.Updated))
-	diffs := make([]*message.EntityDiff, len(pool.Updated))
-	i := 0
-	for entity, diff := range pool.Updated {
-		entities[i] = entity
-		diffs[i] = diff
-		i++
-	}
+	if len(pool.Updated) > 0 {
+		entities := make([]*message.Entity, len(pool.Updated))
+		diffs := make([]*message.EntityDiff, len(pool.Updated))
+		i := 0
+		for entity, diff := range pool.Updated {
+			entities[i] = entity
+			diffs[i] = diff
+			i++
+		}
 
-	err := SendEntitiesUpdate(w, t, entities, diffs)
-	if err != nil {
-		return err
+		err := SendEntitiesUpdate(w, t, entities, diffs)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Deleted entities
