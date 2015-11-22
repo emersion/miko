@@ -62,26 +62,32 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return errors.New("Cannot get newly logged in user's session")
 			}
 
+			session.Entity.Position.BX = 10
+			session.Entity.Position.BY = 10
 			session.Entity.Type = 0   // player
 			session.Entity.Sprite = 1 // player
 
 			ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere
 
 			// Send initial terrain
-
 			pos := session.Entity.Position
-			blk, err := ctx.Terrain.GetBlockAt(pos.BX, pos.BY)
-			if err != nil {
-				return err
-			}
+			for i := pos.BX - 5; i <= pos.BX+5; i++ {
+				for j := pos.BY - 5; j < pos.BY+5; j++ {
+					blk, err := ctx.Terrain.GetBlockAt(pos.BX, pos.BY)
+					if err != nil {
+						log.Println("Cannot send initial terrain to client", err)
+						continue
+					}
 
-			err = builder.SendTerrainUpdate(io, ctx.Clock.GetRelativeTick(), blk)
-			if err != nil {
-				return err
+					err = builder.SendTerrainUpdate(io, ctx.Clock.GetRelativeTick(), blk)
+					if err != nil {
+						return err
+					}
+				}
 			}
 
 			// Broadcast new entity
-			err = builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
+			err := builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
 			if err != nil {
 				return err
 			}

@@ -202,6 +202,6 @@ func (t *Terrain) Redo(d *Delta) error {
 // Create a new terrain.
 func New() *Terrain {
 	t := &Terrain{}
-	t.Reset(2)
+	t.Reset(20)
 	return t
 }
