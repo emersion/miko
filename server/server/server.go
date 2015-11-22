@@ -110,6 +110,8 @@ func (s *Server) Listen() {
 }
 
 func (s *Server) broadcast(data []byte, from int) (n int, err error) {
+	log.Println("Broadcast from:", from)
+
 	N := 0
 	for _, io := range s.ios {
 		if io == nil {
