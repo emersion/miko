@@ -56,53 +56,53 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		log.Println("Client logged in:", username, code)
 
-		if code == message.LoginResponseCodes["ok"] {
-			// Create entity
-			session := ctx.Auth.GetSession(io.Id)
-			if session == nil {
-				return errors.New("Cannot get newly logged in user's session")
-			}
-
-			session.Entity.Position.BX = 20
-			session.Entity.Position.BY = 20
-			session.Entity.Type = 0   // player
-			session.Entity.Sprite = 1 // player
-			session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0)
-
-			ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere
-
-			// Wait for the entity to be accepted
-			// TODO: bypass frontend, manage this in engine
-			time.Sleep(time.Millisecond * 100) // TODO: THIS IS VERRYYYYY UGLYYYYY!!1
-
-			// Broadcast new entity
-			err := builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
-			if err != nil {
-				return err
-			}
-
-			// Send initial terrain
-			pos := session.Entity.Position
-			radius := message.BlockCoord(10)
-			for i := pos.BX - radius; i <= pos.BX+radius; i++ {
-				for j := pos.BY - radius; j <= pos.BY+radius; j++ {
-					blk, err := ctx.Terrain.GetBlockAt(i, j)
-					if err != nil {
-						log.Println("Cannot send initial terrain to client", err)
-						continue
-					}
-
-					err = builder.SendTerrainUpdate(io, ctx.Clock.GetRelativeTick(), blk)
-					if err != nil {
-						return err
-					}
-				}
-			}
-
-			return builder.SendPlayerJoined(io.Broadcaster(), ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
-		} else {
+		if code != message.LoginResponseCodes["ok"] {
 			return nil
 		}
+
+		// Create entity
+		session := ctx.Auth.GetSession(io.Id)
+		if session == nil {
+			return errors.New("Cannot get newly logged in user's session")
+		}
+
+		session.Entity.Position.BX = 20
+		session.Entity.Position.BY = 20
+		session.Entity.Type = 0   // player
+		session.Entity.Sprite = 1 // player
+		session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0)
+
+		ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere
+
+		// Wait for the entity to be accepted
+		// TODO: bypass frontend, manage this in engine
+		time.Sleep(time.Millisecond * 100) // TODO: THIS IS VERRYYYYY UGLYYYYY!!1
+
+		// Broadcast new entity
+		err := builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
+		if err != nil {
+			return err
+		}
+
+		// Send initial terrain
+		pos := session.Entity.Position
+		radius := message.BlockCoord(10)
+		for i := pos.BX - radius; i <= pos.BX+radius; i++ {
+			for j := pos.BY - radius; j <= pos.BY+radius; j++ {
+				blk, err := ctx.Terrain.GetBlockAt(i, j)
+				if err != nil {
+					log.Println("Cannot send initial terrain to client", err)
+					continue
+				}
+
+				err = builder.SendTerrainUpdate(io, ctx.Clock.GetRelativeTick(), blk)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		return builder.SendPlayerJoined(io.Broadcaster(), ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
 	},
 	message.Types["register"]: func(ctx *message.Context, io *message.IO) error {
 		username := readString(io)
