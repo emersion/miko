@@ -49,10 +49,27 @@ func ReadEntity(r io.Reader) (*message.Entity, *message.EntityDiff) {
 	if diff.Attributes {
 		var size uint16
 		read(r, &size)
-		// TODO
 
-		if size != 0 {
-			log.Println("Warning: entity attributes not implemented!")
+		// TODO: move this somewhere else
+		for i := 0; i < int(size); i++ {
+			var attrId uint16
+			read(r, &attrId)
+
+			// TODO: do something of the data
+			switch attrId {
+			case 0:
+				var ticksLeft uint16
+				read(r, &ticksLeft)
+			case 1:
+				var health uint16
+				read(r, &health)
+			case 2:
+				var sender message.EntityId
+				read(r, &sender)
+			case 30000:
+				var cooldownOne uint16
+				read(r, &cooldownOne)
+			}
 		}
 	}
 
