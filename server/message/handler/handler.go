@@ -51,6 +51,8 @@ func (h *Handler) Listen(clientIO *message.IO) {
 	defer (func() {
 		// Will be executed when the connection is closed
 
+		clientIO.Close()
+
 		var session *message.Session
 		if h.ctx.IsServer() {
 			session = h.ctx.Auth.GetSession(clientIO.Id)
