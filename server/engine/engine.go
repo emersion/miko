@@ -38,7 +38,7 @@ func (e *Engine) processEntityRequest(req entity.Request) bool {
 	return true
 }
 
-func (e *Engine) processActionRequest(req action.Request) bool {
+func (e *Engine) processActionRequest(req *action.Request) bool {
 	if req.Action.Id == 0 { // throw_ball
 		initiator := e.entity.Get(req.Action.Initiator)
 		ball := entity.New()
@@ -58,9 +58,8 @@ func (e *Engine) processActionRequest(req action.Request) bool {
 }
 
 func (e *Engine) processRequest(req requests.Request) {
-	log.Println(req)
 	switch r := req.(type) {
-	case action.Request:
+	case *action.Request:
 		if !e.processActionRequest(r) {
 			return
 		}
