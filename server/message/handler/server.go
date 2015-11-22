@@ -62,8 +62,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return errors.New("Cannot get newly logged in user's session")
 			}
 
-			session.Entity.Position.BX = 10
-			session.Entity.Position.BY = 10
+			session.Entity.Position.BX = 20
+			session.Entity.Position.BY = 20
 			session.Entity.Type = 0   // player
 			session.Entity.Sprite = 1 // player
 			session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0)
@@ -72,8 +72,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 			// Send initial terrain
 			pos := session.Entity.Position
-			for i := pos.BX - 5; i <= pos.BX+5; i++ {
-				for j := pos.BY - 5; j < pos.BY+5; j++ {
+			radius := message.BlockCoord(10)
+			for i := pos.BX - radius; i <= pos.BX+radius; i++ {
+				for j := pos.BY - radius; j <= pos.BY+radius; j++ {
 					blk, err := ctx.Terrain.GetBlockAt(pos.BX, pos.BY)
 					if err != nil {
 						log.Println("Cannot send initial terrain to client", err)
