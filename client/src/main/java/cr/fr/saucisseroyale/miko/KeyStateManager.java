@@ -17,6 +17,7 @@ import java.util.function.Supplier;
 class KeyStateManager implements KeyListener {
 
   // additional synchronization to ensure no event gets lost
+  private Object eventListLock = new Object();
   private List<Triplet<Boolean, Integer, Point>> eventList = new ArrayList<>();
 
   private final Supplier<Point> mousePositionSupplier;
@@ -27,7 +28,7 @@ class KeyStateManager implements KeyListener {
 
   public List<Triplet<Boolean, Integer, Point>> getEventsAndFlush() {
     List<Triplet<Boolean, Integer, Point>> lastFrameList = eventList;
-    synchronized (eventList) {
+    synchronized (eventListLock) {
       eventList = new ArrayList<>();
     }
     return lastFrameList;
@@ -40,14 +41,14 @@ class KeyStateManager implements KeyListener {
 
   @Override
   public void keyPressed(KeyEvent e) {
-    synchronized (eventList) {
+    synchronized (eventListLock) {
       eventList.add(new Triplet<>(Boolean.TRUE, e.getKeyCode(), mousePositionSupplier.get()));
     }
   }
 
   @Override
   public void keyReleased(KeyEvent e) {
-    synchronized (eventList) {
+    synchronized (eventListLock) {
       eventList.add(new Triplet<>(Boolean.FALSE, e.getKeyCode(), mousePositionSupplier.get()));
     }
   }

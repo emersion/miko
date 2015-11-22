@@ -15,6 +15,7 @@ public enum DataType {
   ONE_FLOAT,
   ONE_ENTITY,
   ONE_SHORT,
-  ONE_TERRAIN;
+  ONE_TERRAIN,
+  PAIR_FLOAT_ENTITY;
   // @formatting
 }

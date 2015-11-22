@@ -22,7 +22,14 @@ public class MikoMath {
 
   public static int modulo(int number, int divisor) {
     if (number < 0) {
-      return modulo(-number, divisor);
+      int positiveModulo = modulo(-number, divisor);
+      if (positiveModulo == 0) {
+        return 0;
+      }
+      return divisor - modulo(-number, divisor);
+    }
+    if (number < divisor) {
+      return number;
     }
     return number % divisor;
   }

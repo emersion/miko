@@ -10,6 +10,7 @@ import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
  */
 public enum MessageType implements UniquelyIdentifiable {
 
+  // update InputMessageFactory or OutputMessageFactory if changing this
   // @noformatting
   PING(0), PONG(1),
   EXIT(2),
@@ -21,7 +22,8 @@ public enum MessageType implements UniquelyIdentifiable {
   ACTIONS(12), ACTION(13),
   ENTITY_CREATE(14), ENTITY_DESTROY(15),
   CHAT_SEND(16), CHAT_RECEIVE(17),
-  VERSION(18), CONFIG(19);
+  VERSION(18), CONFIG(19),
+  ENTITY_ID_CHANGE(20);
   // @formatting
 
   static {

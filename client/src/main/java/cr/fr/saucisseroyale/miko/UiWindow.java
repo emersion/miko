@@ -13,7 +13,6 @@ import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.PointerInfo;
 import java.awt.Toolkit;
-import java.awt.Transparency;
 import java.awt.Window;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
@@ -51,6 +50,7 @@ class UiWindow {
 
     public EventCatcherComponent(int width, int height) {
       setSize(width, height);
+      setFocusable(true);
     }
 
     public void setKeyListener(KeyListener keyListener) {
@@ -81,9 +81,9 @@ class UiWindow {
     }
   }
 
-  private static final Integer UI_VISIBLE_LAYER = new Integer(1);
-  private static final Integer UI_HIDDEN_LAYER = new Integer(-1);
-  private static final Integer MAIN_LAYER = new Integer(0);
+  private static final Integer UI_VISIBLE_LAYER = Integer.valueOf(1);
+  private static final Integer UI_HIDDEN_LAYER = Integer.valueOf(-1);
+  private static final Integer MAIN_LAYER = Integer.valueOf(0);
   private SynchronizedEventQueue eventQueue;
   private Runnable closeListener;
   private JFrame frame;
@@ -119,7 +119,6 @@ class UiWindow {
     }
     this.device = device;
     this.displayMode = displayMode;
-    System.out.println(device.getDefaultConfiguration().getColorModel(Transparency.OPAQUE));
     width = displayMode.getWidth();
     height = displayMode.getHeight();
     eventQueue = new SynchronizedEventQueue(uiLock);
@@ -203,6 +202,7 @@ class UiWindow {
     if (resize) {
       component.setSize(getWidth(), getHeight());
     }
+    component.setVisible(false);
     frame.getLayeredPane().add(component, UI_HIDDEN_LAYER);
   }
 
@@ -212,6 +212,7 @@ class UiWindow {
    * @param component Le composant à rendre visible.
    */
   public void showUi(JComponent component) {
+    component.setVisible(true);
     frame.getLayeredPane().setLayer(component, UI_VISIBLE_LAYER, 0);
   }
 
@@ -221,6 +222,7 @@ class UiWindow {
    * @param component Le composant à cacher.
    */
   public void hideUi(JComponent component) {
+    component.setVisible(false);
     frame.getLayeredPane().setLayer(component, UI_HIDDEN_LAYER, 0);
   }
 

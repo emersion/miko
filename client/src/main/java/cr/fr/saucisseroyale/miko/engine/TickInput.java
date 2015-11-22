@@ -6,7 +6,6 @@ import cr.fr.saucisseroyale.miko.util.Triplet;
 import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.prefs.Preferences;
 
@@ -29,15 +28,22 @@ class TickInput {
   private boolean moveUp;
   private boolean moveDown;
 
-  // list of ball send requests represented by send direction
-  private List<Float> ballSendRequests = new LinkedList<>();
+  private float ballSendAngle = Float.NaN;
 
-  public TickInput(TickInput previous, List<Triplet<Boolean, Integer, Point>> eventList) {
+  public TickInput(TickInput previous, List<Triplet<Boolean, Integer, Point>> eventList, Point mousePosition) {
 
     int lastLeftRightPressed = 0;
     int lastUpDownPressed = 0;
 
-    boolean newLeft = false, newRight = false, newUp = false, newDown = false;
+    if (previous != null) {
+      moveLeft = previous.moveLeft;
+      moveRight = previous.moveRight;
+      moveUp = previous.moveUp;
+      moveDown = previous.moveDown;
+      if (!Float.isNaN(previous.ballSendAngle)) {
+        ballSendAngle = getAngleFromMousePosition(mousePosition);
+      }
+    }
 
     for (Triplet<Boolean, Integer, Point> event : eventList) {
       int key = event.getSecond();
@@ -45,67 +51,59 @@ class TickInput {
         if (key == ballSendKeycode) {
           // angle can be calculated from screen middle because the render translation (offset based
           // on mouse position) has the same direction
-          Point mousePosition = event.getThird();
-          if (mousePosition == null) {
-            continue;
-          }
-          float angle = MikoMath.atan2(mousePosition);
-          ballSendRequests.add(angle);
+          ballSendAngle = getAngleFromMousePosition(event.getThird());
         }
         if (key == moveLeftKeycode) {
           lastLeftRightPressed = -1;
-          newLeft = true;
+          moveLeft = true;
           continue;
         }
         if (key == moveRightKeycode) {
           lastLeftRightPressed = 1;
-          newRight = true;
+          moveRight = true;
           continue;
         }
         if (key == moveUpKeycode) {
           lastUpDownPressed = -1;
-          newUp = true;
+          moveUp = true;
           continue;
         }
         if (key == moveDownKeycode) {
           lastUpDownPressed = 1;
-          newDown = true;
+          moveDown = true;
           continue;
         }
       } else {
+        if (key == ballSendKeycode) {
+          ballSendAngle = Float.NaN;
+        }
         if (key == moveLeftKeycode) {
-          newLeft = false;
+          moveLeft = false;
           continue;
         }
         if (key == moveRightKeycode) {
-          newRight = false;
+          moveRight = false;
           continue;
         }
         if (key == moveUpKeycode) {
-          newUp = false;
+          moveUp = false;
           continue;
         }
         if (key == moveDownKeycode) {
-          newDown = false;
+          moveDown = false;
           continue;
         }
       }
     }
 
-    if (newLeft && newRight) {
+    if (moveLeft && moveRight) {
       moveLeft = lastLeftRightPressed < 0;
       moveRight = lastLeftRightPressed > 0;
-    } else {
-      moveLeft = newLeft;
-      moveRight = newRight;
     }
 
-    if (newUp && newDown) {
+    if (moveUp && moveDown) {
       moveUp = lastUpDownPressed < 0;
       moveDown = lastUpDownPressed > 0;
-    } else {
-      moveUp = newUp;
-      moveDown = newDown;
     }
 
   }
@@ -139,10 +137,23 @@ class TickInput {
   }
 
   /**
-   * @return La liste des requêtes de lancement de balles.
+   * Renvoit une requête de lancement de balle sous la forme de l'angle de lancement désiré. Si le
+   * joueur n'a pas lancé de balle, renvoit Float.NaN.
+   *
+   * @return L'angle de lancement de balle souhaité, ou Float.NaN.
    */
-  public Iterable<Float> getBallSendRequests() {
-    return ballSendRequests;
+  public float getBallSendRequest() {
+    return ballSendAngle;
+  }
+
+  private static final float getAngleFromMousePosition(Point mousePosition) {
+    if (mousePosition == null) {
+      return Float.NaN;
+    }
+    // angle can be calculated from screen middle because the render translation (offset based
+    // on mouse position) has the same direction
+    float angle = MikoMath.atan2(mousePosition);
+    return angle;
   }
 
   /**
@@ -152,7 +163,7 @@ class TickInput {
    * @return Un input par défaut basé sur l'input passé en paramètre.
    */
   public static TickInput getNextFrom(TickInput previous) {
-    return new TickInput(previous, Collections.emptyList());
+    return new TickInput(previous, Collections.emptyList(), null);
   }
 
 }

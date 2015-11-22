@@ -10,6 +10,7 @@ import cr.fr.saucisseroyale.miko.protocol.ExitType;
 import cr.fr.saucisseroyale.miko.protocol.MessageType;
 import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
 import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
+import cr.fr.saucisseroyale.miko.util.Pair;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -130,11 +131,11 @@ public class OutputMessageFactory {
             buffer.writeShort(entityType.getId());
             break;
           case OBJECT_DATA:
-            if (!entityDataUpdate.hasObjectAttributes()) {
+            Map<ObjectAttribute, Object> attributes = entityDataUpdate.getObjectAttributes();
+            if (attributes.isEmpty()) {
               break;
             }
             updateTypes[b] = true;
-            Map<ObjectAttribute, Object> attributes = entityDataUpdate.getObjectAttributes();
             int size = attributes.size();
             if (size >= 1 << 16) {
               throw new IllegalArgumentException("The attributes list is too long, max size : 65535 attributes");
@@ -156,6 +157,12 @@ public class OutputMessageFactory {
                   break;
                 case ONE_TERRAIN:
                   writeTerrainPoint(buffer, (TerrainPoint) value);
+                  break;
+                case PAIR_FLOAT_ENTITY:
+                  @SuppressWarnings("unchecked")
+                  Pair<Float, Integer> pair = (Pair<Float, Integer>) value;
+                  buffer.writeFloat(pair.getFirst());
+                  buffer.writeShort(pair.getSecond());
                   break;
                 default:
                   throw new IllegalArgumentException("Unknown parameters set in entityDataUpdate objectattributes");
@@ -224,11 +231,18 @@ public class OutputMessageFactory {
         dos.writeFloat(action.getFloatValue());
         break;
       case ONE_SHORT:
+        dos.writeShort(action.getShortValue());
+        break;
       case ONE_ENTITY:
         dos.writeShort(action.getEntityIdValue());
         break;
       case ONE_TERRAIN:
         writeTerrainPoint(dos, action.getTerrainPointValue());
+        break;
+      case PAIR_FLOAT_ENTITY:
+        Pair<Float, Integer> pair = action.getPairFloatEntityIdValue();
+        dos.writeFloat(pair.getFirst());
+        dos.writeShort(pair.getSecond());
         break;
       default:
         throw new IllegalArgumentException("Unknown parameters type set in action");

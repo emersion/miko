@@ -1,5 +1,6 @@
 package cr.fr.saucisseroyale.miko.engine;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -20,7 +21,7 @@ public class SnapshotsMap<T, U> {
 
   private static final int LINKED_LIST = -1;
   private final int snapshotsCapacity;
-  private Map<T, Snapshots<U>> map;
+  private Map<T, Snapshots<U>> map = new HashMap<>();
 
   /**
    * Crée une map de snapshots, créant des snapshots avec {@link Snapshots#Snapshots()}.

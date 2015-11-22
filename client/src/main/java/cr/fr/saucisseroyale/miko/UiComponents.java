@@ -33,7 +33,7 @@ class UiComponents {
       numberFormatter.setValueClass(Integer.class);
       numberFormatter.setMinimum(0);
       JFormattedTextField portField = new JFormattedTextField(numberFormatter);
-      portField.setValue(new Integer(defaultPort));
+      portField.setValue(Integer.valueOf(defaultPort));
       add(portField);
       JButton connectButton = new JButton("Se connecter");
       connectButton.addActionListener((event) -> {

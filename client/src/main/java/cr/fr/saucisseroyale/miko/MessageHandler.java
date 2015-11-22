@@ -25,6 +25,8 @@ public interface MessageHandler {
 
   public void chunkUpdate(int tickRemainder, ChunkPoint chunkPoint, Chunk chunk);
 
+  public void entityIdChange(int oldEntityId, int newEntityId);
+
   public void entityCreate(int tickRemainder, EntityDataUpdate entityDataUpdate);
 
   public void entityDestroy(int tickRemainder, int entityId);

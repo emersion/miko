@@ -22,7 +22,7 @@ public class ArrayIterable<T> implements Iterable<T> {
 
     @Override
     public boolean hasNext() {
-      return position != data.length - 1;
+      return position < data.length;
     }
 
     @Override

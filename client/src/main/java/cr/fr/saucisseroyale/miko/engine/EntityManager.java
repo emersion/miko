@@ -2,10 +2,12 @@ package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
 import cr.fr.saucisseroyale.miko.protocol.EntityType;
+import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
 import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
 import cr.fr.saucisseroyale.miko.protocol.SpriteType;
 import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -20,12 +22,12 @@ import java.util.stream.IntStream;
  */
 class EntityManager {
 
-  private static final int TEMPORARY_ID_START = 60000;
-  private boolean[] usedTemporaryIds = new boolean[1 << 16 - TEMPORARY_ID_START];
+  private static final int TEMPORARY_ID_START = 64536;
+  private boolean[] usedTemporaryIds = new boolean[(1 << 16) - TEMPORARY_ID_START];
   // improves performance on temporaryid generating
   private int circularTemporaryId = usedTemporaryIds.length - 1;
 
-  private Map<Integer, Entity> map;
+  private Map<Integer, Entity> map = new HashMap<>();
 
   // cache last entity to improve performance on repeated get and set calls
   private int lastEntityId = -1;
@@ -40,12 +42,17 @@ class EntityManager {
     if (entity == null) {
       entity = new Entity();
       map.put(entityDataUpdate.getEntityId(), entity);
+      lastEntityId = -1;
     }
     entity.applyFullUpdate(tick, entityDataUpdate);
   }
 
   public void destroyEntity(long tick, int entityId) {
     getEntity(entityId).disable(tick);
+  }
+
+  public EntityDataUpdate generateDataUpdate(long tick, int entityId, Set<EntityUpdateType> types, Set<ObjectAttribute> attributes) {
+    return getEntity(entityId).generateUpdate(entityId, tick, types, attributes);
   }
 
   public EntityType getEntityType(long tick, int entityId) {
@@ -112,15 +119,14 @@ class EntityManager {
    * @see #freeAndUpdateTemporaryId(int, int)
    */
   public int getAndUseTemporaryId() {
-    int start = (circularTemporaryId + 1) % usedTemporaryIds.length;
-    for (int i = start; i != start; i++) {
-      if (usedTemporaryIds[i]) {
-        usedTemporaryIds[i] = true;
-        circularTemporaryId = i;
-        return i + TEMPORARY_ID_START;
-      }
-      if (i == usedTemporaryIds.length - 1) {
-        i = -1;
+    int start = circularTemporaryId + 1;
+    int end = circularTemporaryId + usedTemporaryIds.length;
+    for (int i = start; i <= end; i++) {
+      int id = i % usedTemporaryIds.length;
+      if (!usedTemporaryIds[id]) {
+        usedTemporaryIds[id] = true;
+        circularTemporaryId = id;
+        return id + TEMPORARY_ID_START;
       }
     }
     throw new RuntimeException("Ran out of temporary entities id");
@@ -152,6 +158,7 @@ class EntityManager {
       throw new IllegalArgumentException("newEntityId must be a permanent (normal) id");
     }
     map.put(newEntityId, entity);
+    lastEntityId = -1;
   }
 
   /**
