@@ -9,7 +9,6 @@ const frontendChanSize = 48
 type Frontend struct {
 	backend *Service
 	deltas  []*Delta
-	lastId  message.EntityId
 
 	Creates chan *CreateRequest
 	Updates chan *UpdateRequest
@@ -21,9 +20,7 @@ func (f *Frontend) Get(id message.EntityId) *message.Entity {
 }
 
 func (f *Frontend) Add(entity *message.Entity, t message.AbsoluteTick) {
-	f.lastId++
-	entity.Id = f.lastId
-
+	entity.Id = f.backend.allocateId()
 	req := &CreateRequest{newClientRequest(t), NewFromMessage(entity)}
 	f.Creates <- req
 }

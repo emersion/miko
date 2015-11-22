@@ -20,6 +20,7 @@ func copyEntityFromDiff(src *Entity, diff *message.EntityDiff) *Entity {
 // appropriate messages to clients.
 type Service struct {
 	entities map[message.EntityId]*Entity
+	lastId   message.EntityId
 	deltas   *delta.List
 	tick     message.AbsoluteTick
 	frontend *Frontend
@@ -53,15 +54,16 @@ func (s *Service) AcceptRequest(req Request) error {
 	}
 }
 
+func (s *Service) allocateId() message.EntityId {
+	s.lastId++
+	return s.lastId
+}
+
 func (s *Service) acceptCreate(req *CreateRequest) error {
 	entity := req.Entity
 
 	if entity.Id == 0 {
-		nextId := len(s.entities)
-		if nextId == 0 {
-			nextId = 1
-		}
-		entity.Id = message.EntityId(nextId)
+		entity.Id = s.allocateId()
 	} else if s.Get(entity.Id) != nil {
 		return errors.New("Cannot create entity: entity already exists")
 	}
