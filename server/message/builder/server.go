@@ -32,6 +32,7 @@ func SendRegisterResp(w io.Writer, code message.RegisterResponseCode) error {
 }
 
 func SendPlayerJoined(w io.Writer, t message.Tick, id message.EntityId, username string) error {
+	log.Println("SendPlayerJoined", t, id, username)
 	return writeAll(w, []interface{}{
 		message.Types["meta_action"],
 		t,
