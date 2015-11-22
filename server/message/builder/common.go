@@ -4,7 +4,6 @@ package builder
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"io"
-	"log"
 )
 
 func SendPing(w io.Writer) error {
@@ -47,7 +46,7 @@ func sendEntityUpdateBody(w io.Writer, entity *message.Entity, diff *message.Ent
 	if diff.Sprite {
 		data = append(data, entity.Sprite)
 	}
-	log.Println(diff.Attributes, entity.Attributes)
+
 	if diff.Attributes {
 		data = append(data, uint16(len(entity.Attributes)))
 

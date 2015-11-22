@@ -8,11 +8,12 @@ import (
 // Entities properties such as position and speed are stored here with a greater
 // precision than in the package message.
 type Entity struct {
-	Id       message.EntityId
-	Type     message.EntityType
-	Position *Position
-	Speed    *Speed
-	Sprite   message.Sprite
+	Id         message.EntityId
+	Type       message.EntityType
+	Position   *Position
+	Speed      *Speed
+	Sprite     message.Sprite
+	Attributes map[message.EntityAttrId]interface{}
 }
 
 // Convert this entity to a message.Entity.
@@ -28,6 +29,9 @@ func (e *Entity) ToMessage() *message.Entity {
 	}
 	if e.Speed != nil {
 		ent.Speed = e.Speed.ToMessage()
+	}
+	if e.Attributes != nil {
+		ent.Attributes = e.Attributes
 	}
 
 	return ent
@@ -58,23 +62,29 @@ func (e *Entity) ApplyDiff(d *message.EntityDiff, src *Entity) {
 	if d.Sprite {
 		e.Sprite = src.Sprite
 	}
+
+	if d.Attributes {
+		e.Attributes = src.Attributes
+	}
 }
 
 // Create a new empty entity.
 func New() *Entity {
 	return &Entity{
-		Position: &Position{},
-		Speed:    &Speed{},
+		Position:   &Position{},
+		Speed:      &Speed{},
+		Attributes: map[message.EntityAttrId]interface{}{},
 	}
 }
 
 // Create an entity from a message.Entity.
 func NewFromMessage(src *message.Entity) *Entity {
 	return &Entity{
-		Id:       src.Id,
-		Type:     src.Type,
-		Position: NewPositionFromMessage(src.Position),
-		Speed:    NewSpeedFromMessage(src.Speed),
-		Sprite:   src.Sprite,
+		Id:         src.Id,
+		Type:       src.Type,
+		Position:   NewPositionFromMessage(src.Position),
+		Speed:      NewSpeedFromMessage(src.Speed),
+		Sprite:     src.Sprite,
+		Attributes: src.Attributes,
 	}
 }
