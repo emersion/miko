@@ -70,6 +70,12 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 			ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere
 
+			// Broadcast new entity
+			err := builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
+			if err != nil {
+				return err
+			}
+
 			// Send initial terrain
 			pos := session.Entity.Position
 			radius := message.BlockCoord(10)
@@ -86,12 +92,6 @@ var serverHandlers = &map[message.Type]TypeHandler{
 						return err
 					}
 				}
-			}
-
-			// Broadcast new entity
-			err := builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
-			if err != nil {
-				return err
 			}
 
 			return builder.SendPlayerJoined(io.Broadcaster(), ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
