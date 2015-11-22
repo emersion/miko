@@ -4,7 +4,6 @@ package builder
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"io"
-	"sort"
 )
 
 func SendPing(w io.Writer) error {
@@ -51,17 +50,8 @@ func sendEntityUpdateBody(w io.Writer, entity *message.Entity, diff *message.Ent
 	if diff.Attributes {
 		data = append(data, uint16(len(entity.Attributes)))
 
-		attrIds := make([]int, len(entity.Attributes))
-		i := 0
-		for id, _ := range entity.Attributes {
-			attrIds[i] = int(id)
-			i++
-		}
-		sort.Ints(attrIds)
-
-		for _, id := range attrIds {
-			attrId := message.EntityAttrId(id)
-			data = append(data, attrId, entity.Attributes[attrId])
+		for id, val := range entity.Attributes {
+			data = append(data, id, val)
 		}
 	}
 
