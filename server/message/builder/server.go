@@ -124,12 +124,7 @@ func SendEntityCreate(w io.Writer, t message.Tick, entity *message.Entity) error
 		return err
 	}
 
-	diff := &message.EntityDiff{
-		Position:   true,
-		SpeedAngle: true,
-		SpeedNorm:  true,
-	}
-	return sendEntityUpdateBody(w, entity, diff)
+	return sendEntityUpdateBody(w, entity, message.NewFilledEntityDiff(true))
 }
 
 func SendEntitiesUpdate(w io.Writer, t message.Tick, entities []*message.Entity, diffs []*message.EntityDiff) error {
