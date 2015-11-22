@@ -10,7 +10,7 @@ import (
 func main() {
 	address := ":9998"
 
-	e := engine.New()
+	/*e := engine.New()
 	ctx := e.Context()
 
 	// Generate a new terrain
@@ -19,5 +19,5 @@ func main() {
 	srv := server.New(address, ctx)
 	go srv.Listen()
 
-	e.Start()
+	e.Start()*/
 }
