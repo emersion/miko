@@ -3,6 +3,7 @@ package builder
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"io"
+	"log"
 )
 
 func SendLoginResp(w io.Writer, code message.LoginResponseCode, t message.Tick) error {
@@ -215,6 +216,7 @@ func SendEntityIdChange(w io.Writer, oldId message.EntityId, newId message.Entit
 
 func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.EntityDiffPool) error {
 	// TODO: broadcast only to clients who need it
+	log.Println("Sent entities diff:", pool)
 
 	// Created entities
 	for _, entity := range pool.Created {

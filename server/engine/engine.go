@@ -92,27 +92,30 @@ func (e *Engine) listenNewClients() {
 }
 
 func (e *Engine) broadcastChanges() {
-	for {
-		if e.ctx.Entity.IsDirty() {
-			err := builder.SendEntitiesDiffToClients(e.srv, e.clock.GetRelativeTick(), e.ctx.Entity.Flush())
-			if err != nil {
-				log.Println("Cannot broadcast entities diff:", err)
-			}
+	if e.ctx.Entity.IsDirty() {
+		err := builder.SendEntitiesDiffToClients(e.srv, e.clock.GetRelativeTick(), e.ctx.Entity.Flush())
+		if err != nil {
+			log.Println("Cannot broadcast entities diff:", err)
 		}
-		if e.ctx.Action.IsDirty() {
-			err := builder.SendActionsDone(e.srv, e.clock.GetRelativeTick(), e.ctx.Action.Flush())
-			if err != nil {
-				log.Println("Cannot broadcast actions:", err)
-			}
+	}
+	if e.ctx.Action.IsDirty() {
+		err := builder.SendActionsDone(e.srv, e.clock.GetRelativeTick(), e.ctx.Action.Flush())
+		if err != nil {
+			log.Println("Cannot broadcast actions:", err)
 		}
+	}
+}
 
+func (e *Engine) startBroadcastingChanges() {
+	for {
+		e.broadcastChanges()
 		time.Sleep(broadcastInterval)
 	}
 }
 
 func (e *Engine) Start() {
 	go e.listenNewClients()
-	go e.broadcastChanges()
+	go e.startBroadcastingChanges()
 
 	entityFrontend := e.entity.Frontend()
 	actionFrontend := e.action.Frontend()
