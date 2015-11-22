@@ -155,41 +155,36 @@ func SendEntitiesUpdate(w io.Writer, t message.Tick, entities []*message.Entity,
 }
 
 func SendEntityDestroy(w io.Writer, t message.Tick, id message.EntityId) error {
-	if err := write(w, message.Types["entity_destroy"]); err != nil {
-		return err
-	}
-	if err := write(w, t); err != nil {
-		return err
-	}
-
-	if err := write(w, id); err != nil {
-		return err
-	}
-
-	return nil
+	return writeAll(w, []interface{}{
+		message.Types["entity_destroy"],
+		t,
+		id,
+	})
 }
 
 func SendActionsDone(w io.Writer, t message.Tick, actions []*message.Action) error {
-	if err := write(w, message.Types["actions_done"]); err != nil {
-		return err
-	}
-	if err := write(w, t); err != nil {
-		return err
-	}
-	if err := write(w, uint16(len(actions))); err != nil {
+	err := writeAll(w, []interface{}{
+		message.Types["actions_done"],
+		t,
+		uint16(len(actions)),
+	})
+	if err != nil {
 		return err
 	}
 
 	for _, action := range actions {
-		if err := write(w, action.Initiator); err != nil {
+		err := writeAll(w, []interface{}{
+			action.Initiator,
+			action.Id,
+		})
+		if err != nil {
 			return err
 		}
 
-		if err := write(w, action.Id); err != nil {
+		err = writeAll(w, action.Params)
+		if err != nil {
 			return err
 		}
-
-		// TODO: action params
 	}
 
 	return nil

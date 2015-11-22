@@ -42,7 +42,7 @@ func (s *Service) Rewind(dt message.AbsoluteTick) (deltas []delta.Delta, err err
 	for e := s.actions.LastBefore(s.tick); e != nil; e = e.Prev() {
 		a := e.Value.(Action)
 
-		for _, d := range a.Inverse().(Action).Execute() {
+		for _, d := range a.Inverse().(*Action).Execute() {
 			deltas = append(deltas, d)
 		}
 	}

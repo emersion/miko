@@ -2,7 +2,7 @@ package entity
 
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
-	requests "git.emersion.fr/saucisse-royale/miko.git/server/request" // TODO
+	"git.emersion.fr/saucisse-royale/miko.git/server/requests"
 )
 
 type request struct {

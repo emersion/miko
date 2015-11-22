@@ -1,4 +1,4 @@
-package request
+package requests
 
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"

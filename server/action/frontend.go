@@ -8,7 +8,7 @@ const frontendChanSize = 48
 
 type Frontend struct {
 	backend *Service
-	actions []Action
+	actions []*Action
 
 	Executes chan *Request
 }
@@ -25,10 +25,10 @@ func (f *Frontend) IsDirty() bool {
 func (f *Frontend) Flush() []*message.Action {
 	actions := make([]*message.Action, len(f.actions))
 	for i, a := range f.actions {
-		actions[i] = a.(*action).ToMessage()
+		actions[i] = a.ToMessage()
 	}
 
-	f.actions = []Action{}
+	f.actions = []*Action{}
 	return actions
 }
 

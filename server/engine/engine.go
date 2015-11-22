@@ -8,7 +8,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
-	"git.emersion.fr/saucisse-royale/miko.git/server/request"
+	"git.emersion.fr/saucisse-royale/miko.git/server/requests"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 	"log"
 	"time"
@@ -31,10 +31,14 @@ func (e *Engine) processEntityRequest(req entity.Request) bool {
 }
 
 func (e *Engine) processActionRequest(req action.Request) bool {
+	if req.Action.Id == 0 { // throw_ball
+		// TODO
+	}
+
 	return true
 }
 
-func (e *Engine) processRequest(req request.Request) {
+func (e *Engine) processRequest(req requests.Request) {
 	switch r := req.(type) {
 	case action.Request:
 		if !e.processActionRequest(r) {
@@ -82,7 +86,7 @@ func (e *Engine) Start() {
 		acceptedMinTick := e.clock.GetAbsoluteTick()
 		accepted := list.New()
 		for {
-			var req request.Request
+			var req requests.Request
 
 			// Get last request
 			noMore := false
@@ -109,7 +113,7 @@ func (e *Engine) Start() {
 			// Append request to the list, keeping it ordered
 			inserted := false
 			for e := accepted.Front(); e != nil; e = e.Next() {
-				r := e.Value.(request.Request)
+				r := e.Value.(requests.Request)
 
 				if r.GetTick() > req.GetTick() {
 					accepted.InsertBefore(req, e)
@@ -176,7 +180,7 @@ func (e *Engine) Start() {
 
 				// Accept new requests at the correct tick
 				for el := accepted.Front(); el != nil; el = el.Next() {
-					req := el.Value.(request.Request)
+					req := el.Value.(requests.Request)
 
 					if req.GetTick() >= ed.GetTick() {
 						break
