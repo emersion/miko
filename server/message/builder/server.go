@@ -215,6 +215,14 @@ func SendConfig(w io.Writer, config *message.Config) error {
 	})
 }
 
+func SendEntityIdChange(w io.Writer, oldId message.EntityId, newId message.EntityId) error {
+	return writeAll(w, []interface{}{
+		message.Types["entity_id_change"],
+		oldId,
+		newId,
+	})
+}
+
 func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.EntityDiffPool) error {
 	// TODO: broadcast only to clients who need it
 
