@@ -33,7 +33,9 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 	}
 
 	if val, ok := h.handlers[t]; ok {
+		io.Locker.Lock()
 		err := val(h.ctx, io)
+		io.Locker.Unlock()
 		if err != nil {
 			return err
 		}

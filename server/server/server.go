@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"log"
 	"net"
+	"sync"
 
 	"git.emersion.fr/saucisse-royale/miko.git/server/crypto"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
@@ -16,6 +17,7 @@ type Client struct {
 	conn   net.Conn
 	Server *Server
 	id     int
+	locker *sync.Mutex
 }
 
 // TCP server
@@ -51,6 +53,8 @@ func (s *Server) newClient(conn net.Conn) {
 	reader := bufio.NewReader(c.conn)
 	io := message.NewIO(c.id, reader, c.conn, c.Server)
 	c.Server.Joins <- io
+
+	c.locker = io.Locker
 }
 
 // Listens new connections channel and creating new client
@@ -99,11 +103,15 @@ func (s *Server) Write(msg []byte) (n int, err error) {
 			continue
 		}
 
+		c.locker.Lock()
+
 		n, err = c.conn.Write(msg)
 		if err != nil {
 			log.Println("Error broadcasting message:", err)
 		}
 		N += n
+
+		c.locker.Unlock()
 	}
 	return N, nil
 }
