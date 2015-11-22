@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-const broadcastInterval time.Duration = time.Millisecond * 2000
+const broadcastInterval time.Duration = time.Millisecond * 200
 
 type Engine struct {
 	auth    *auth.Service
@@ -108,7 +108,8 @@ func (e *Engine) broadcastChanges() {
 
 func (e *Engine) startBroadcastingChanges() {
 	for {
-		e.broadcastChanges()
+		// TODO
+		//e.broadcastChanges()
 		time.Sleep(broadcastInterval)
 	}
 }
