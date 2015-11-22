@@ -225,7 +225,11 @@ func New() *Engine {
 	ctx.Clock = e.clock
 
 	ctx.Config = &message.Config{
-		MaxRollbackTicks: uint16(message.MaxRewind),
+		MaxRollbackTicks:    uint16(message.MaxRewind),
+		DefaultPlayerSpeed:  7,
+		PlayerBallCooldown:  40,
+		DefaultBallSpeed:    9,
+		DefaultBallLifespan: 100,
 	}
 
 	// Initialize engine submodules
