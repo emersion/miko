@@ -4,12 +4,14 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/engine"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/server"
 	"testing"
 	"time"
 )
 
 func TestEngine(t *testing.T) {
-	e := engine.New()
+	srv := server.New("")
+	e := engine.New(srv)
 	ctx := e.Context()
 
 	go e.Start()

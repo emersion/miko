@@ -14,6 +14,13 @@ func copyEntityFromDiff(src *Entity, diff *message.EntityDiff) *Entity {
 	return dst
 }
 
+func closeRequest(wait chan error, err error) {
+	select {
+	case wait <- err:
+	default:
+	}
+}
+
 // The entity service.
 // It manages all entities by maintaining a list of them and a diff pool. The
 // diff pool keeps track of created, updated and deleted entities to send
@@ -45,18 +52,15 @@ func (s *Service) AcceptRequest(req Request) (err error) {
 	switch r := req.(type) {
 	case *CreateRequest:
 		err = s.acceptCreate(r)
+		closeRequest(r.wait, err)
 	case *UpdateRequest:
 		err = s.acceptUpdate(r)
+		closeRequest(r.wait, err)
 	case *DeleteRequest:
 		err = s.acceptDelete(r)
+		closeRequest(r.wait, err)
 	default:
 		panic("Cannot accept request: not a request")
-	}
-
-	// Write result without blocking
-	select {
-	case req.(*request).wait <- err:
-	default:
 	}
 
 	return err
