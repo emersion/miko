@@ -13,9 +13,10 @@ type Frontend struct {
 	Executes chan *Request
 }
 
-func (f *Frontend) Execute(a *message.Action, t message.AbsoluteTick) {
+func (f *Frontend) Execute(a *message.Action, t message.AbsoluteTick) message.Request {
 	req := &Request{NewFromMessage(a, t)}
 	f.Executes <- req
+	return req
 }
 
 func (f *Frontend) IsDirty() bool {

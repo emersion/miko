@@ -19,10 +19,16 @@ func (s *Service) GetTick() message.AbsoluteTick {
 	return s.tick
 }
 
-func (s *Service) AcceptRequest(req *Request) error {
+func (s *Service) AcceptRequest(req *Request) (err error) {
 	s.actions.Insert(req.Action)
 	s.tick = req.GetTick()
-	return nil
+
+	select {
+	case req.wait <- err:
+	default:
+	}
+
+	return
 }
 
 func (s *Service) Rewind(dt message.AbsoluteTick) (deltas []delta.Delta, err error) {

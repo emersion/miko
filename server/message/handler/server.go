@@ -5,7 +5,6 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"log"
-	"time"
 )
 
 var serverHandlers = &map[message.Type]TypeHandler{
@@ -72,11 +71,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		session.Entity.Sprite = 1 // player
 		session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0)
 
-		ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere
-
-		// Wait for the entity to be accepted
-		// TODO: bypass frontend, manage this in engine
-		time.Sleep(time.Millisecond * 100) // TODO: THIS IS VERRYYYYY UGLYYYYY!!1
+		req := ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere?
+		req.Wait()
 
 		// Broadcast new entity
 		err := builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())

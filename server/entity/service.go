@@ -41,17 +41,25 @@ func (s *Service) Get(id message.EntityId) *Entity {
 	return nil
 }
 
-func (s *Service) AcceptRequest(req Request) error {
+func (s *Service) AcceptRequest(req Request) (err error) {
 	switch r := req.(type) {
 	case *CreateRequest:
-		return s.acceptCreate(r)
+		err = s.acceptCreate(r)
 	case *UpdateRequest:
-		return s.acceptUpdate(r)
+		err = s.acceptUpdate(r)
 	case *DeleteRequest:
-		return s.acceptDelete(r)
+		err = s.acceptDelete(r)
 	default:
 		panic("Cannot accept request: not a request")
 	}
+
+	// Write result without blocking
+	select {
+	case req.(*request).wait <- err:
+	default:
+	}
+
+	return err
 }
 
 func (s *Service) allocateId() message.EntityId {

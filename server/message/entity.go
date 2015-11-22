@@ -175,13 +175,13 @@ type EntityService interface {
 	Get(id EntityId) *Entity
 
 	// Add a new entity.
-	Add(entity *Entity, t AbsoluteTick)
+	Add(entity *Entity, t AbsoluteTick) Request
 
 	// Update an entity.
-	Update(entity *Entity, diff *EntityDiff, t AbsoluteTick)
+	Update(entity *Entity, diff *EntityDiff, t AbsoluteTick) Request
 
 	// Delete an entity.
-	Delete(id EntityId, t AbsoluteTick)
+	Delete(id EntityId, t AbsoluteTick) Request
 
 	// Check if some entities have been added, updated or deleted.
 	IsDirty() bool

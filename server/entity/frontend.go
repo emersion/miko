@@ -19,20 +19,23 @@ func (f *Frontend) Get(id message.EntityId) *message.Entity {
 	return f.backend.Get(id).ToMessage()
 }
 
-func (f *Frontend) Add(entity *message.Entity, t message.AbsoluteTick) {
+func (f *Frontend) Add(entity *message.Entity, t message.AbsoluteTick) message.Request {
 	entity.Id = f.backend.allocateId()
 	req := &CreateRequest{newClientRequest(t), NewFromMessage(entity)}
 	f.Creates <- req
+	return req
 }
 
-func (f *Frontend) Update(entity *message.Entity, diff *message.EntityDiff, t message.AbsoluteTick) {
+func (f *Frontend) Update(entity *message.Entity, diff *message.EntityDiff, t message.AbsoluteTick) message.Request {
 	req := &UpdateRequest{newClientRequest(t), NewFromMessage(entity), diff}
 	f.Updates <- req
+	return req
 }
 
-func (f *Frontend) Delete(id message.EntityId, t message.AbsoluteTick) {
+func (f *Frontend) Delete(id message.EntityId, t message.AbsoluteTick) message.Request {
 	req := &DeleteRequest{newClientRequest(t), id}
 	f.Deletes <- req
+	return req
 }
 
 // Check if the diff pool is empty. If not, it means that entities updates need

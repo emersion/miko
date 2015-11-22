@@ -13,7 +13,7 @@ type Action struct {
 // An action service.
 type ActionService interface {
 	// Execute an action.
-	Execute(a *Action, t AbsoluteTick)
+	Execute(a *Action, t AbsoluteTick) Request
 
 	// Check if some actions have been executed.
 	IsDirty() bool

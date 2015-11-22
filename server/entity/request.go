@@ -2,22 +2,27 @@ package entity
 
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
-	"git.emersion.fr/saucisse-royale/miko.git/server/requests"
 )
 
 type request struct {
 	tick      message.AbsoluteTick
 	requested bool
 	accepted  bool
+	wait      chan error
 }
 
 func (r *request) GetTick() message.AbsoluteTick {
 	return r.tick
 }
 
+func (r *request) Wait() error {
+	return <-r.wait
+}
+
 func newRequest(t message.AbsoluteTick) *request {
 	return &request{
 		tick: t,
+		wait: make(chan error),
 	}
 }
 
@@ -38,7 +43,7 @@ func NewUpdateRequest(t message.AbsoluteTick, entity *Entity, diff *message.Enti
 }
 
 type Request interface {
-	requests.Request
+	message.Request
 }
 
 type CreateRequest struct {
