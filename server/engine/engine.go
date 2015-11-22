@@ -220,14 +220,16 @@ func (e *Engine) Start() {
 			}
 			if td == nil || (ed != nil && ed.GetTick() <= td.GetTick()) {
 				// Process entity delta
-				entEl = entEl.Next()
 
 				// Do not redo deltas not triggered by the user
 				// These are the ones that will be computed again
 				if !ed.Requested() {
-					entDeltas.Remove(entEl.Prev())
+					entDeltas.Remove(entEl)
+					entEl = entEl.Next()
 					continue
 				}
+
+				entEl = entEl.Next()
 
 				// Compute new entities positions
 				e.moveEntities(ed.GetTick())
