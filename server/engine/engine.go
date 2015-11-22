@@ -42,7 +42,8 @@ func (e *Engine) processActionRequest(req *action.Request) bool {
 	if req.Action.Id == 0 { // throw_ball
 		initiator := e.entity.Get(req.Action.Initiator)
 		ball := entity.New()
-		ball.Type = 1 // ball
+		ball.Type = 1   // ball
+		ball.Sprite = 2 // ball
 		ball.Position = initiator.Position
 		ball.Speed.Norm = float64(e.ctx.Config.DefaultBallSpeed)
 		ball.Speed.Angle = float64(req.Action.Params[0].(float32))
