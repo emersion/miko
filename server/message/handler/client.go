@@ -167,9 +167,4 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		log.Println("Chat:", username, msg)
 		return nil
 	},
-	message.Types["version_response"]: func(ctx *message.Context, io *message.IO) error {
-		code := ReadVersionResponse(io)
-		log.Println("Version response:", code)
-		return nil
-	},
 }

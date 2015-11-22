@@ -61,6 +61,10 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			if session == nil {
 				return errors.New("Cannot get newly logged in user's session")
 			}
+
+			session.Entity.Type = 0   // player
+			session.Entity.Sprite = 1 // player
+
 			ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere
 
 			// Send initial terrain
@@ -120,6 +124,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["entity_update"]: func(ctx *message.Context, io *message.IO) error {
+		// TODO: add update initiator as parameter to ctx.Entity.Update()
+
 		t := ctx.Clock.ToAbsoluteTick(readTick(io))
 
 		entity, diff := ReadEntity(io)
@@ -129,8 +135,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	},
 	message.Types["action_do"]: func(ctx *message.Context, io *message.IO) error {
 		if !ctx.Auth.HasSession(io.Id) {
-			// TODO: trigger an error
-			return nil
+			return errors.New("Cannot execute action: remote not logged in")
 		}
 
 		session := ctx.Auth.GetSession(io.Id)
@@ -139,13 +144,24 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			Initiator: session.Entity.Id,
 		}
 
-		readTick(io) // TODO: properly handle this tick
+		t := ctx.Clock.ToAbsoluteTick(readTick(io))
 		read(io, &action.Id)
-		// TODO: action params
 
-		log.Println("Client triggered action:", action.Id)
+		// TODO: move action params somewhere else
+		if action.Id == 0 { // throw_ball
+			var angle float32
+			var tmpId message.EntityId
+			read(io, &angle)
+			read(io, &tmpId)
+			log.Println("Client threw ball:", angle, tmpId)
 
-		return builder.SendActionsDone(io.Broadcaster(), ctx.Clock.GetRelativeTick(), []*message.Action{action})
+			action.Params = []interface{}{angle, tmpId}
+		} else {
+			log.Println("Client triggered unknown action:", action.Id)
+		}
+
+		ctx.Action.Execute(action, t)
+		return nil
 	},
 	message.Types["chat_send"]: func(ctx *message.Context, io *message.IO) error {
 		msg := readString(io)

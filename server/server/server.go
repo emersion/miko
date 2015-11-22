@@ -9,23 +9,21 @@ import (
 
 	"git.emersion.fr/saucisse-royale/miko.git/server/crypto"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
-	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
 )
 
 // Client holds info about connection
 type Client struct {
-	conn     net.Conn
-	Server   *server
-	incoming chan string // Channel for incoming data from client
-	id       int
+	conn   net.Conn
+	Server *Server
+	id     int
 }
 
 // TCP server
-type server struct {
+type Server struct {
 	clients []*Client
 	address string        // Address to open connection, e.g. localhost:9999
 	joins   chan net.Conn // Channel for new connections
-	handler *handler.Handler
+	Joins   chan *message.IO
 }
 
 // Read client data from channel
@@ -36,7 +34,7 @@ func (c *Client) listen() {
 
 	reader := bufio.NewReader(c.conn)
 	io := message.NewIO(c.id, reader, c.conn, c.Server)
-	c.Server.handler.Listen(io)
+	c.Server.Joins <- io
 }
 
 func (c *Client) Close() error {
@@ -51,7 +49,7 @@ func (c *Client) Close() error {
 }
 
 // Creates new Client instance and starts listening
-func (s *server) newClient(conn net.Conn) {
+func (s *Server) newClient(conn net.Conn) {
 	client := &Client{
 		conn:   conn,
 		Server: s,
@@ -62,7 +60,7 @@ func (s *server) newClient(conn net.Conn) {
 }
 
 // Listens new connections channel and creating new client
-func (s *server) listenChannels() {
+func (s *Server) listenChannels() {
 	for {
 		select {
 		case conn := <-s.joins:
@@ -72,7 +70,7 @@ func (s *server) listenChannels() {
 }
 
 // Start network server
-func (s *server) Listen() {
+func (s *Server) Listen() {
 	go s.listenChannels()
 
 	tlsConfig, err := crypto.GetServerTlsConfig()
@@ -100,7 +98,7 @@ func (s *server) Listen() {
 }
 
 // Broadcast a message to all clients
-func (s *server) Write(msg []byte) (n int, err error) {
+func (s *Server) Write(msg []byte) (n int, err error) {
 	N := 0
 	for _, c := range s.clients {
 		if c == nil {
@@ -117,12 +115,12 @@ func (s *server) Write(msg []byte) (n int, err error) {
 }
 
 // Creates new tcp server instance
-func New(address string, ctx *message.Context) *server {
+func New(address string) *Server {
 	log.Println("Creating server with address", address)
-	server := &server{
+	server := &Server{
 		address: address,
 		joins:   make(chan net.Conn),
-		handler: handler.New(ctx),
+		Joins:   make(chan *message.IO),
 	}
 
 	return server

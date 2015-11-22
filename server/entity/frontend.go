@@ -37,7 +37,7 @@ func (f *Frontend) Delete(id message.EntityId, t message.AbsoluteTick) {
 // Check if the diff pool is empty. If not, it means that entities updates need
 // to be sent to clients.
 func (f *Frontend) IsDirty() bool {
-	return (len(f.deltas) == 0)
+	return (len(f.deltas) > 0)
 }
 
 // Flush the diff pool. This returns the current one and replace it by a new one.

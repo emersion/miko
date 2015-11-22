@@ -7,7 +7,18 @@ type ActionId uint16
 type Action struct {
 	Id        ActionId
 	Initiator EntityId
+	Params    []interface{}
 }
 
 // An action service.
-type ActionService interface{}
+type ActionService interface {
+	// Execute an action.
+	Execute(a *Action, t AbsoluteTick)
+
+	// Check if some actions have been executed.
+	IsDirty() bool
+
+	// Flush the actions history.Return the current one and replace it by a new
+	// empty one.
+	Flush() []*Action
+}

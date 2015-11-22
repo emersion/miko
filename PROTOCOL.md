@@ -1,4 +1,4 @@
-# Protocole version *6*
+# Protocole version *7*
 
 ## Généralités
 
@@ -12,16 +12,6 @@
 * messsage : headers + contenu
 * header : uint8, type du message
 * le stream est fermé après réception ou envoi d'un exit
-
-## Type (utilisé pour action et objectattributes)
-
-Signification | Types de params
---- | ---
-void |
-onefloat | float value
-oneshort | uint16 value
-oneentity | uint16 targetentityid
-oneterrain | sint16 bx sint16 by uint8 x uint8 y
 
 ## Messages
 
@@ -47,6 +37,7 @@ C | 16 | Non | chat_send | str message
 S | 17 | Oui | chat_receive | uint16 entityid + str message
 C | 18 | Non | version | uint16 versionid
 S | 19 | Non | config | bytes config
+S | 20 | Non | entity_id_change | uint16 oldentityid + uint16 newentityid
 
 * Si le message possède un tick, il l'envoit avant son contenu : headers puis tick puis contenu. Le tick est un uint16 et est la frame de logique actuelle sur le simulateur du jeu envoyant le message, elle revient à 0 après avoir atteint son maximum (2^16 - 1)
 * [1] : Un tick est envoyé après le `loginresponsecode` si c'est le code "ok".
@@ -151,6 +142,14 @@ size times:
 
 Le client peut envoyer plusieurs entity_update si interaction d'objets différents de lui.
 
+### entityid
+
+Un identifiant unique de l'entité, représenté par un uint16. Les 1000 dernières valeurs possibles (de 64536 à 65535 inclus) sont réservées pour des ids temporaires générés par le client et ne doivent jamais être générées par le serveur.
+
+### entity_id_change
+
+Un action peut provoquer la création d'une entité. Si tel est le cas, le client va générer un entityid temporaire. Lorsque le serveur va créer l'entité, un entityid permanent sera attribué. Le serveur doit alors envoyer un entity_id_change au client qui a provoqué l'action.
+
 ### entity_update
 
 ```
@@ -195,11 +194,11 @@ Un identifiant unique du type de l'entité.
 
 ### sprite
 
-Un identifiant unique de l'animation (graphique) d'une entité.
+Un identifiant unique de l'animation (graphique) d'une entité. Définit aussi une hitbox pour cette entité.
 
 ### objectattributes
 
-* Paires de (type;valeur) correspondants à des attributes spécifiques à des entités
+* Paires de (type;valeur) correspondants à des attributs spécifiques à des entités
 * Un message object ne va que mettre à jour la paire qu'il spécifie
 
 ```
@@ -208,6 +207,14 @@ size times:
     uint16 attribute
     bytes value
 ```
+
+### hitbox
+
+Définit le contour d'une entité. Le barycentre du contour est toujours centré sur la position de l'entité.
+
+* null: aucun contour
+* circle(float radius): un cercle de rayon radius
+* rectangle(float width, float height): un rectangle de longueur width et de hauteur height
 
 ## Actions
 

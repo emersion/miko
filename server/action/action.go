@@ -5,43 +5,41 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
-type Action interface {
-	delta.Delta
-
-	Execute() []delta.Delta
-}
-
-type action struct {
+type Action struct {
 	*message.Action
 	tick message.AbsoluteTick
 }
 
-func (a *action) GetTick() message.AbsoluteTick {
+func (a *Action) GetTick() message.AbsoluteTick {
 	return a.tick
 }
 
-func (a *action) Execute() []delta.Delta {
+func (a *Action) Execute() []delta.Delta {
 	return []delta.Delta{}
 }
 
-func (a *action) Inverse() delta.Delta {
+func (a *Action) Inverse() delta.Delta {
 	return &inversedAction{a}
 }
 
-func NewFromMessage(src *message.Action, t message.AbsoluteTick) *action {
-	return &action{
+func (a *Action) ToMessage() *message.Action {
+	return a.Action
+}
+
+func NewFromMessage(src *message.Action, t message.AbsoluteTick) *Action {
+	return &Action{
 		Action: src,
 		tick:   t,
 	}
 }
 
 type inversedAction struct {
-	*action
+	*Action
 }
 
 func (a *inversedAction) Execute() []delta.Delta {
 	inversed := []delta.Delta{}
-	deltas := a.action.Execute()
+	deltas := a.Action.Execute()
 
 	for i := len(deltas) - 1; i >= 0; i-- {
 		inversed = append(inversed, deltas[i].Inverse())
@@ -51,5 +49,5 @@ func (a *inversedAction) Execute() []delta.Delta {
 }
 
 func (a *inversedAction) Inverse() delta.Delta {
-	return a.action
+	return a.Action
 }

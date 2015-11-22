@@ -79,6 +79,7 @@ type EntityDiff struct {
 	SpeedNorm  bool
 	Type       bool
 	Sprite     bool
+	Attributes bool
 }
 
 // Get this diff's bitfield.
@@ -99,6 +100,9 @@ func (d *EntityDiff) GetBitfield() uint8 {
 	if d.Sprite {
 		bitfield |= 1 << 1
 	}
+	if d.Attributes {
+		bitfield |= 1 << 0
+	}
 	return bitfield
 }
 
@@ -109,6 +113,7 @@ func (d *EntityDiff) Merge(other *EntityDiff) *EntityDiff {
 	d.SpeedNorm = d.SpeedNorm || other.SpeedNorm
 	d.Type = d.Type || other.Type
 	d.Sprite = d.Sprite || other.Sprite
+	d.Attributes = d.Attributes || other.Attributes
 	return d
 }
 
@@ -125,6 +130,7 @@ func NewEntityDiffFromBitfield(bitfield uint8) *EntityDiff {
 		bitfield&(1<<5) > 0,
 		bitfield&(1<<2) > 0,
 		bitfield&(1<<1) > 0,
+		bitfield&(1<<0) > 0,
 	}
 }
 

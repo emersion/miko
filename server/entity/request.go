@@ -2,6 +2,7 @@ package entity
 
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/requests"
 )
 
 type request struct {
@@ -27,12 +28,17 @@ func newClientRequest(t message.AbsoluteTick) *request {
 }
 
 // TODO: move this somewhere else?
+func NewCreateRequest(t message.AbsoluteTick, entity *Entity) *CreateRequest {
+	return &CreateRequest{newRequest(t), entity}
+}
+
+// TODO: move this somewhere else?
 func NewUpdateRequest(t message.AbsoluteTick, entity *Entity, diff *message.EntityDiff) *UpdateRequest {
 	return &UpdateRequest{newRequest(t), entity, diff}
 }
 
 type Request interface {
-	GetTick() message.AbsoluteTick
+	requests.Request
 }
 
 type CreateRequest struct {

@@ -8,10 +8,16 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
+	"git.emersion.fr/saucisse-royale/miko.git/server/requests"
+	"git.emersion.fr/saucisse-royale/miko.git/server/server"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 	"log"
 	"time"
 )
+
+const broadcastInterval time.Duration = time.Millisecond * 200
 
 type Engine struct {
 	auth    *auth.Service
@@ -20,21 +26,50 @@ type Engine struct {
 	action  *action.Service
 	terrain *terrain.Terrain
 	ctx     *message.Context
+	srv     *server.Server
+
+	clients map[int]*message.IO
 
 	mover *Mover
 	stop  chan bool
 }
 
-func (e *Engine) checkRequest(req entity.Request) bool {
+func (e *Engine) processEntityRequest(req entity.Request) bool {
 	return true
 }
 
-func (e *Engine) processRequest(req entity.Request) {
-	if !e.checkRequest(req) {
-		return
+func (e *Engine) processActionRequest(req action.Request) bool {
+	if req.Action.Id == 0 { // throw_ball
+		initiator := e.entity.Get(req.Action.Initiator)
+		ball := entity.New()
+		ball.Type = 1 // ball
+		ball.Position = initiator.Position
+		ball.Speed.Norm = float64(e.ctx.Config.DefaultBallSpeed)
+		ball.Speed.Angle = float64(req.Action.Params[0].(float32))
+		r := entity.NewCreateRequest(req.GetTick(), ball)
+		e.entity.AcceptRequest(r)
+
+		session := e.auth.GetSessionByEntity(req.Action.Initiator)
+		client := e.clients[session.Id]
+		builder.SendEntityIdChange(client, req.Action.Params[1].(message.EntityId), ball.Id)
 	}
 
-	e.entity.AcceptRequest(req)
+	return true
+}
+
+func (e *Engine) processRequest(req requests.Request) {
+	switch r := req.(type) {
+	case action.Request:
+		if !e.processActionRequest(r) {
+			return
+		}
+		e.action.AcceptRequest(r)
+	case entity.Request:
+		if !e.processEntityRequest(r) {
+			return
+		}
+		e.entity.AcceptRequest(r)
+	}
 }
 
 func (e *Engine) moveEntities(t message.AbsoluteTick) {
@@ -47,8 +82,40 @@ func (e *Engine) moveEntities(t message.AbsoluteTick) {
 	}
 }
 
+func (e *Engine) listenNewClients() {
+	hdlr := handler.New(e.ctx)
+
+	for {
+		io := <-e.srv.Joins
+		hdlr.Listen(io)
+	}
+}
+
+func (e *Engine) broadcastChanges() {
+	for {
+		if e.ctx.Entity.IsDirty() {
+			err := builder.SendEntitiesDiffToClients(e.srv, e.clock.GetRelativeTick(), e.ctx.Entity.Flush())
+			if err != nil {
+				log.Println("Cannot broadcast entities diff:", err)
+			}
+		}
+		if e.ctx.Action.IsDirty() {
+			err := builder.SendActionsDone(e.srv, e.clock.GetRelativeTick(), e.ctx.Action.Flush())
+			if err != nil {
+				log.Println("Cannot broadcast actions:", err)
+			}
+		}
+
+		time.Sleep(broadcastInterval)
+	}
+}
+
 func (e *Engine) Start() {
+	go e.listenNewClients()
+	go e.broadcastChanges()
+
 	entityFrontend := e.entity.Frontend()
+	actionFrontend := e.action.Frontend()
 
 	for {
 		start := time.Now().UnixNano()
@@ -69,19 +136,18 @@ func (e *Engine) Start() {
 		acceptedMinTick := e.clock.GetAbsoluteTick()
 		accepted := list.New()
 		for {
-			noMore := false
-
-			var req entity.Request
+			var req requests.Request
 
 			// Get last request
+			noMore := false
 			select {
 			case req = <-entityFrontend.Creates:
 			case req = <-entityFrontend.Updates:
 			case req = <-entityFrontend.Deletes:
+			case req = <-actionFrontend.Executes:
 			default:
 				noMore = true
 			}
-
 			if noMore {
 				break
 			}
@@ -97,7 +163,7 @@ func (e *Engine) Start() {
 			// Append request to the list, keeping it ordered
 			inserted := false
 			for e := accepted.Front(); e != nil; e = e.Next() {
-				r := e.Value.(entity.Request)
+				r := e.Value.(requests.Request)
 
 				if r.GetTick() > req.GetTick() {
 					accepted.InsertBefore(req, e)
@@ -110,10 +176,9 @@ func (e *Engine) Start() {
 			}
 		}
 
-		log.Println("TICK", e.clock.GetAbsoluteTick(), e.clock.GetAbsoluteTick()-acceptedMinTick)
-
 		// Initiate lag compensation if necessary
 		if acceptedMinTick < e.ctx.Clock.GetAbsoluteTick() {
+			log.Println("Back to the past!", e.clock.GetAbsoluteTick(), e.clock.GetAbsoluteTick()-acceptedMinTick)
 			e.terrain.Rewind(e.terrain.GetTick() - acceptedMinTick)
 			e.entity.Rewind(e.entity.GetTick() - acceptedMinTick)
 		}
@@ -164,7 +229,7 @@ func (e *Engine) Start() {
 
 				// Accept new requests at the correct tick
 				for el := accepted.Front(); el != nil; el = el.Next() {
-					req := el.Value.(entity.Request)
+					req := el.Value.(requests.Request)
 
 					if req.GetTick() >= ed.GetTick() {
 						break
@@ -201,20 +266,22 @@ func (e *Engine) Context() *message.Context {
 	return e.ctx
 }
 
-func New() *Engine {
+func New(srv *server.Server) *Engine {
 	// Create a new context
 	ctx := message.NewServerContext()
 
 	// Create the engine
 	e := &Engine{
 		ctx:     ctx,
+		srv:     srv,
 		auth:    auth.NewService(),
 		clock:   clock.NewService(),
 		entity:  entity.NewService(),
 		action:  action.NewService(),
 		terrain: terrain.New(),
 
-		stop: make(chan bool),
+		clients: make(map[int]*message.IO),
+		stop:    make(chan bool),
 	}
 
 	// Populate context
@@ -225,7 +292,11 @@ func New() *Engine {
 	ctx.Clock = e.clock
 
 	ctx.Config = &message.Config{
-		MaxRollbackTicks: uint16(message.MaxRewind),
+		MaxRollbackTicks:    uint16(message.MaxRewind),
+		DefaultPlayerSpeed:  7,
+		PlayerBallCooldown:  40,
+		DefaultBallSpeed:    9,
+		DefaultBallLifespan: 100,
 	}
 
 	// Initialize engine submodules
