@@ -87,6 +87,7 @@ func (e *Engine) listenNewClients() {
 
 	for {
 		io := <-e.srv.Joins
+		e.clients[io.Id] = io
 		go hdlr.Listen(io)
 	}
 }
