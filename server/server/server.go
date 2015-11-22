@@ -26,17 +26,6 @@ type Server struct {
 	Joins   chan *message.IO
 }
 
-// Read client data from channel
-func (c *Client) listen() {
-	log.Println("New client:", c.id)
-
-	defer c.Close()
-
-	reader := bufio.NewReader(c.conn)
-	io := message.NewIO(c.id, reader, c.conn, c.Server)
-	c.Server.Joins <- io
-}
-
 func (c *Client) Close() error {
 	err := c.conn.Close()
 	if err != nil {
@@ -50,13 +39,18 @@ func (c *Client) Close() error {
 
 // Creates new Client instance and starts listening
 func (s *Server) newClient(conn net.Conn) {
-	client := &Client{
+	c := &Client{
 		conn:   conn,
 		Server: s,
 		id:     len(s.clients),
 	}
-	s.clients = append(s.clients, client)
-	go client.listen()
+	s.clients = append(s.clients, c)
+
+	log.Println("New client:", c.id)
+
+	reader := bufio.NewReader(c.conn)
+	io := message.NewIO(c.id, reader, c.conn, c.Server)
+	c.Server.Joins <- io
 }
 
 // Listens new connections channel and creating new client
