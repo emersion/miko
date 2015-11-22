@@ -2,6 +2,7 @@ package message
 
 import (
 	"io"
+	"sync"
 )
 
 // An input/output for a specific client
@@ -11,6 +12,8 @@ type IO struct {
 	broadcastWriter io.Writer
 	Id              int
 	Version         ProtocolVersion
+
+	Locker *sync.Mutex
 }
 
 func (io *IO) Read(p []byte) (int, error) {
@@ -35,5 +38,7 @@ func NewIO(id int, reader io.Reader, writer io.WriteCloser, broadcastWriter io.W
 		writer:          writer,
 		broadcastWriter: broadcastWriter,
 		Id:              id,
+
+		Locker: &sync.Mutex{},
 	}
 }

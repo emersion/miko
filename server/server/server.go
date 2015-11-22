@@ -47,6 +47,7 @@ func (c *Client) Close() error {
 	}
 
 	c.Server.clients[c.id] = nil
+	c.Server.ios[c.id] = nil
 
 	return nil
 }
@@ -110,19 +111,24 @@ func (s *Server) Listen() {
 
 func (s *Server) broadcast(data []byte, from int) (n int, err error) {
 	N := 0
-	for _, c := range s.clients {
-		if c == nil {
+	for _, io := range s.ios {
+		if io == nil {
 			continue
 		}
-		if from != c.id {
 
+		if from != io.Id {
+			io.Locker.Lock()
 		}
 
-		n, err = c.conn.Write(data)
+		n, err = io.Write(data)
 		if err != nil {
 			log.Println("Error broadcasting message:", err)
 		}
 		N += n
+
+		if from != io.Id {
+			io.Locker.Unlock()
+		}
 	}
 	return N, nil
 }
