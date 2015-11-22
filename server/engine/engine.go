@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-const broadcastInterval time.Duration = time.Millisecond * 10000
+const broadcastInterval time.Duration = time.Millisecond * 1000
 
 type Engine struct {
 	auth    *auth.Service
