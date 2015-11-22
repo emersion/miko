@@ -67,9 +67,9 @@ func (h *Handler) Listen(clientIO *message.IO) {
 		}
 	})()
 
-	var msg_type message.Type
+	var msgType message.Type
 	for {
-		err := read(clientIO, &msg_type)
+		err := read(clientIO, &msgType)
 		if err == io.EOF {
 			log.Println("Connection closed.")
 			return
@@ -79,10 +79,10 @@ func (h *Handler) Listen(clientIO *message.IO) {
 			return
 		}
 
-		err = h.Handle(msg_type, clientIO)
+		err = h.Handle(msgType, clientIO)
 		if err != nil {
 			log.Println("Handle failed:", err)
-			log.Println("Message type:", msg_type)
+			log.Println("Message type:", msgType)
 		}
 	}
 }
