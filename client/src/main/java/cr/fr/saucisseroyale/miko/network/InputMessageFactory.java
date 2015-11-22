@@ -160,6 +160,10 @@ class InputMessageFactory {
       case CONFIG:
         Config config = readConfig(dis);
         return (handler) -> handler.config(config);
+      case ENTITY_ID_CHANGE:
+        int oldEntityId = dis.readUnsignedShort();
+        int newEntityId = dis.readUnsignedShort();
+        return (handler) -> handler.entityIdChange(oldEntityId, newEntityId);
       default: // unknown or client-only
         throw newParseException();
     }
@@ -269,6 +273,10 @@ class InputMessageFactory {
         return dis.readUnsignedShort();
       case ONE_TERRAIN:
         return readTerrainPoint(dis);
+      case PAIR_FLOAT_ENTITY:
+        float number = dis.readFloat();
+        int entityId = dis.readUnsignedShort();
+        return new Pair<>(number, entityId);
       default:
         throw newParseException();
     }

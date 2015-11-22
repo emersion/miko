@@ -213,8 +213,4 @@ public final class EntityDataUpdate {
     return data.containsKey(EntityUpdateType.SPRITE_TYPE);
   }
 
-  public boolean hasObjectAttributes() {
-    return data.containsKey(EntityUpdateType.OBJECT_DATA);
-  }
-
 }

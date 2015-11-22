@@ -7,7 +7,12 @@ import cr.fr.saucisseroyale.miko.util.Pair;
 
 import java.util.List;
 
-
+/**
+ * Un message adressé à l'engine du jeu, stocké sous forme d'objet pour délayer son exécution.
+ * <p>
+ * Note: this class has a natural ordering that is inconsistent with equals.
+ *
+ */
 class EngineMessage implements Comparable<EngineMessage> {
 
   enum Type {
@@ -35,7 +40,7 @@ class EngineMessage implements Comparable<EngineMessage> {
   }
 
   public static EngineMessage newPlayerLeftMessage(long tick, int playerId) {
-    return new EngineMessage(tick, Type.PLAYER_JOINED, new Object[] {playerId});
+    return new EngineMessage(tick, Type.PLAYER_LEFT, new Object[] {playerId});
   }
 
   public static EngineMessage newChunkUpdateMessage(long tick, ChunkPoint chunkPoint, Chunk chunk) {
@@ -43,19 +48,19 @@ class EngineMessage implements Comparable<EngineMessage> {
   }
 
   public static EngineMessage newActionsMessage(long tick, List<Pair<Integer, Action>> actions) {
-    return new EngineMessage(tick, Type.PLAYER_JOINED, new Object[] {actions});
+    return new EngineMessage(tick, Type.ACTIONS_DONE, new Object[] {actions});
   }
 
   public static EngineMessage newEntityDestroyMessage(long tick, int entityId) {
-    return new EngineMessage(tick, Type.PLAYER_JOINED, new Object[] {entityId});
+    return new EngineMessage(tick, Type.ENTITY_DESTROY, new Object[] {entityId});
   }
 
   public static EngineMessage newEntityCreateMessage(long tick, EntityDataUpdate entityDataUpdate) {
-    return new EngineMessage(tick, Type.PLAYER_JOINED, new Object[] {entityDataUpdate});
+    return new EngineMessage(tick, Type.ENTITY_CREATE, new Object[] {entityDataUpdate});
   }
 
   public static EngineMessage newEntitiesUpdateMessage(long tick, List<EntityDataUpdate> entitiesUpdateList) {
-    return new EngineMessage(tick, Type.PLAYER_JOINED, new Object[] {entitiesUpdateList});
+    return new EngineMessage(tick, Type.ENTITIES_UPDATE, new Object[] {entitiesUpdateList});
   }
 
   public long getTick() {

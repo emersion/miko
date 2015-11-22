@@ -2,11 +2,13 @@ package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
 import cr.fr.saucisseroyale.miko.protocol.EntityType;
+import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
 import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
 import cr.fr.saucisseroyale.miko.protocol.SpriteType;
 import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Une entité existant sur plusieurs ticks, supportant des mises à jour partielles.
@@ -52,9 +54,7 @@ class Entity {
     if (entityDataUpdate.hasSprite()) {
       setSpriteType(tick, entityDataUpdate.getSpriteType());
     }
-    if (entityDataUpdate.hasObjectAttributes()) {
-      setObjectAttributes(tick, entityDataUpdate.getObjectAttributes());
-    }
+    setObjectAttributes(tick, entityDataUpdate.getObjectAttributes());
   }
 
   public void applyFullUpdate(long tick, EntityDataUpdate entityDataUpdate) {
@@ -84,11 +84,7 @@ class Entity {
     } else {
       throw new IllegalArgumentException("Illegal full data update: spriteType not set");
     }
-    if (entityDataUpdate.hasObjectAttributes()) {
-      setObjectAttributes(tick, entityDataUpdate.getObjectAttributes());
-    } else {
-      throw new IllegalArgumentException("Illegal full data update: objectattributes not set");
-    }
+    setObjectAttributes(tick, entityDataUpdate.getObjectAttributes());
   }
 
   public boolean isEnabled(long tick) {
@@ -111,6 +107,37 @@ class Entity {
       return true;
     }
     return false;
+  }
+
+  public EntityDataUpdate generateUpdate(int entityId, long tick, Set<EntityUpdateType> types, Set<ObjectAttribute> attributeTypes) {
+    EntityDataUpdate.Builder builder = new EntityDataUpdate.Builder(entityId);
+    for (EntityUpdateType type : types) {
+      switch (type) {
+        case POSITION:
+          builder.position(getMapPoint(tick));
+          break;
+        case SPEED_ANGLE:
+          builder.speedAngle(getSpeedAngle(tick));
+          break;
+        case SPEED_NORM:
+          builder.speedNorm(getSpeedNorm(tick));
+          break;
+        case ENTITY_TYPE:
+          builder.entityType(getEntityType(tick));
+          break;
+        case SPRITE_TYPE:
+          builder.spriteType(getSpriteType(tick));
+          break;
+        case OBJECT_DATA:
+          for (ObjectAttribute attributeType : attributeTypes) {
+            builder.objectAttribute(attributeType, getObjectAttribute(tick, attributeType));
+          }
+          break;
+        default:
+          throw new IllegalArgumentException("attribute " + type + " is not supported");
+      }
+    }
+    return builder.build();
   }
 
   // no enable check before getting to maximize performance

@@ -17,7 +17,6 @@ import cr.fr.saucisseroyale.miko.util.Pair;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Toolkit;
-import java.awt.geom.AffineTransform;
 import java.io.IOException;
 import java.util.List;
 
@@ -27,14 +26,13 @@ public class Miko implements MessageHandler {
     NETWORK, CONNECTION_REQUEST, CONNECTION, CONFIG, LOGIN_REQUEST, REGISTER, LOGIN, JOIN, EXIT;
   }
 
-  public static final int PROTOCOL_VERSION = 6;
-  private static final String DEFAULT_SERVER_ADDRESS = "miko.emersion.fr";
+  public static final int PROTOCOL_VERSION = 7;
+  private static final String DEFAULT_SERVER_ADDRESS = "127.0.0.1";
   private static final int DEFAULT_SERVER_PORT = 9999;
   public static final int TICK_TIME = 20; // milliseconds
   private static final int SERVER_TIMEOUT = 10 * 1000000000; // seconds
-  private long lastMessageReceived;
+  private long lastMessageReceived = Long.MAX_VALUE;
   private boolean pingSent;
-  private AffineTransform graphicsTransform;
   private String username;
   private Config config;
   private Engine engine;
@@ -83,10 +81,6 @@ public class Miko implements MessageHandler {
     keyStateManager = new KeyStateManager(window::getMousePosition);
     window.setKeyListener(keyStateManager);
 
-    graphicsTransform = new AffineTransform();
-    graphicsTransform.translate(0, window.getHeight());
-    graphicsTransform.scale(1.0, -1.0);
-
     window.initAndShow();
   }
 
@@ -94,7 +88,7 @@ public class Miko implements MessageHandler {
     if (state != MikoState.EXIT) {
       return;
     }
-    engine.processNextTick(keyStateManager.getEventsAndFlush());
+    engine.processNextTick(keyStateManager.getEventsAndFlush(), window.getMousePosition());
   }
 
   private void loop() {
@@ -130,15 +124,15 @@ public class Miko implements MessageHandler {
   }
 
   private void render(Graphics2D graphics) {
-    AffineTransform saveTransform = graphics.getTransform();
-    graphics.transform(graphicsTransform);
+    if (state != MikoState.EXIT) {
+      return;
+    }
     Point mousePosition = window.getMousePosition();
     engine.render(graphics, alpha, mousePosition);
-    graphics.setTransform(saveTransform);
   }
 
   private void postLoop() {
-    if (state != MikoState.NETWORK && state != MikoState.CONNECTION_REQUEST) {
+    if (state != MikoState.NETWORK && state != MikoState.CONNECTION_REQUEST && state != MikoState.CONNECTION) {
       long currentTime = System.nanoTime();
       if (currentTime - lastMessageReceived > SERVER_TIMEOUT) {
         exit(ExitType.PING_TIMEOUT);
@@ -244,7 +238,7 @@ public class Miko implements MessageHandler {
   @Override
   public void chatReceived(int tickRemainder, int entityIdChat, String chatMessage) {
     messageReceived();
-    if (state != MikoState.JOIN || state != MikoState.EXIT) {
+    if (state != MikoState.JOIN && state != MikoState.EXIT) {
       return;
     }
     engine.chatReceived(tickRemainder, entityIdChat, chatMessage);
@@ -253,16 +247,25 @@ public class Miko implements MessageHandler {
   @Override
   public void chunkUpdate(int tickRemainder, ChunkPoint chunkPoint, Chunk chunk) {
     messageReceived();
-    if (state != MikoState.JOIN || state != MikoState.EXIT) {
+    if (state != MikoState.JOIN && state != MikoState.EXIT) {
       return;
     }
     engine.chunkUpdate(tickRemainder, chunkPoint, chunk);
   }
 
   @Override
+  public void entityIdChange(int oldEntityId, int newEntityId) {
+    messageReceived();
+    if (state != MikoState.JOIN && state != MikoState.EXIT) {
+      return;
+    }
+    engine.entityIdChange(oldEntityId, newEntityId);
+  }
+
+  @Override
   public void entityCreate(int tickRemainder, EntityDataUpdate entityDataUpdate) {
     messageReceived();
-    if (state != MikoState.JOIN || state != MikoState.EXIT) {
+    if (state != MikoState.JOIN && state != MikoState.EXIT) {
       return;
     }
     engine.entityCreate(tickRemainder, entityDataUpdate);
@@ -271,7 +274,7 @@ public class Miko implements MessageHandler {
   @Override
   public void entityDestroy(int tickRemainder, int entityId) {
     messageReceived();
-    if (state != MikoState.JOIN || state != MikoState.EXIT) {
+    if (state != MikoState.JOIN && state != MikoState.EXIT) {
       return;
     }
     engine.entityDestroy(tickRemainder, entityId);
@@ -280,7 +283,7 @@ public class Miko implements MessageHandler {
   @Override
   public void entitiesUpdate(int tickRemainder, List<EntityDataUpdate> entitiesUpdateList) {
     messageReceived();
-    if (state != MikoState.JOIN || state != MikoState.EXIT) {
+    if (state != MikoState.JOIN && state != MikoState.EXIT) {
       return;
     }
     engine.entitiesUpdate(tickRemainder, entitiesUpdateList);
@@ -374,7 +377,7 @@ public class Miko implements MessageHandler {
   @Override
   public void networkError(Exception e) {
     networkClient.disconnect();
-    uiConnect.setStatusText("Déconnexion forcée : erreur de réseau.");
+    uiConnect.setStatusText("Déconnexion forcée : erreur de réseau : " + e.getLocalizedMessage());
     changeStateTo(MikoState.CONNECTION_REQUEST);
   }
 
@@ -387,10 +390,10 @@ public class Miko implements MessageHandler {
   @Override
   public void playerJoined(int tickRemainder, int entityId, String pseudo) {
     messageReceived();
-    if (state != MikoState.JOIN || state != MikoState.EXIT) {
+    if (state != MikoState.JOIN && state != MikoState.EXIT) {
       return;
     }
-    if (state == MikoState.JOIN && pseudo == username) {
+    if (state == MikoState.JOIN && pseudo.equals(username)) {
       engine.setPlayerEntityId(entityId);
       engine.playerJoined(tickRemainder, entityId, pseudo);
       changeStateTo(MikoState.EXIT);
@@ -454,6 +457,7 @@ public class Miko implements MessageHandler {
     if (state != MikoState.CONFIG) {
       return;
     }
+    this.config = config;
     uiLogin.setStatusText("Connexion réussie, connectez ou enregistrez-vous.");
     changeStateTo(MikoState.LOGIN_REQUEST);
   }
@@ -462,4 +466,5 @@ public class Miko implements MessageHandler {
     // called when any message is received
     lastMessageReceived = System.nanoTime();
   }
+
 }

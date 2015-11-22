@@ -1,6 +1,7 @@
 package cr.fr.saucisseroyale.miko.engine;
 
 
+
 /**
  * Un gestionnaire de joueurs, stockant tous les joueurs à tous les ticks, avec le principe de
  * {@link Snapshots}.
@@ -9,7 +10,7 @@ package cr.fr.saucisseroyale.miko.engine;
  */
 class PlayerManager {
 
-  private SnapshotsMap<Integer, String> map;
+  private SnapshotsMap<Integer, String> map = new SnapshotsMap<>();
 
   /**
    * Ajoute un joueur à la liste de joueurs, au tick spécifié.

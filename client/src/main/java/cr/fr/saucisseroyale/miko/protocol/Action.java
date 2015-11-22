@@ -1,5 +1,7 @@
 package cr.fr.saucisseroyale.miko.protocol;
 
+import cr.fr.saucisseroyale.miko.util.Pair;
+
 import java.util.NoSuchElementException;
 
 /**
@@ -43,6 +45,17 @@ public final class Action {
         }
         parameter = value;
         break;
+      case PAIR_FLOAT_ENTITY:
+        if (!(value instanceof Pair)) {
+          throw newConstructorValueException();
+        }
+        @SuppressWarnings("rawtypes")
+        Pair pair = (Pair) value;
+        if (!(pair.getFirst() instanceof Float) || !(pair.getSecond() instanceof Integer)) {
+          throw newConstructorValueException();
+        }
+        parameter = value;
+        break;
       default:
         throw new IllegalArgumentException("unknown data type: " + type);
     }
@@ -80,6 +93,15 @@ public final class Action {
       throw newGetFieldException();
     }
     return (int) parameter;
+  }
+
+  public Pair<Float, Integer> getPairFloatEntityIdValue() {
+    if (type.getDataType() != DataType.PAIR_FLOAT_ENTITY) {
+      throw newGetFieldException();
+    }
+    @SuppressWarnings("unchecked")
+    Pair<Float, Integer> pair = (Pair<Float, Integer>) parameter;
+    return pair;
   }
 
   /**

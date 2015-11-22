@@ -50,6 +50,7 @@ public class NetworkClient {
    */
   public void connect(String address, int port) throws IOException {
     socket = socketFactory.createSocket(address, port);
+    socket = new Socket(address, port);
     socket.setTcpNoDelay(true);
     socket.setTrafficClass(0x10); // LOWDELAY
     receiverThread = new ReceiverThread(socket.getInputStream(), inputMessages, this::networkError);

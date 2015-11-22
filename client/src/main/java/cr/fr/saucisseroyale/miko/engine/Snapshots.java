@@ -159,9 +159,15 @@ class Snapshots<T> {
     while (snapshotIterator.hasNext()) {
       MutablePair<T, Long> pair = snapshotIterator.next();
       if (pair.getSecond() > tick) {
-        first = pair.getSecond();
         break;
       }
+    }
+    if (!snapshotIterator.hasPrevious()) {
+      return;
+    }
+    first = snapshotIterator.previous().getSecond();
+    while (snapshotIterator.hasPrevious()) {
+      snapshotIterator.previous();
       snapshotIterator.remove();
     }
   }
@@ -181,7 +187,7 @@ class Snapshots<T> {
    * {@link #disposeUntilTick(long)} puis cette méthode <b>ne renverra pas forcément</b> le nombre
    * effectif de snapshots après le tick.
    *
-   * @return une majoration du nombre de snapshots stockés.
+   * @return Une majoration du nombre de snapshots stockés.
    */
   public int size() {
     return snapshots.size();

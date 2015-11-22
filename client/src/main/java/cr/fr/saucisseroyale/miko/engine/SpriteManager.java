@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -32,10 +33,15 @@ import javax.imageio.ImageIO;
 public class SpriteManager {
 
   private final GraphicsConfiguration graphicsConfiguration;
-  private Map<SpriteType, Sprite> sprites;
+  private final int screenHeight;
+  private Map<SpriteType, Sprite> sprites = new HashMap<>();
 
-  public SpriteManager(GraphicsConfiguration graphicsConfiguration) {
+  public SpriteManager(GraphicsConfiguration graphicsConfiguration, int width, int height) {
     this.graphicsConfiguration = graphicsConfiguration;
+    screenHeight = height;
+    @SuppressWarnings("unused")
+    // could be useful in the future
+    int screenWidth = width;
   }
 
   /**
@@ -53,7 +59,7 @@ public class SpriteManager {
       throw new IllegalArgumentException("SpriteType " + spriteType + " doesn't have a sprite.");
     }
     BufferedImage image = sprite.getImage(spriteTime);
-    graphics.drawImage(image, x - image.getWidth() / 2, y - image.getHeight() / 2, null);
+    graphics.drawImage(image, x - image.getWidth() / 2, screenHeight - (y - image.getHeight() / 2) - 1 - image.getHeight(), null);
   }
 
   /**
