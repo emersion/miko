@@ -6,4 +6,8 @@ Powered by:
 
 ## Compilation
 
-TODO
+```bash
+make # Pour compiler
+# ou
+make start # Pour compiler et lancer
+```
