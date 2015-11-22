@@ -103,15 +103,11 @@ func (s *Server) Write(msg []byte) (n int, err error) {
 			continue
 		}
 
-		c.locker.Lock()
-
 		n, err = c.conn.Write(msg)
 		if err != nil {
 			log.Println("Error broadcasting message:", err)
 		}
 		N += n
-
-		c.locker.Unlock()
 	}
 	return N, nil
 }
