@@ -13,16 +13,6 @@
 * header : uint8, type du message
 * le stream est fermé après réception ou envoi d'un exit
 
-## Type (utilisé pour action et objectattributes)
-
-Signification | Types de params
---- | ---
-void |
-onefloat | float value
-oneshort | uint16 value
-oneentity | uint16 targetentityid
-oneterrain | sint16 bx sint16 by uint8 x uint8 y
-
 ## Messages
 
 Envoyeur | Valeur | Tick | Nom | Contenu
@@ -204,11 +194,11 @@ Un identifiant unique du type de l'entité.
 
 ### sprite
 
-Un identifiant unique de l'animation (graphique) d'une entité.
+Un identifiant unique de l'animation (graphique) d'une entité. Définit aussi une hitbox pour cette entité.
 
 ### objectattributes
 
-* Paires de (type;valeur) correspondants à des attributes spécifiques à des entités
+* Paires de (type;valeur) correspondants à des attributs spécifiques à des entités
 * Un message object ne va que mettre à jour la paire qu'il spécifie
 
 ```
@@ -217,6 +207,14 @@ size times:
     uint16 attribute
     bytes value
 ```
+
+### hitbox
+
+Définit le contour d'une entité. Le barycentre du contour est toujours centré sur la position de l'entité.
+
+* null: aucun contour
+* circle(float radius): un cercle de rayon radius
+* rectangle(float width, float height): un rectangle de longueur width et de hauteur height
 
 ## Actions
 

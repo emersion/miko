@@ -1,4 +1,4 @@
-# boulemagique version *6*
+# boulemagique version *7*
 
 ## config
 
@@ -27,20 +27,20 @@ Valeur | Description du type
 
 ### sprite
 
-Valeur | Description de l'animation
---- | ---
-0 | placeholder
-1 | player
-2 | ball
+Valeur | Description de l'animation | Hitbox
+--- | --- | ---
+0 | placeholder | null
+1 | player | circle(10)
+2 | ball | circle(10)
 
 ### objectattributes
 
 Valeur | Type | Signification | Détail
 --- | --- | --- | ---
-0 | oneshort | ticks_left | Temps en ticks avant la destruction d'un objet éphémère
-1 | oneshort | health | Nombre de points de vie d'une entité
-2 | oneentity | sender | entity_id du créateur de l'entité
-30000 | oneshort | cooldown_one | Cooldown en ticks (numéro 1)
+0 | uint16 | ticks_left | Temps en ticks avant la destruction d'un objet éphémère
+1 | uint16 | health | Nombre de points de vie d'une entité
+2 | entityid | sender | Créateur de l'entité
+30000 | uint16 | cooldown_one | Cooldown en ticks (numéro 1)
 
 ## action
 
@@ -48,4 +48,4 @@ Valeur | Type | Signification | Détail
 
 Valeur | Type | Signification
 --- | --- | ---
-0 | onefloat | Envoit une boule dans la direction spécifiée
+0 | float angle + uint16 entityid | Envoit une boule dans la direction spécifiée, avec un id temporaire
