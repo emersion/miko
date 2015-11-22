@@ -58,6 +58,7 @@ func (e *Engine) processActionRequest(req action.Request) bool {
 }
 
 func (e *Engine) processRequest(req requests.Request) {
+	log.Println(req)
 	switch r := req.(type) {
 	case action.Request:
 		if !e.processActionRequest(r) {
