@@ -25,7 +25,7 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 	if h.ctx.IsServer() {
 		if t != message.Types["version"] && io.Version == 0 {
 			// Client didn't send his version number
-			if err := builder.SendExit(io.Writer(), message.ExitCodes["client_outdated"]); err != nil {
+			if err := builder.SendExit(io, message.ExitCodes["client_outdated"]); err != nil {
 				return err
 			}
 			return io.Close()

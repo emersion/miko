@@ -27,14 +27,6 @@ func (io *IO) Close() error {
 	return io.writer.Close()
 }
 
-func (io *IO) Reader() io.Reader {
-	return io.reader
-}
-
-func (io *IO) Writer() io.WriteCloser {
-	return io.writer
-}
-
 func (io *IO) Broadcaster() io.Writer {
 	return io.broadcastWriter
 }
