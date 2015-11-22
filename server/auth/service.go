@@ -33,6 +33,15 @@ func (a *Service) getSessionByUsername(username string) *message.Session {
 	return nil
 }
 
+func (a *Service) GetSessionByEntity(id message.EntityId) *message.Session {
+	for _, session := range a.sessions {
+		if session != nil && session.Entity != nil && session.Entity.Id == id {
+			return session
+		}
+	}
+	return nil
+}
+
 func (a *Service) Login(id int, username string, password string) message.LoginResponseCode {
 	code := "unknown_pseudo"
 	for _, user := range a.users {

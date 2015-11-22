@@ -8,11 +8,16 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
 	"git.emersion.fr/saucisse-royale/miko.git/server/requests"
+	"git.emersion.fr/saucisse-royale/miko.git/server/server"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 	"log"
 	"time"
 )
+
+const broadcastInterval time.Duration = time.Millisecond * 200
 
 type Engine struct {
 	auth    *auth.Service
@@ -21,6 +26,9 @@ type Engine struct {
 	action  *action.Service
 	terrain *terrain.Terrain
 	ctx     *message.Context
+	srv     *server.Server
+
+	clients map[int]*message.IO
 
 	mover *Mover
 	stop  chan bool
@@ -41,7 +49,9 @@ func (e *Engine) processActionRequest(req action.Request) bool {
 		r := entity.NewCreateRequest(req.GetTick(), ball)
 		e.entity.AcceptRequest(r)
 
-		// TODO: req.Action.Params[1] = temporary entity id
+		session := e.auth.GetSessionByEntity(req.Action.Initiator)
+		client := e.clients[session.Id]
+		builder.SendEntityIdChange(client, req.Action.Params[1].(message.EntityId), ball.Id)
 	}
 
 	return true
@@ -72,7 +82,38 @@ func (e *Engine) moveEntities(t message.AbsoluteTick) {
 	}
 }
 
+func (e *Engine) listenNewClients() {
+	hdlr := handler.New(e.ctx)
+
+	for {
+		io := <-e.srv.Joins
+		hdlr.Listen(io)
+	}
+}
+
+func (e *Engine) broadcastChanges() {
+	for {
+		if e.ctx.Entity.IsDirty() {
+			err := builder.SendEntitiesDiffToClients(e.srv, e.clock.GetRelativeTick(), e.ctx.Entity.Flush())
+			if err != nil {
+				log.Println("Cannot broadcast entities diff:", err)
+			}
+		}
+		if e.ctx.Action.IsDirty() {
+			err := builder.SendActionsDone(e.srv, e.clock.GetRelativeTick(), e.ctx.Action.Flush())
+			if err != nil {
+				log.Println("Cannot broadcast actions:", err)
+			}
+		}
+
+		time.Sleep(broadcastInterval)
+	}
+}
+
 func (e *Engine) Start() {
+	go e.listenNewClients()
+	go e.broadcastChanges()
+
 	entityFrontend := e.entity.Frontend()
 	actionFrontend := e.action.Frontend()
 
@@ -226,20 +267,22 @@ func (e *Engine) Context() *message.Context {
 	return e.ctx
 }
 
-func New() *Engine {
+func New(srv *server.Server) *Engine {
 	// Create a new context
 	ctx := message.NewServerContext()
 
 	// Create the engine
 	e := &Engine{
 		ctx:     ctx,
+		srv:     srv,
 		auth:    auth.NewService(),
 		clock:   clock.NewService(),
 		entity:  entity.NewService(),
 		action:  action.NewService(),
 		terrain: terrain.New(),
 
-		stop: make(chan bool),
+		clients: make(map[int]*message.IO),
+		stop:    make(chan bool),
 	}
 
 	// Populate context

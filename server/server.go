@@ -9,15 +9,15 @@ import (
 
 // Miko server
 func main() {
-	e := engine.New()
+	srv := server.New(":9999")
+
+	e := engine.New(srv)
 	ctx := e.Context()
 
 	// Generate a new terrain
 	ctx.Terrain.Generate()
 
-	// Start the server
-	srv := server.New(":9999", ctx)
+	// Start the server & the engine
 	go srv.Listen()
-
 	e.Start()
 }
