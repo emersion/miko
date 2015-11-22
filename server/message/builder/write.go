@@ -43,3 +43,29 @@ func writeAll(w io.Writer, data []interface{}) error {
 	}
 	return nil
 }
+
+func lock(w io.Writer) {
+	if client, ok := w.(*message.IO); ok {
+		client.Locker.Lock()
+	}
+}
+
+func unlock(w io.Writer) {
+	if client, ok := w.(*message.IO); ok {
+		client.Locker.Unlock()
+	}
+}
+
+func send(w io.Writer, data interface{}) error {
+	lock(w)
+	defer unlock(w)
+
+	return write(w, data)
+}
+
+func sendAll(w io.Writer, data []interface{}) error {
+	lock(w)
+	defer unlock(w)
+
+	return writeAll(w, data)
+}

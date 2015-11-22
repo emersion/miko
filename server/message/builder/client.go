@@ -36,7 +36,7 @@ func SendEntityUpdate(w io.Writer, t message.Tick, entity *message.Entity, diff 
 		return err
 	}
 
-	return sendEntityUpdateBody(w, entity, diff)
+	return writeEntityUpdateBody(w, entity, diff)
 }
 
 func SendActionDo(w io.Writer, t message.Tick, action *message.Action) error {

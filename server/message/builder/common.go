@@ -1,4 +1,7 @@
 // Provides functions to send messages to remotes.
+//
+// Writing and sending are different: sending is thread-safe and ensures that
+// the message won't be mixed with another one being sent in another process.
 package builder
 
 import (
@@ -7,21 +10,21 @@ import (
 )
 
 func SendPing(w io.Writer) error {
-	return write(w, message.Types["ping"])
+	return send(w, message.Types["ping"])
 }
 
 func SendPong(w io.Writer) error {
-	return write(w, message.Types["pong"])
+	return send(w, message.Types["pong"])
 }
 
 func SendExit(w io.Writer, code message.ExitCode) error {
-	if err := write(w, message.Types["exit"]); err != nil {
-		return err
-	}
-	return write(w, code)
+	return sendAll(w, []interface{}{
+		message.Types["exit"],
+		code,
+	})
 }
 
-func sendEntityUpdateBody(w io.Writer, entity *message.Entity, diff *message.EntityDiff) error {
+func writeEntityUpdateBody(w io.Writer, entity *message.Entity, diff *message.EntityDiff) error {
 	if err := write(w, entity.Id); err != nil {
 		return err
 	}

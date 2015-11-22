@@ -7,32 +7,27 @@ import (
 )
 
 func SendLoginResp(w io.Writer, code message.LoginResponseCode, t message.Tick) error {
-	if err := write(w, message.Types["login_response"]); err != nil {
-		return err
-	}
-
-	if err := write(w, code); err != nil {
-		return err
+	data := []interface{}{
+		message.Types["login_response"],
+		code,
 	}
 
 	if code == message.LoginResponseCodes["ok"] {
-		if err := write(w, t); err != nil {
-			return err
-		}
+		data = append(data, t)
 	}
 
-	return nil
+	return sendAll(w, data)
 }
 
 func SendRegisterResp(w io.Writer, code message.RegisterResponseCode) error {
-	if err := write(w, message.Types["register_response"]); err != nil {
-		return err
-	}
-	return write(w, code)
+	return sendAll(w, []interface{}{
+		message.Types["register_response"],
+		code,
+	})
 }
 
 func SendPlayerJoined(w io.Writer, t message.Tick, id message.EntityId, username string) error {
-	return writeAll(w, []interface{}{
+	return sendAll(w, []interface{}{
 		message.Types["meta_action"],
 		t,
 		id,
@@ -41,7 +36,7 @@ func SendPlayerJoined(w io.Writer, t message.Tick, id message.EntityId, username
 	})
 }
 func SendPlayerLeft(w io.Writer, t message.Tick, id message.EntityId) error {
-	return writeAll(w, []interface{}{
+	return sendAll(w, []interface{}{
 		message.Types["meta_action"],
 		t,
 		id,
@@ -105,6 +100,9 @@ func WriteBlock(w io.Writer, blk *message.Block) error {
 }
 
 func SendTerrainUpdate(w io.Writer, t message.Tick, blk *message.Block) error {
+	lock(w)
+	defer unlock(w)
+
 	if err := write(w, message.Types["terrain_update"]); err != nil {
 		return err
 	}
@@ -118,6 +116,9 @@ func SendTerrainUpdate(w io.Writer, t message.Tick, blk *message.Block) error {
 }
 
 func SendEntityCreate(w io.Writer, t message.Tick, entity *message.Entity) error {
+	lock(w)
+	defer unlock(w)
+
 	if err := write(w, message.Types["entity_create"]); err != nil {
 		return err
 	}
@@ -125,10 +126,13 @@ func SendEntityCreate(w io.Writer, t message.Tick, entity *message.Entity) error
 		return err
 	}
 
-	return sendEntityUpdateBody(w, entity, message.NewFilledEntityDiff(true))
+	return writeEntityUpdateBody(w, entity, message.NewFilledEntityDiff(true))
 }
 
 func SendEntitiesUpdate(w io.Writer, t message.Tick, entities []*message.Entity, diffs []*message.EntityDiff) error {
+	lock(w)
+	defer unlock(w)
+
 	if err := write(w, message.Types["entities_update"]); err != nil {
 		return err
 	}
@@ -142,7 +146,7 @@ func SendEntitiesUpdate(w io.Writer, t message.Tick, entities []*message.Entity,
 	for i, entity := range entities {
 		diff := diffs[i]
 
-		if err := sendEntityUpdateBody(w, entity, diff); err != nil {
+		if err := writeEntityUpdateBody(w, entity, diff); err != nil {
 			return err
 		}
 	}
@@ -151,7 +155,7 @@ func SendEntitiesUpdate(w io.Writer, t message.Tick, entities []*message.Entity,
 }
 
 func SendEntityDestroy(w io.Writer, t message.Tick, id message.EntityId) error {
-	return writeAll(w, []interface{}{
+	return sendAll(w, []interface{}{
 		message.Types["entity_destroy"],
 		t,
 		id,
@@ -159,6 +163,9 @@ func SendEntityDestroy(w io.Writer, t message.Tick, id message.EntityId) error {
 }
 
 func SendActionsDone(w io.Writer, t message.Tick, actions []*message.Action) error {
+	lock(w)
+	defer unlock(w)
+
 	err := writeAll(w, []interface{}{
 		message.Types["actions_done"],
 		t,
@@ -187,7 +194,7 @@ func SendActionsDone(w io.Writer, t message.Tick, actions []*message.Action) err
 }
 
 func SendChatReceive(w io.Writer, t message.Tick, username string, msg string) error {
-	return writeAll(w, []interface{}{
+	return sendAll(w, []interface{}{
 		message.Types["chat_receive"],
 		t,
 		username,
@@ -196,7 +203,7 @@ func SendChatReceive(w io.Writer, t message.Tick, username string, msg string) e
 }
 
 func SendConfig(w io.Writer, config *message.Config) error {
-	return writeAll(w, []interface{}{
+	return sendAll(w, []interface{}{
 		message.Types["config"],
 		config.MaxRollbackTicks,
 		config.DefaultPlayerSpeed,
@@ -207,7 +214,7 @@ func SendConfig(w io.Writer, config *message.Config) error {
 }
 
 func SendEntityIdChange(w io.Writer, oldId message.EntityId, newId message.EntityId) error {
-	return writeAll(w, []interface{}{
+	return sendAll(w, []interface{}{
 		message.Types["entity_id_change"],
 		oldId,
 		newId,
