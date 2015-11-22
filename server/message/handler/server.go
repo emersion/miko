@@ -75,7 +75,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			radius := message.BlockCoord(10)
 			for i := pos.BX - radius; i <= pos.BX+radius; i++ {
 				for j := pos.BY - radius; j <= pos.BY+radius; j++ {
-					blk, err := ctx.Terrain.GetBlockAt(pos.BX, pos.BY)
+					blk, err := ctx.Terrain.GetBlockAt(i, j)
 					if err != nil {
 						log.Println("Cannot send initial terrain to client", err)
 						continue
