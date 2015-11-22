@@ -48,4 +48,4 @@ Valeur | Type | Signification | Détail
 
 Valeur | Type | Signification
 --- | --- | ---
-0 | float angle + uint16 entityid | Envoit une boule dans la direction spécifiée, avec un id temporaire
+0 | float angle + uint16 entityid | Envoie une boule dans la direction spécifiée, avec un id temporaire
