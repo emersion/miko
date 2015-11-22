@@ -11,6 +11,15 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
+type broadcaster struct {
+	id     int
+	server *Server
+}
+
+func (brd *broadcaster) Write(data []byte) (n int, err error) {
+	return brd.server.broadcast(data, brd.id)
+}
+
 // Client holds info about connection
 type Client struct {
 	conn   net.Conn
@@ -24,6 +33,10 @@ type Server struct {
 	address string        // Address to open connection, e.g. localhost:9999
 	joins   chan net.Conn // Channel for new connections
 	Joins   chan *message.IO
+}
+
+func (c *Client) Write(data []byte) (n int, err error) {
+	return c.conn.Write(data)
 }
 
 func (c *Client) Close() error {
@@ -49,7 +62,8 @@ func (s *Server) newClient(conn net.Conn) {
 	log.Println("New client:", c.id)
 
 	reader := bufio.NewReader(c.conn)
-	io := message.NewIO(c.id, reader, c.conn, c.Server)
+	brd := &broadcaster{c.id, c.Server}
+	io := message.NewIO(c.id, reader, c, brd)
 	c.Server.Joins <- io
 }
 
@@ -91,21 +105,25 @@ func (s *Server) Listen() {
 	}
 }
 
-// Broadcast a message to all clients
-func (s *Server) Write(msg []byte) (n int, err error) {
+func (s *Server) broadcast(data []byte, from int) (n int, err error) {
 	N := 0
 	for _, c := range s.clients {
 		if c == nil {
 			continue
 		}
 
-		n, err = c.conn.Write(msg)
+		n, err = c.conn.Write(data)
 		if err != nil {
 			log.Println("Error broadcasting message:", err)
 		}
 		N += n
 	}
 	return N, nil
+}
+
+// Broadcast a message to all clients
+func (s *Server) Write(data []byte) (n int, err error) {
+	return s.broadcast(data, -1)
 }
 
 // Creates new tcp server instance
