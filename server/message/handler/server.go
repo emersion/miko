@@ -66,7 +66,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			session.Entity.Position.BY = 10
 			session.Entity.Type = 0   // player
 			session.Entity.Sprite = 1 // player
-			session.Entity.Attributes[message.EntityAttrId(30000)] = 0
+			session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0)
 
 			ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere
 
