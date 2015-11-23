@@ -46,6 +46,8 @@ func (e *Engine) processActionRequest(req *action.Request) bool {
 		ball.Position = initiator.Position
 		ball.Speed.Norm = float64(e.ctx.Config.DefaultBallSpeed)
 		ball.Speed.Angle = float64(req.Action.Params[0].(float32))
+		ball.Attributes[message.EntityAttrId(0)] = e.ctx.Config.DefaultBallLifespan // ticks_left
+		ball.Attributes[message.EntityAttrId(2)] = initiator.Id                     // sender
 		r := entity.NewCreateRequest(req.GetTick(), ball)
 		e.entity.AcceptRequest(r)
 
