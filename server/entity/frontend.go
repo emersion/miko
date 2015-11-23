@@ -48,7 +48,9 @@ func (f *Frontend) IsDirty() bool {
 // Flush the diff pool. This returns the current one and replace it by a new one.
 func (f *Frontend) Flush() *message.EntityDiffPool {
 	log.Println("Flushing entity frontend, deltas count:", len(f.deltas))
-	pool := deltasToDiffPool(flattenDeltas(f.deltas))
+	flattened := flattenDeltas(f.deltas)
+	log.Println("Flattened deltas count:", len(flattened))
+	pool := deltasToDiffPool(flattened)
 	f.deltas = []*Delta{}
 	return pool
 }
