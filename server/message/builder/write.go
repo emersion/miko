@@ -5,6 +5,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"io"
 	"log"
+	"sync"
 )
 
 func write(w io.Writer, data interface{}) error {
@@ -45,14 +46,14 @@ func writeAll(w io.Writer, data []interface{}) error {
 }
 
 func lock(w io.Writer) {
-	if client, ok := w.(*message.IO); ok {
-		client.Locker.Lock()
+	if locker, ok := w.(sync.Locker); ok {
+		locker.Lock()
 	}
 }
 
 func unlock(w io.Writer) {
-	if client, ok := w.(*message.IO); ok {
-		client.Locker.Unlock()
+	if locker, ok := w.(sync.Locker); ok {
+		locker.Unlock()
 	}
 }
 

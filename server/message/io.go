@@ -13,7 +13,7 @@ type IO struct {
 	Id              int
 	Version         ProtocolVersion
 
-	Locker *sync.Mutex
+	locker *sync.Mutex
 }
 
 func (io *IO) Read(p []byte) (int, error) {
@@ -32,6 +32,14 @@ func (io *IO) Broadcaster() io.Writer {
 	return io.broadcastWriter
 }
 
+func (io *IO) Lock() {
+	io.locker.Lock()
+}
+
+func (io *IO) Unlock() {
+	io.locker.Unlock()
+}
+
 func NewIO(id int, reader io.Reader, writer io.WriteCloser, broadcastWriter io.Writer) *IO {
 	return &IO{
 		reader:          reader,
@@ -39,6 +47,6 @@ func NewIO(id int, reader io.Reader, writer io.WriteCloser, broadcastWriter io.W
 		broadcastWriter: broadcastWriter,
 		Id:              id,
 
-		Locker: &sync.Mutex{},
+		locker: &sync.Mutex{},
 	}
 }
