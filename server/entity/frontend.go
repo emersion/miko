@@ -4,7 +4,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
-const frontendChanSize = 48
+const frontendChanSize = 128
 
 type Frontend struct {
 	backend *Service
