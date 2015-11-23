@@ -64,8 +64,6 @@ func (s *Service) AcceptRequest(req Request) (err error) {
 		panic("Cannot accept request: not a request")
 	}
 
-	log.Println("Accepted request, deltas count:", s.deltas.Len())
-
 	return err
 }
 
@@ -92,8 +90,9 @@ func (s *Service) acceptCreate(req *CreateRequest) error {
 		From:      nil,
 		To:        entity,
 	}
-	if !req.accepted {
+	if req.requested {
 		s.deltas.Insert(d)
+		log.Println("Accepted create request, deltas count:", s.deltas.Len())
 	}
 	if s.frontend != nil {
 		s.frontend.deltas = append(s.frontend.deltas, d)
@@ -130,6 +129,7 @@ func (s *Service) acceptUpdate(req *UpdateRequest) error {
 	// Add delta to history
 	if req.requested {
 		s.deltas.Insert(d)
+		log.Println("Accepted update request, deltas count:", s.deltas.Len())
 	}
 	if s.frontend != nil {
 		s.frontend.deltas = append(s.frontend.deltas, d)
@@ -160,6 +160,7 @@ func (s *Service) acceptDelete(req *DeleteRequest) error {
 	}
 	if req.requested {
 		s.deltas.Insert(d)
+		log.Println("Accepted delete request, deltas count:", s.deltas.Len())
 	}
 	if s.frontend != nil {
 		s.frontend.deltas = append(s.frontend.deltas, d)

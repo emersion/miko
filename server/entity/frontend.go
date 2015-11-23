@@ -2,6 +2,7 @@ package entity
 
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"log"
 )
 
 const frontendChanSize = 128
@@ -46,6 +47,7 @@ func (f *Frontend) IsDirty() bool {
 
 // Flush the diff pool. This returns the current one and replace it by a new one.
 func (f *Frontend) Flush() *message.EntityDiffPool {
+	log.Println("Flushing entity frontend, deltas count:", len(f.deltas))
 	pool := deltasToDiffPool(flattenDeltas(f.deltas))
 	f.deltas = []*Delta{}
 	return pool
