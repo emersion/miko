@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"git.emersion.fr/saucisse-royale/miko.git/server/delta"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"log"
 )
 
 func copyEntityFromDiff(src *Entity, diff *message.EntityDiff) *Entity {
