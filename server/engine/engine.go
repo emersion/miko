@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const broadcastInterval time.Duration = time.Millisecond * 1000
+const broadcastInterval time.Duration = time.Millisecond * 500
 
 type Engine struct {
 	auth    *auth.Service
@@ -39,6 +39,8 @@ func (e *Engine) processEntityRequest(req entity.Request) bool {
 
 func (e *Engine) processActionRequest(req *action.Request) bool {
 	if req.Action.Id == 0 { // throw_ball
+		log.Println("Accepting ball", req)
+
 		initiator := e.entity.Get(req.Action.Initiator)
 		ball := entity.New()
 		ball.Type = 1   // ball
@@ -96,12 +98,14 @@ func (e *Engine) listenNewClients() {
 
 func (e *Engine) broadcastChanges() {
 	if e.ctx.Entity.IsDirty() {
+		log.Println("Entity diff dirty, broadcasting to clients...")
 		err := builder.SendEntitiesDiffToClients(e.srv, e.clock.GetRelativeTick(), e.ctx.Entity.Flush())
 		if err != nil {
 			log.Println("Cannot broadcast entities diff:", err)
 		}
 	}
 	if e.ctx.Action.IsDirty() {
+		log.Println("Actions diff dirty, broadcasting to clients...")
 		err := builder.SendActionsDone(e.srv, e.clock.GetRelativeTick(), e.ctx.Action.Flush())
 		if err != nil {
 			log.Println("Cannot broadcast actions:", err)
@@ -162,6 +166,10 @@ func (e *Engine) Start() {
 			if t < minTick {
 				continue
 			}
+			if t > e.clock.GetAbsoluteTick() {
+				log.Println("Warning: client sending requests in the future", t)
+				continue
+			}
 			if t < acceptedMinTick {
 				acceptedMinTick = t
 			}
@@ -180,6 +188,10 @@ func (e *Engine) Start() {
 			if !inserted {
 				accepted.PushBack(req)
 			}
+		}
+
+		if accepted.Len() > 0 {
+			log.Println("Accepted", accepted.Len(), "requests from clients")
 		}
 
 		// Initiate lag compensation if necessary
@@ -262,7 +274,11 @@ func (e *Engine) Start() {
 		e.moveEntities(e.clock.GetAbsoluteTick())
 
 		end := time.Now().UnixNano()
-		time.Sleep(clock.TickDuration - time.Nanosecond*time.Duration(end-start))
+		duration := time.Nanosecond * time.Duration(end-start)
+		if clock.TickDuration < duration {
+			log.Println("Warning: loop duration exceeds tick duration", duration)
+		}
+		time.Sleep(clock.TickDuration - duration)
 	}
 }
 

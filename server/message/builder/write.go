@@ -9,9 +9,9 @@ import (
 )
 
 func write(w io.Writer, data interface{}) error {
-	if t, ok := data.(message.Type); ok {
+	/*if t, ok := data.(message.Type); ok {
 		log.Println("Sent:", message.GetTypeName(t))
-	}
+	}*/
 
 	return binary.Write(w, binary.BigEndian, data)
 }

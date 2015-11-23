@@ -63,6 +63,8 @@ func (s *Service) AcceptRequest(req Request) (err error) {
 		panic("Cannot accept request: not a request")
 	}
 
+	log.Println("Accepted request, deltas count:", s.deltas.Len())
+
 	return err
 }
 
