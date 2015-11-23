@@ -82,7 +82,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		// Send initial terrain
 		pos := session.Entity.Position
-		radius := message.BlockCoord(10)
+		radius := message.BlockCoord(5)
 		for i := pos.BX - radius; i <= pos.BX+radius; i++ {
 			for j := pos.BY - radius; j <= pos.BY+radius; j++ {
 				blk, err := ctx.Terrain.GetBlockAt(i, j)
@@ -162,7 +162,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			var tmpId message.EntityId
 			read(io, &angle)
 			read(io, &tmpId)
-			log.Println("Client threw ball:", angle, tmpId)
+			log.Println("Received ball action:", angle, tmpId)
 
 			action.Params = []interface{}{angle, tmpId}
 		} else {

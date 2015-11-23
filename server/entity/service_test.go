@@ -10,8 +10,6 @@ func TestService_Rewind(t *testing.T) {
 	s := entity.NewService()
 	f := s.Frontend()
 
-	accepted := make(chan entity.Request)
-
 	// Accept all requests
 	go (func() {
 		for {
@@ -23,7 +21,6 @@ func TestService_Rewind(t *testing.T) {
 			}
 
 			s.AcceptRequest(req)
-			accepted <- req
 		}
 	})()
 
@@ -33,9 +30,10 @@ func TestService_Rewind(t *testing.T) {
 	ent := message.NewEntity()
 	ent.Position.X = 10
 	ent.Position.Y = 15
-	f.Add(ent, t0)
+	req := f.Add(ent, t0)
+	req.Wait()
 
-	created := (<-accepted).(*entity.CreateRequest)
+	created := req.(*entity.CreateRequest)
 	id := created.Entity.Id
 	if id == 0 {
 		t.Fatal("Entity doesn't have an id after being added")
@@ -51,9 +49,8 @@ func TestService_Rewind(t *testing.T) {
 	update.Position.X = 33
 	update.Position.Y = 15
 	diff := &message.EntityDiff{Position: true}
-	f.Update(update, diff, t1)
-
-	<-accepted
+	req = f.Update(update, diff, t1)
+	req.Wait()
 
 	// Rewind
 	err := s.Rewind(s.GetTick() - t0)
