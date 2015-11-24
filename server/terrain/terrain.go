@@ -49,6 +49,11 @@ func (t *Terrain) GetBounds() (int, int, int, int) {
 	return 0, 0, len(t.points), len(t.points[0])
 }
 
+func (t *Terrain) GetCenter() (int, int) {
+	x1, y1, x2, y2 := t.GetBounds()
+	return int((x2 - x1) / 2), int((y2 - y1) / 2)
+}
+
 // Check if the terrain has a point at given coordinates.
 func (t *Terrain) hasPointAt(x, y int) bool {
 	x1, y1, x2, y2 := t.GetBounds()
@@ -156,8 +161,21 @@ func (t *Terrain) Reset(blkNbr int) {
 
 // Auto-generate a new terrain.
 func (t *Terrain) Generate() {
-	for i := 0; i < 20; i++ {
-		t.points[10][10+i] = message.PointType(1)
+	cx, cy := t.GetCenter()
+	radius := 5 * message.BlockLen
+	pt := message.PointType(1)
+
+	for i := cx - radius; i < cx+radius; i++ {
+		t.points[i][cy-radius] = pt
+	}
+	for i := cx - radius; i < cx+radius; i++ {
+		t.points[i][cy+radius] = pt
+	}
+	for j := cx - radius; j < cx+radius; j++ {
+		t.points[cx-radius][j] = pt
+	}
+	for j := cx - radius; j < cx+radius; j++ {
+		t.points[cx+radius][j] = pt
 	}
 }
 
