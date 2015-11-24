@@ -114,6 +114,10 @@ func (s *Server) Lock() {
 	s.locked = true
 
 	for i, io := range s.ios {
+		if io == nil {
+			continue
+		}
+
 		buffer := [][]byte{}
 		locked := true
 		finished := false
@@ -143,7 +147,7 @@ func (s *Server) Lock() {
 				case <-s.brdEnd[i]:
 					finished = true
 
-					if !locked {
+					if locked {
 						io.Unlock()
 					}
 					return
