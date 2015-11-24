@@ -6,19 +6,30 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<build>
 		<plugins>
-			<plugin>
-				<artifactId>maven-jar-plugin</artifactId>
-				<configuration>
-					<archive>
-						<manifest>
-							<addClasspath>true</addClasspath>
-							<mainClass>cr.fr.saucisseroyale.miko.Miko</mainClass>
-						</manifest>
-					</archive>
-				</configuration>
-			</plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>cr.fr.saucisseroyale.miko.Miko</mainClass>
+            </manifest>
+          </archive>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.5.1</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
@@ -27,6 +38,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>keytool-maven-plugin</artifactId>
+				<version>1.5</version>
 				<executions>
 					<execution>
 						<goals>
@@ -46,6 +58,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-clean-plugin</artifactId>
+				<version>2.5</version>
 				<executions>
 					<execution>
 						<id>auto-clean</id>

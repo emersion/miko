@@ -2,15 +2,19 @@
 <Configuration status="INFO">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n" />
-            <ThresholdFilter level="WARN" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %-15logger - %msg%n"/>
+            <ThresholdFilter level="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
         </Console>
         <File name="File" fileName="allDebug.log" immediateFlush="false" append="false">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %-15logger - %msg%n"/>
         </File>
     </Appenders>
     <Loggers>
-        <Root level="DEBUG">
+        <Logger name="miko.engine" level="DEBUG" additivity="false">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="File"/>
+        </Logger>
+        <Root level="TRACE">
             <AppenderRef ref="Console" />
             <AppenderRef ref="File"/>
         </Root>
