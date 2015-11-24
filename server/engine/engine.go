@@ -167,7 +167,7 @@ func (e *Engine) Start() {
 				continue
 			}
 			if t > e.clock.GetAbsoluteTick() {
-				log.Println("Warning: client sending requests in the future", t)
+				log.Println("Warning: client sending requests in the future", t-e.clock.GetAbsoluteTick())
 				continue
 			}
 			if t < acceptedMinTick {
