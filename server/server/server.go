@@ -119,7 +119,7 @@ func (s *Server) Lock() {
 		}
 
 		buffer := [][]byte{}
-		locked := true
+		locked := false
 		finished := false
 
 		go (func() {
@@ -139,7 +139,7 @@ func (s *Server) Lock() {
 			for {
 				select {
 				case data := <-s.brd[i]:
-					if locked {
+					if !locked {
 						buffer = append(buffer, data)
 					} else {
 						io.Write(data)
