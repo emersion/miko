@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"git.emersion.fr/saucisse-royale/miko.git/server/delta"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
-	"log"
+	//"log"
 )
 
 func copyEntityFromDiff(src *Entity, diff *message.EntityDiff) *Entity {
@@ -92,7 +92,7 @@ func (s *Service) acceptCreate(req *CreateRequest) error {
 	}
 	if req.requested {
 		s.deltas.Insert(d)
-		log.Println("Accepted create request, deltas count:", s.deltas.Len())
+		//log.Println("Accepted create request, deltas count:", s.deltas.Len())
 	}
 	if s.frontend != nil {
 		s.frontend.deltas = append(s.frontend.deltas, d)
@@ -129,7 +129,7 @@ func (s *Service) acceptUpdate(req *UpdateRequest) error {
 	// Add delta to history
 	if req.requested {
 		s.deltas.Insert(d)
-		log.Println("Accepted update request, deltas count:", s.deltas.Len())
+		//log.Println("Accepted update request, deltas count:", s.deltas.Len())
 	}
 	if s.frontend != nil {
 		s.frontend.deltas = append(s.frontend.deltas, d)
@@ -160,7 +160,7 @@ func (s *Service) acceptDelete(req *DeleteRequest) error {
 	}
 	if req.requested {
 		s.deltas.Insert(d)
-		log.Println("Accepted delete request, deltas count:", s.deltas.Len())
+		//log.Println("Accepted delete request, deltas count:", s.deltas.Len())
 	}
 	if s.frontend != nil {
 		s.frontend.deltas = append(s.frontend.deltas, d)
