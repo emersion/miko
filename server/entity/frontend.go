@@ -51,7 +51,7 @@ func (f *Frontend) Flush() *message.EntityDiffPool {
 	flattened := flattenDeltas(f.deltas)
 	log.Println("Flattened deltas:")
 	for _, d := range flattened {
-		log.Println(d)
+		log.Println(d.From, d.To, d.Diff)
 	}
 	pool := deltasToDiffPool(flattened)
 	f.deltas = []*Delta{}
