@@ -5,10 +5,16 @@ import (
 	"sync"
 )
 
+type bufferedWriter interface {
+	io.Writer
+	Flush() error
+}
+
 // An input/output for a specific client
 type IO struct {
 	reader          io.Reader
-	writer          io.WriteCloser
+	writer          io.Writer
+	closer          io.Closer
 	broadcastWriter io.Writer
 	Id              int
 	Version         ProtocolVersion
@@ -25,7 +31,7 @@ func (io *IO) Write(p []byte) (int, error) {
 }
 
 func (io *IO) Close() error {
-	return io.writer.Close()
+	return io.closer.Close()
 }
 
 func (io *IO) Broadcaster() io.Writer {
@@ -37,13 +43,17 @@ func (io *IO) Lock() {
 }
 
 func (io *IO) Unlock() {
+	if w, ok := io.writer.(bufferedWriter); ok {
+		w.Flush()
+	}
 	io.locker.Unlock()
 }
 
-func NewIO(id int, reader io.Reader, writer io.WriteCloser, broadcastWriter io.Writer) *IO {
+func NewIO(id int, reader io.Reader, writer io.Writer, closer io.Closer, broadcastWriter io.Writer) *IO {
 	return &IO{
 		reader:          reader,
 		writer:          writer,
+		closer:          closer,
 		broadcastWriter: broadcastWriter,
 		Id:              id,
 

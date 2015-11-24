@@ -60,7 +60,8 @@ func (s *Server) newClient(conn net.Conn) {
 	log.Println("New client:", c.id)
 
 	r := bufio.NewReader(c.conn)
-	io := message.NewIO(c.id, r, c, s)
+	w := bufio.NewWriter(c)
+	io := message.NewIO(c.id, r, w, c, s)
 
 	s.ios = append(s.ios, io)
 	c.Server.Joins <- io
