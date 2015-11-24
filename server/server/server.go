@@ -124,12 +124,12 @@ func (s *Server) Lock() {
 
 		go (func() {
 			io.Lock()
-			locked = true
 
 			for _, data := range buffer {
 				io.Write(data)
 			}
 
+			locked = true
 			if finished {
 				io.Unlock()
 			}
