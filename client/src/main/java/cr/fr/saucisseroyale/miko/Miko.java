@@ -32,8 +32,8 @@ public class Miko implements MessageHandler {
   public static final int PROTOCOL_VERSION = 7;
   private static final String DEFAULT_SERVER_ADDRESS = "miko.emersion.fr";
   private static final int DEFAULT_SERVER_PORT = 9999;
-  public static final int TICK_TIME = 20; // milliseconds
-  private static final int SERVER_TIMEOUT = 10 * 1000000000; // seconds
+  public static final int TICK_TIME = 20 * 1000000; // milliseconds
+  private static final long SERVER_TIMEOUT = 20 * 1000000000L; // seconds
   private static Logger logger = LogManager.getLogger("miko.main");
   private long lastMessageReceived = Long.MAX_VALUE;
   private boolean pingSent;
@@ -51,6 +51,7 @@ public class Miko implements MessageHandler {
   private float alpha; // for drawing, updated each loop
 
   private void exit() {
+    logger.info("Starts exiting");
     if (window != null) {
       window.close();
     }
@@ -105,11 +106,11 @@ public class Miko implements MessageHandler {
       lastFrame = newTime;
       accumulator += deltaTime;
       network();
-      while (accumulator >= TICK_TIME * 1000000) {
+      while (accumulator >= TICK_TIME) {
         logic();
-        accumulator -= TICK_TIME * 1000000;
+        accumulator -= TICK_TIME;
       }
-      alpha = (float) accumulator / (TICK_TIME * 1000000);
+      alpha = (float) accumulator / TICK_TIME;
       window.render(); // calls render(graphics)
       postLoop();
       Toolkit.getDefaultToolkit().sync(); // vsync
@@ -137,19 +138,18 @@ public class Miko implements MessageHandler {
   }
 
   private void postLoop() {
-    // TODO fix ping system
-    /*-
     if (state != MikoState.NETWORK && state != MikoState.CONNECTION_REQUEST && state != MikoState.CONNECTION) {
       long currentTime = System.nanoTime();
       if (currentTime - lastMessageReceived > SERVER_TIMEOUT) {
+        logger.error("Ping timeout");
         exit(ExitType.PING_TIMEOUT);
       }
       if (currentTime - lastMessageReceived > SERVER_TIMEOUT / 2 && !pingSent) {
+        logger.warn("Sent ping to avoid timeout (last message received {} millis ago)", (currentTime - lastMessageReceived) / 1000000);
         pingSent = true;
         networkClient.putMessage(OutputMessageFactory.ping());
       }
     }
-     */
     if (state == MikoState.EXIT) {
       engine.freeTime();
     }
@@ -157,8 +157,10 @@ public class Miko implements MessageHandler {
 
   private void connect(String address, int port) {
     try {
+      logger.info("Connecting to {} at port {}", address, port);
       networkClient.connect(address, port);
     } catch (IOException e) {
+      logger.warn("Connection error, disconnecting");
       networkClient.disconnect();
       uiConnect.setStatusText("Erreur de connexion : erreur d'établissement de connexion: " + e.getClass().getCanonicalName() + ": "
           + e.getLocalizedMessage());
@@ -185,6 +187,7 @@ public class Miko implements MessageHandler {
     }
     changeStateTo(MikoState.LOGIN);
     this.username = username;
+    logger.info("Logging in as {}:<password>", username);
     networkClient.putMessage(OutputMessageFactory.login(username, password));
   }
 
@@ -193,10 +196,12 @@ public class Miko implements MessageHandler {
       return;
     }
     changeStateTo(MikoState.REGISTER);
+    logger.info("Registering {}:<password>", username);
     networkClient.putMessage(OutputMessageFactory.register(username, password));
   }
 
   private void changeStateTo(MikoState newState) {
+    logger.trace("Changing state from {} to {}", state, newState);
     state = newState;
     window.hideAllUi();
     accumulator = 0;
@@ -226,13 +231,16 @@ public class Miko implements MessageHandler {
   }
 
   private void run() throws Exception {
+    logger.debug("Initializing window");
     initWindow();
     networkClient = new NetworkClient();
     changeStateTo(MikoState.CONNECTION_REQUEST);
+    logger.debug("Starting game loop");
     loop();
   }
 
   public static void main(String... args) throws Exception {
+    logger.info("Starting Miko version {}", PROTOCOL_VERSION);
     Miko miko = new Miko();
     miko.run();
   }
@@ -241,6 +249,7 @@ public class Miko implements MessageHandler {
   public void actions(int tickRemainder, List<Pair<Integer, Action>> actions) {
     messageReceived();
     if (state != MikoState.EXIT) {
+      logger.warn("Ignored actions message received in state {}", state);
       return;
     }
     engine.actions(tickRemainder, actions);
@@ -250,6 +259,7 @@ public class Miko implements MessageHandler {
   public void chatReceived(int tickRemainder, int entityIdChat, String chatMessage) {
     messageReceived();
     if (state != MikoState.JOIN && state != MikoState.EXIT) {
+      logger.warn("Ignored chatreceived message received in state {}", state);
       return;
     }
     engine.chatReceived(tickRemainder, entityIdChat, chatMessage);
@@ -259,6 +269,7 @@ public class Miko implements MessageHandler {
   public void chunkUpdate(int tickRemainder, ChunkPoint chunkPoint, Chunk chunk) {
     messageReceived();
     if (state != MikoState.JOIN && state != MikoState.EXIT) {
+      logger.warn("Ignored chunkupdate message received in state {}", state);
       return;
     }
     engine.chunkUpdate(tickRemainder, chunkPoint, chunk);
@@ -268,6 +279,7 @@ public class Miko implements MessageHandler {
   public void entityIdChange(int oldEntityId, int newEntityId) {
     messageReceived();
     if (state != MikoState.JOIN && state != MikoState.EXIT) {
+      logger.warn("Ignored entityidchange message received in state {}", state);
       return;
     }
     engine.entityIdChange(oldEntityId, newEntityId);
@@ -277,6 +289,7 @@ public class Miko implements MessageHandler {
   public void entityCreate(int tickRemainder, EntityDataUpdate entityDataUpdate) {
     messageReceived();
     if (state != MikoState.JOIN && state != MikoState.EXIT) {
+      logger.warn("Ignored entitycreate message received in state {}", state);
       return;
     }
     engine.entityCreate(tickRemainder, entityDataUpdate);
@@ -286,6 +299,7 @@ public class Miko implements MessageHandler {
   public void entityDestroy(int tickRemainder, int entityId) {
     messageReceived();
     if (state != MikoState.JOIN && state != MikoState.EXIT) {
+      logger.warn("Ignored entitydestroy message received in state {}", state);
       return;
     }
     engine.entityDestroy(tickRemainder, entityId);
@@ -295,6 +309,7 @@ public class Miko implements MessageHandler {
   public void entitiesUpdate(int tickRemainder, List<EntityDataUpdate> entitiesUpdateList) {
     messageReceived();
     if (state != MikoState.JOIN && state != MikoState.EXIT) {
+      logger.warn("Ignored entitiesupdate message received in state {}", state);
       return;
     }
     engine.entitiesUpdate(tickRemainder, entitiesUpdateList);
@@ -303,6 +318,7 @@ public class Miko implements MessageHandler {
   @Override
   public void exit(ExitType exitType) {
     networkClient.disconnect();
+    logger.warn("Exited because of {} exit message", exitType);
     String statusMessage;
     switch (exitType) {
       case CLIENT_BANNED:
@@ -341,8 +357,10 @@ public class Miko implements MessageHandler {
   public void loginFail(LoginResponseType loginResponseType) {
     messageReceived();
     if (state != MikoState.LOGIN) {
+      logger.warn("Ignored loginfail message received in state {}", state);
       return;
     }
+    logger.warn("Login failed with type {}", loginResponseType);
     String statusMessage;
     switch (loginResponseType) {
       case ALREADY_CONNECTED:
@@ -372,8 +390,10 @@ public class Miko implements MessageHandler {
   public void loginSuccess(int tickRemainder) {
     messageReceived();
     if (state != MikoState.LOGIN) {
+      logger.warn("Ignored loginsuccess message received in state {}", state);
       return;
     }
+    logger.info("Login success, starting engine at tick {}", tickRemainder);
     changeStateTo(MikoState.JOIN);
     try {
       engine =
@@ -387,6 +407,7 @@ public class Miko implements MessageHandler {
 
   @Override
   public void networkError(Exception e) {
+    logger.error("Network error, disconnecting");
     networkClient.disconnect();
     uiConnect.setStatusText("Déconnexion forcée : erreur de réseau : " + e.getClass().getCanonicalName() + ": " + e.getLocalizedMessage());
     e.printStackTrace();
@@ -403,9 +424,11 @@ public class Miko implements MessageHandler {
   public void playerJoined(int tickRemainder, int entityId, String pseudo) {
     messageReceived();
     if (state != MikoState.JOIN && state != MikoState.EXIT) {
+      logger.warn("Ignored playerjoined message received in state {}", state);
       return;
     }
     if (state == MikoState.JOIN && pseudo.equals(username)) {
+      logger.info("Received self player join, finished initializing engine, starting game");
       engine.setPlayerEntityId(entityId);
       engine.playerJoined(tickRemainder, entityId, pseudo);
       changeStateTo(MikoState.EXIT);
@@ -418,6 +441,7 @@ public class Miko implements MessageHandler {
   public void playerLeft(int tickRemainder, int entityId) {
     messageReceived();
     if (state != MikoState.EXIT) {
+      logger.warn("Ignored playerleft message received in state {}", state);
       return;
     }
     engine.playerLeft(tickRemainder, entityId);
@@ -433,7 +457,13 @@ public class Miko implements MessageHandler {
   public void registerResponse(RegisterResponseType registerResponseType) {
     messageReceived();
     if (state != MikoState.REGISTER) {
+      logger.warn("Ignored register message received in state {}", state);
       return;
+    }
+    if (registerResponseType == RegisterResponseType.OK) {
+      logger.info("Register succeeded");
+    } else {
+      logger.warn("Register failed, reason : {}", registerResponseType);
     }
     String statusMessage;
     switch (registerResponseType) {
@@ -467,8 +497,10 @@ public class Miko implements MessageHandler {
   public void config(Config config) {
     messageReceived();
     if (state != MikoState.CONFIG) {
+      logger.warn("Ignored config message received in state {}", state);
       return;
     }
+    logger.debug("Received server config");
     this.config = config;
     uiLogin.setStatusText("Connexion réussie, connectez ou enregistrez-vous.");
     changeStateTo(MikoState.LOGIN_REQUEST);

@@ -35,6 +35,7 @@ public class NetworkClient {
   public NetworkClient() {
     try {
       socketFactory = createSocketFactory();
+      logger.debug("Created socket factory");
     } catch (Exception e) {
       // TODO log cette erreur
       throw new RuntimeException(e);
@@ -49,6 +50,7 @@ public class NetworkClient {
    * @throws IOException S'il y a des erreurs quelconques d'IO lors de la connexion.
    */
   public void connect(String address, int port) throws IOException {
+    logger.debug("Starting connection to server {} at port {}", address, port);
     socket = socketFactory.createSocket(address, port);
     socket.setTcpNoDelay(true);
     socket.setTrafficClass(0x10); // LOWDELAY
@@ -56,6 +58,7 @@ public class NetworkClient {
     senderThread = new SenderThread(socket.getOutputStream(), outputMessages, this::networkError);
     receiverThread.start();
     senderThread.start();
+    logger.info("Connected to server {} at port {}", address, port);
   }
 
   /**
@@ -74,6 +77,7 @@ public class NetworkClient {
       senderThread = null;
     }
     if (socket != null) {
+      logger.info("Disconnected from server");
       try {
         socket.close();
       } catch (IOException e) {

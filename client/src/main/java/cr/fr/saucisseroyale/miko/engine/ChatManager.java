@@ -13,7 +13,7 @@ import java.util.stream.Stream;
  */
 class ChatManager {
 
-  private static final int MESSAGES_DURATION = 20 * 1000000000; // 20 seconds
+  private static final long MESSAGES_DURATION = 20 * 1000000000L; // 20 seconds
   private List<Pair<Long, String>> messages = new LinkedList<>();
 
   /**

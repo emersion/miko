@@ -64,8 +64,10 @@ class InputMessageFactory {
     int tickRemainder;
     switch (messageType) {
       case PING:
+        logger.trace("Received ping");
         return (handler) -> handler.ping();
       case PONG:
+        logger.trace("Received pong");
         return (handler) -> handler.pong();
       case EXIT:
         int exitCode = dis.readUnsignedByte();
@@ -73,6 +75,7 @@ class InputMessageFactory {
         if (exitType == null) {
           throw newParseException();
         }
+        logger.trace("Received exit");
         return (handler) -> handler.exit(exitType);
       case LOGIN_RESPONSE:
         int loginResponseCode = dis.readUnsignedByte();
@@ -82,8 +85,10 @@ class InputMessageFactory {
         }
         if (loginResponseType == LoginResponseType.OK) {
           tickRemainder = dis.readUnsignedShort();
+          logger.trace("Received login success");
           return (handler) -> handler.loginSuccess(tickRemainder);
         } else {
+          logger.trace("Received login fail");
           return (handler) -> handler.loginFail(loginResponseType);
         }
       case REGISTER_RESPONSE:
@@ -92,6 +97,7 @@ class InputMessageFactory {
         if (registerResponseType == null) {
           throw newParseException();
         }
+        logger.trace("Received register response");
         return (handler) -> handler.registerResponse(registerResponseType);
       case META_ACTION:
         tickRemainder = dis.readUnsignedShort();
@@ -104,8 +110,10 @@ class InputMessageFactory {
         switch (metaActionType) {
           case PLAYER_JOINED:
             String pseudo = readString(dis);
+            logger.trace("Received player joined, tickRemainder {}", tickRemainder);
             return (handler) -> handler.playerJoined(tickRemainder, entityId, pseudo);
           case PLAYER_LEFT:
+            logger.trace("Received player left, tickRemainder {}", tickRemainder);
             return (handler) -> handler.playerLeft(tickRemainder, entityId);
           default: // unknown
             throw newParseException();
@@ -125,6 +133,7 @@ class InputMessageFactory {
           blocks[i] = block;
         }
         Chunk chunk = new Chunk(defaultType, Arrays.asList(blocks));
+        logger.trace("Received chunk update, tickRemainder {}", tickRemainder);
         return (handler) -> handler.chunkUpdate(tickRemainder, chunkPoint, chunk);
       case ENTITIES_UPDATE:
         tickRemainder = dis.readUnsignedShort();
@@ -134,6 +143,7 @@ class InputMessageFactory {
           EntityDataUpdate entityDataUpdate = readEntityDataUpdate(dis);
           entitiesUpdateList.add(entityDataUpdate);
         }
+        logger.trace("Received entitiesUpdates, tickRemainder {}", tickRemainder);
         return (handler) -> handler.entitiesUpdate(tickRemainder, entitiesUpdateList);
       case ACTIONS:
         tickRemainder = dis.readUnsignedShort();
@@ -144,30 +154,32 @@ class InputMessageFactory {
           Action action = readAction(dis);
           actions.add(new Pair<>(id, action));
         }
+        logger.trace("Received actions, tickRemainder {}", tickRemainder);
         return (handler) -> handler.actions(tickRemainder, actions);
       case ENTITY_CREATE:
         tickRemainder = dis.readUnsignedShort();
         EntityDataUpdate entityCreateUpdate = readEntityDataUpdate(dis);
-        return (handler) -> {
-          handler.entityCreate(tickRemainder, entityCreateUpdate);
-        };
+        logger.trace("Received entityCreate, tickRemainder {}", tickRemainder);
+        return (handler) -> handler.entityCreate(tickRemainder, entityCreateUpdate);
       case ENTITY_DESTROY:
         tickRemainder = dis.readUnsignedShort();
         int entityIdDestroy = dis.readUnsignedShort();
-        return (handler) -> {
-          handler.entityDestroy(tickRemainder, entityIdDestroy);
-        };
+        logger.trace("Received entityDestroy, tickRemainder {}", tickRemainder);
+        return (handler) -> handler.entityDestroy(tickRemainder, entityIdDestroy);
       case CHAT_RECEIVE:
         tickRemainder = dis.readUnsignedShort();
         int entityIdChat = dis.readUnsignedShort();
         String chatMessage = readString(dis);
+        logger.trace("Received chatReceive, tickRemainder {}", tickRemainder);
         return (handler) -> handler.chatReceived(tickRemainder, entityIdChat, chatMessage);
       case CONFIG:
         Config config = readConfig(dis);
+        logger.trace("Received config");
         return (handler) -> handler.config(config);
       case ENTITY_ID_CHANGE:
         int oldEntityId = dis.readUnsignedShort();
         int newEntityId = dis.readUnsignedShort();
+        logger.trace("Received entityIdChange");
         return (handler) -> handler.entityIdChange(oldEntityId, newEntityId);
       default: // unknown or client-only
         throw newParseException();

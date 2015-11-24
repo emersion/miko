@@ -35,3 +35,4 @@ local.properties
 # miko-specific files
 
 src/main/resources/keystore
+*.log

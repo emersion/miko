@@ -53,7 +53,7 @@ public class Sprite {
    */
   public BufferedImage getImage(long spriteTime) {
     // convert ticks to milliseconds!
-    long spriteTimeMillis = spriteTime * Miko.TICK_TIME;
+    long spriteTimeMillis = spriteTime * Miko.TICK_TIME / 1000000;
     int remainder = (int) (spriteTimeMillis % spriteTimeDivider);
     for (Pair<Integer, BufferedImage> frame : frames) {
       if (remainder < frame.getFirst()) {

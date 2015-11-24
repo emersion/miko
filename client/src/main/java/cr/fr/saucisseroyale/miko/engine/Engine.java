@@ -80,6 +80,7 @@ public class Engine {
 
   public Engine(Config config, GraphicsConfiguration graphicsConfiguration, Consumer<FutureOutputMessage> messageOutput, int width, int height,
       int tickRemainder) throws IOException {
+    logger.debug("Created engine");
     this.config = config;
     this.messageOutput = messageOutput;
     screenWidth = width;
@@ -106,6 +107,7 @@ public class Engine {
     if (!initialized) {
       initialized = true;
     }
+    logger.trace("Creating tick after {}", lastTick);
     // create next tick
     updateTickAfter(lastTick);
   }
@@ -367,7 +369,6 @@ public class Engine {
     // send client position
     Set<EntityUpdateType> updateTypes = EnumSet.of(EntityUpdateType.POSITION, EntityUpdateType.SPEED_ANGLE, EntityUpdateType.SPEED_NORM);
     EntityDataUpdate playerUpdate = entityManager.generateDataUpdate(tick, playerEntityId, updateTypes, null);
-    System.out.println(playerUpdate.getPosition().getX() + " " + playerUpdate.getPosition().getY());
     messageOutput.accept(OutputMessageFactory.entityUpdate(tick, playerUpdate));
   }
 
@@ -409,13 +410,21 @@ public class Engine {
       Object[] data = engineMessage.getData();
       switch (engineMessage.getType()) {
         case PLAYER_JOINED:
-          playerManager.addPlayer(engineMessage.getTick(), (int) data[0], (String) data[1]);
+          int entityIdJoined = (int) data[0];
+          String username = (String) data[1];
+          playerManager.addPlayer(engineMessage.getTick(), entityIdJoined, username);
+          logger.debug("Player joined with entityId {} as {} on tick {}", entityIdJoined, username, tick);
           break;
         case PLAYER_LEFT:
+          int entityIdLeft = (int) data[0];
           playerManager.removePlayer(engineMessage.getTick(), (int) data[0]);
+          logger.debug("Player left with entityId {} on tick {}", entityIdLeft, tick);
           break;
         case CHUNK_UPDATE:
-          terrainManager.setChunk(tick, (ChunkPoint) data[0], (Chunk) data[1]);
+          ChunkPoint chunkPoint = (ChunkPoint) data[0];
+          Chunk chunk = (Chunk) data[1];
+          terrainManager.setChunk(tick, chunkPoint, chunk);
+          logger.debug("Chunk update at cx {} cy {} on tick {}", chunkPoint.getChunkX(), chunkPoint.getChunkY(), tick);
           break;
         case ACTIONS_DONE:
           @SuppressWarnings("unchecked")
@@ -423,12 +432,17 @@ public class Engine {
           for (Pair<Integer, Action> actionPair : actionList) {
             processAction(tick, actionPair.getFirst(), actionPair.getSecond());
           }
+          logger.debug("Actions received on tick {}", tick);
           break;
         case ENTITY_DESTROY:
-          entityManager.destroyEntity(tick, (int) data[0]);
+          int entityId = (int) data[0];
+          entityManager.destroyEntity(tick, entityId);
+          logger.debug("Entity destroyed with entityId {} on tick {}", entityId, tick);
           break;
         case ENTITY_CREATE:
-          entityManager.createEntity(tick, (EntityDataUpdate) data[0]);
+          EntityDataUpdate entityDataCreate = (EntityDataUpdate) data[0];
+          entityManager.createEntity(tick, entityDataCreate);
+          logger.debug("Entity created with entityId {} on tick {}", entityDataCreate.getEntityId(), tick);
           break;
         case ENTITIES_UPDATE:
           @SuppressWarnings("unchecked")
@@ -436,6 +450,7 @@ public class Engine {
           for (EntityDataUpdate entityDataUpdate : entityDataUpdateList) {
             entityManager.applyUpdate(tick, entityDataUpdate);
           }
+          logger.debug("Entities updated on tick {}", tick);
           break;
         default:
           throw new IllegalArgumentException("Unsupported engine message type : " + engineMessage.getType());
@@ -457,6 +472,7 @@ public class Engine {
   public void chatReceived(int tickRemainder, int entityIdChat, String chatMessage) {
     String formattedMessage = formatMessage(getTick(tickRemainder), entityIdChat, chatMessage);
     chatManager.addMessage(formattedMessage);
+    logger.info("Received chat message from entityId {}", entityIdChat);
   }
 
   public void chunkUpdate(int tickRemainder, ChunkPoint chunkPoint, Chunk chunk) {
@@ -465,6 +481,7 @@ public class Engine {
 
   public void entityIdChange(int oldEntityId, int newEntityId) {
     entityManager.freeAndUpdateTemporaryId(oldEntityId, newEntityId);
+    logger.debug("Received entity id change from {} to {}", oldEntityId, newEntityId);
   }
 
   public void entityCreate(int tickRemainder, EntityDataUpdate entityDataUpdate) {
@@ -498,6 +515,7 @@ public class Engine {
       throw new IllegalStateException("setPlayerEntityId is only callable once");
     }
     playerEntityId = entityId;
+    logger.debug("Set player entity id to {}", entityId);
   }
 
   private long getTick(int tickRemainder) {

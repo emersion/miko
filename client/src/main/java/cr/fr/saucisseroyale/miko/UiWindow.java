@@ -162,6 +162,7 @@ class UiWindow {
     frame.createBufferStrategy(2);
     strategy = frame.getBufferStrategy();
     frame.getLayeredPane().add(mainComponent, MAIN_LAYER);
+    logger.info("Initialized and created window");
   }
 
   /**
@@ -185,6 +186,7 @@ class UiWindow {
     device.setFullScreenWindow(null);
     frame.setVisible(false);
     frame.dispose();
+    logger.info("Closed and hid window");
   }
 
   /**
@@ -320,29 +322,31 @@ class UiWindow {
   }
 
   private void paintComponents(Graphics2D graphics) {
-    synchronized (uiLock) {
-      Component[] uiComponents = frame.getLayeredPane().getComponentsInLayer(UI_VISIBLE_LAYER);
-      for (int i = 0; i < uiComponents.length; i++) { // top to bottom
-        Component uiComponent = uiComponents[i];
-        if (uiComponent.isOpaque() && uiComponent.getWidth() == width && uiComponent.getHeight() == height) {
-          // fully opaque component found
-          // only render ui in front of it + itself
-          for (int j = i; j >= 0; j--) { // bottom to top
+    Component[] uiComponents = frame.getLayeredPane().getComponentsInLayer(UI_VISIBLE_LAYER);
+    for (int i = 0; i < uiComponents.length; i++) { // top to bottom
+      Component uiComponent = uiComponents[i];
+      if (uiComponent.isOpaque() && uiComponent.getWidth() == width && uiComponent.getHeight() == height) {
+        // fully opaque component found
+        // only render ui in front of it + itself
+        for (int j = i; j >= 0; j--) { // bottom to top
+          synchronized (uiLock) {
             uiComponents[j].paint(graphics);
           }
-          return;
         }
+        return;
       }
-      // no fully opaque component found
-      // draw opaque background
-      graphics.setBackground(Color.BLACK);
-      graphics.clearRect(0, 0, width, height);
-      // render game
-      if (renderable != null) {
-        renderable.accept(graphics);
-      }
-      // render ui
-      for (int i = uiComponents.length - 1; i >= 0; i--) { // bottom to top
+    }
+    // no fully opaque component found
+    // draw opaque background
+    graphics.setBackground(Color.BLACK);
+    graphics.clearRect(0, 0, width, height);
+    // render game
+    if (renderable != null) {
+      renderable.accept(graphics);
+    }
+    // render ui
+    for (int i = uiComponents.length - 1; i >= 0; i--) { // bottom to top
+      synchronized (uiLock) {
         uiComponents[i].paint(graphics);
       }
     }
