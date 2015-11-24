@@ -73,10 +73,13 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0)
 
 		req := ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere?
-		req.Wait()
+		err := req.Wait()
+		if err != nil {
+			return err
+		}
 
 		// Broadcast new entity
-		err := builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
+		err = builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
 		if err != nil {
 			return err
 		}

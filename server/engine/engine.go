@@ -3,6 +3,7 @@ package engine
 
 import (
 	"container/list"
+	"errors"
 	"git.emersion.fr/saucisse-royale/miko.git/server/action"
 	"git.emersion.fr/saucisse-royale/miko.git/server/auth"
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
@@ -70,6 +71,7 @@ func (e *Engine) processRequest(req message.Request) {
 		e.action.AcceptRequest(r)
 	case entity.Request:
 		if !e.processEntityRequest(r) {
+			e.entity.RejectRequest(req, errors.New("Request has been rejected"))
 			return
 		}
 		e.entity.AcceptRequest(r)
@@ -168,10 +170,11 @@ func (e *Engine) Start() {
 
 			t := req.GetTick()
 			if t < minTick {
+				e.entity.RejectRequest(req, errors.New("Request is too old"))
 				continue
 			}
 			if t > e.clock.GetAbsoluteTick() {
-				log.Println("Warning: client sending requests in the future", t-e.clock.GetAbsoluteTick())
+				e.entity.RejectRequest(req, errors.New("Request is in the future"))
 				continue
 			}
 			if t < acceptedMinTick {
