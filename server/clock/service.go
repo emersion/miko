@@ -9,31 +9,41 @@ import (
 // The duration of a single tick.
 const TickDuration = time.Millisecond * 20
 
+// The clock service.
 type Service struct {
 	ticks message.AbsoluteTick
 }
 
+// Increment the clock's tick count.
 func (s *Service) Tick() {
 	s.ticks++
 }
 
+// Get the current absolute tick.
 func (s *Service) GetAbsoluteTick() message.AbsoluteTick {
 	return s.ticks
 }
 
+// Get the current relative tick.
 func (s *Service) GetRelativeTick() message.Tick {
 	return s.ToRelativeTick(s.ticks)
 }
 
+// Convert an absolute tick to a relative tick.
 func (s *Service) ToRelativeTick(at message.AbsoluteTick) message.Tick {
 	return message.Tick(at)
 }
 
+// Convert a relative tick to an absolute tick.
+// Returns 0 if an error occured.
 func (s *Service) ToAbsoluteTick(rt message.Tick) message.AbsoluteTick {
 	current := s.GetRelativeTick()
 
 	at := message.AbsoluteTick(rt) + message.AbsoluteTick(s.ticks-s.ticks%message.MaxTick)
 	if current < rt {
+		if at < message.MaxTick {
+			return 0 // Overflow error
+		}
 		at -= message.AbsoluteTick(message.MaxTick)
 	}
 
@@ -45,6 +55,7 @@ func (s *Service) Sync(t message.Tick) {
 	s.ticks = s.ToAbsoluteTick(t)
 }
 
+// Create a new clock service.
 func NewService() *Service {
 	return &Service{}
 }
