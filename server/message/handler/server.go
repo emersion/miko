@@ -73,7 +73,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0)
 
 		req := ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere?
+		log.Println("Waiting response...")
 		err := req.Wait()
+		log.Println("Got response:", err)
 		if err != nil {
 			return err
 		}
