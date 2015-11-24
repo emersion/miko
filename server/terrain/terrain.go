@@ -162,7 +162,7 @@ func (t *Terrain) Reset(blkNbr int) {
 // Auto-generate a new terrain.
 func (t *Terrain) Generate() {
 	cx, cy := t.GetCenter()
-	radius := 5 * message.BlockLen
+	radius := 3 * message.BlockLen
 	pt := message.PointType(1)
 
 	for i := cx - radius; i < cx+radius; i++ {
