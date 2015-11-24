@@ -48,6 +48,8 @@ func writeAll(w io.Writer, data []interface{}) error {
 func lock(w io.Writer) {
 	if locker, ok := w.(sync.Locker); ok {
 		locker.Lock()
+	} else {
+		log.Println("Warning: could not lock writer")
 	}
 }
 
