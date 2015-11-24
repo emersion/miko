@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const broadcastInterval time.Duration = time.Millisecond * 500
+const broadcastInterval time.Duration = time.Millisecond * 150
 
 type Engine struct {
 	auth    *auth.Service
@@ -275,6 +275,9 @@ func (e *Engine) Start() {
 
 		// Compute new entities positions
 		e.moveEntities(e.clock.GetAbsoluteTick())
+
+		// Cleanup
+		e.entity.Cleanup(e.clock.GetAbsoluteTick())
 
 		end := time.Now().UnixNano()
 		duration := time.Nanosecond * time.Duration(end-start)

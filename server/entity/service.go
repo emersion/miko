@@ -223,6 +223,11 @@ func (s *Service) Rewind(dt message.AbsoluteTick) error {
 	return nil
 }
 
+// Cleanup data that is too old.
+func (s *Service) Cleanup(t message.AbsoluteTick) {
+	s.deltas.Cleanup(t)
+}
+
 // Get this service's deltas.
 func (s *Service) Deltas() *delta.List {
 	return s.deltas
