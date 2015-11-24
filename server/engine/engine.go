@@ -114,9 +114,10 @@ func (e *Engine) broadcastChanges() {
 }
 
 func (e *Engine) startBroadcastingChanges() {
+	ticks := time.Tick(broadcastInterval)
 	for {
+		<-ticks
 		e.broadcastChanges()
-		time.Sleep(broadcastInterval)
 	}
 }
 
