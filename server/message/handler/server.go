@@ -83,7 +83,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		// Send initial terrain
 		pos := session.Entity.Position
-		radius := message.BlockCoord(5)
+		radius := message.BlockCoord(8)
 		start := time.Now().UnixNano()
 		getTime := time.Duration(0)
 		sendTime := time.Duration(0)
