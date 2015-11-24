@@ -36,6 +36,9 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * L'engine du jeu Miko, écoutant les inputs du serveur et du client, et pouvant être affiché.
  *
@@ -48,6 +51,8 @@ public class Engine {
   private static final float MOUSE_SCREEN_MOVING = 0.3f;
 
   private static final int MAX_INTERPOLATION_DISTANCE = 100;
+
+  private static Logger logger = LogManager.getLogger("miko.engine");
 
   private Config config;
   private int screenWidth;
@@ -197,7 +202,7 @@ public class Engine {
 
   public void freeTime() {
     // we've got some time to dipose the old ticks
-    long disposeTick = lastTick - (config.getMaxRollbackTicks() + 1); // +1 to be safe
+    long disposeTick = lastTick - (config.getMaxRollbackTicks() + 100); // +100 to be safe
     terrainManager.disposeUntilTick(disposeTick);
     entityManager.disposeUntilTick(disposeTick);
     playerManager.disposeUntilTick(disposeTick);
@@ -362,6 +367,7 @@ public class Engine {
     // send client position
     Set<EntityUpdateType> updateTypes = EnumSet.of(EntityUpdateType.POSITION, EntityUpdateType.SPEED_ANGLE, EntityUpdateType.SPEED_NORM);
     EntityDataUpdate playerUpdate = entityManager.generateDataUpdate(tick, playerEntityId, updateTypes, null);
+    System.out.println(playerUpdate.getPosition().getX() + " " + playerUpdate.getPosition().getY());
     messageOutput.accept(OutputMessageFactory.entityUpdate(tick, playerUpdate));
   }
 

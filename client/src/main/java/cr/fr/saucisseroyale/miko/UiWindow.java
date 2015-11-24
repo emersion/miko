@@ -26,6 +26,9 @@ import javax.swing.RepaintManager;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Fenêtre en plein écran avec des composants d'UI et un composant principal, peint manuellement.
  * <p>
@@ -84,6 +87,7 @@ class UiWindow {
   private static final Integer UI_VISIBLE_LAYER = Integer.valueOf(1);
   private static final Integer UI_HIDDEN_LAYER = Integer.valueOf(-1);
   private static final Integer MAIN_LAYER = Integer.valueOf(0);
+  private static Logger logger = LogManager.getLogger("miko.ui");
   private SynchronizedEventQueue eventQueue;
   private Runnable closeListener;
   private JFrame frame;

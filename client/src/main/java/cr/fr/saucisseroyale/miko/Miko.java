@@ -20,6 +20,9 @@ import java.awt.Toolkit;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class Miko implements MessageHandler {
 
   private enum MikoState {
@@ -27,10 +30,11 @@ public class Miko implements MessageHandler {
   }
 
   public static final int PROTOCOL_VERSION = 7;
-  private static final String DEFAULT_SERVER_ADDRESS = "127.0.0.1";
+  private static final String DEFAULT_SERVER_ADDRESS = "miko.emersion.fr";
   private static final int DEFAULT_SERVER_PORT = 9999;
   public static final int TICK_TIME = 20; // milliseconds
   private static final int SERVER_TIMEOUT = 10 * 1000000000; // seconds
+  private static Logger logger = LogManager.getLogger("miko.main");
   private long lastMessageReceived = Long.MAX_VALUE;
   private boolean pingSent;
   private String username;
@@ -43,6 +47,7 @@ public class Miko implements MessageHandler {
   private boolean closeRequested = false;
   private NetworkClient networkClient;
   private KeyStateManager keyStateManager;
+  private long accumulator;
   private float alpha; // for drawing, updated each loop
 
   private void exit() {
@@ -93,7 +98,7 @@ public class Miko implements MessageHandler {
 
   private void loop() {
     long lastFrame = System.nanoTime();
-    long accumulator = 0;
+    accumulator = 0;
     while (!closeRequested) {
       long newTime = System.nanoTime();
       long deltaTime = newTime - lastFrame;
@@ -132,6 +137,8 @@ public class Miko implements MessageHandler {
   }
 
   private void postLoop() {
+    // TODO fix ping system
+    /*-
     if (state != MikoState.NETWORK && state != MikoState.CONNECTION_REQUEST && state != MikoState.CONNECTION) {
       long currentTime = System.nanoTime();
       if (currentTime - lastMessageReceived > SERVER_TIMEOUT) {
@@ -142,6 +149,7 @@ public class Miko implements MessageHandler {
         networkClient.putMessage(OutputMessageFactory.ping());
       }
     }
+     */
     if (state == MikoState.EXIT) {
       engine.freeTime();
     }
@@ -152,7 +160,9 @@ public class Miko implements MessageHandler {
       networkClient.connect(address, port);
     } catch (IOException e) {
       networkClient.disconnect();
-      uiConnect.setStatusText("Erreur de connexion : erreur d'établissement de connexion inconnue.");
+      uiConnect.setStatusText("Erreur de connexion : erreur d'établissement de connexion: " + e.getClass().getCanonicalName() + ": "
+          + e.getLocalizedMessage());
+      e.printStackTrace();
       changeStateTo(MikoState.CONNECTION_REQUEST);
       return;
     }
@@ -189,6 +199,7 @@ public class Miko implements MessageHandler {
   private void changeStateTo(MikoState newState) {
     state = newState;
     window.hideAllUi();
+    accumulator = 0;
     switch (state) {
       case CONNECTION_REQUEST:
         window.showUi(uiConnect);
@@ -377,7 +388,8 @@ public class Miko implements MessageHandler {
   @Override
   public void networkError(Exception e) {
     networkClient.disconnect();
-    uiConnect.setStatusText("Déconnexion forcée : erreur de réseau : " + e.getLocalizedMessage());
+    uiConnect.setStatusText("Déconnexion forcée : erreur de réseau : " + e.getClass().getCanonicalName() + ": " + e.getLocalizedMessage());
+    e.printStackTrace();
     changeStateTo(MikoState.CONNECTION_REQUEST);
   }
 

@@ -8,7 +8,8 @@ import java.io.IOException;
  */
 public class MessageParseException extends IOException {
 
-  private static final long serialVersionUID = 403825774315632241L;
+  // this class should not be serialized so use default id
+  private static final long serialVersionUID = 1L;
 
   public MessageParseException() {}
 

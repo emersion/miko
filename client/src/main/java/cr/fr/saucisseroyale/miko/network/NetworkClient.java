@@ -3,11 +3,7 @@ package cr.fr.saucisseroyale.miko.network;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
-import java.security.KeyManagementException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -17,6 +13,9 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Client de connexion à un serveur Miko fonctionnant sur la couche des messages.
  *
@@ -25,6 +24,7 @@ import javax.net.ssl.TrustManagerFactory;
  */
 public class NetworkClient {
 
+  private static Logger logger = LogManager.getLogger("miko.network");
   private SSLSocketFactory socketFactory;
   private Socket socket;
   private ReceiverThread receiverThread;
@@ -50,7 +50,6 @@ public class NetworkClient {
    */
   public void connect(String address, int port) throws IOException {
     socket = socketFactory.createSocket(address, port);
-    socket = new Socket(address, port);
     socket.setTcpNoDelay(true);
     socket.setTrafficClass(0x10); // LOWDELAY
     receiverThread = new ReceiverThread(socket.getInputStream(), inputMessages, this::networkError);
@@ -107,8 +106,7 @@ public class NetworkClient {
     disconnect();
   }
 
-  private static SSLSocketFactory createSocketFactory() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException,
-  KeyManagementException {
+  private static SSLSocketFactory createSocketFactory() throws Exception {
     KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
     try (InputStream keyStoreStream = NetworkClient.class.getResourceAsStream("/keystore")) {
       keyStore.load(keyStoreStream, "keypass".toCharArray());

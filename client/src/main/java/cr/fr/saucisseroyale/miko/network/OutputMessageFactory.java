@@ -9,6 +9,7 @@ import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
 import cr.fr.saucisseroyale.miko.protocol.ExitType;
 import cr.fr.saucisseroyale.miko.protocol.MessageType;
 import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
+import cr.fr.saucisseroyale.miko.protocol.SpriteType;
 import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
 import cr.fr.saucisseroyale.miko.util.Pair;
 
@@ -20,12 +21,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 /**
  * Factory permettant de créer des {@link FutureOutputMessage} à partir de méthodes haut niveau.
  *
  */
 public class OutputMessageFactory {
+
+  private static Logger logger = LogManager.getLogger("miko.output");
 
   // Classe statique
   private OutputMessageFactory() {
@@ -95,7 +101,9 @@ public class OutputMessageFactory {
       for (int b = 0; b < 8; b++) {
         EntityUpdateType updateType = EntityUpdateType.getType(b);
         if (updateType == null) {
-          throw new IllegalArgumentException("Unknown parameters set in entityDataUpdate");
+          // bit doesn't exist in the protocol or isn't implemented in client _at all_
+          // ignore
+          continue;
         }
         switch (updateType) {
           case POSITION:
@@ -129,6 +137,14 @@ public class OutputMessageFactory {
             updateTypes[b] = true;
             EntityType entityType = entityDataUpdate.getEntityType();
             buffer.writeShort(entityType.getId());
+            break;
+          case SPRITE_TYPE:
+            if (!entityDataUpdate.hasSprite()) {
+              break;
+            }
+            updateTypes[b] = true;
+            SpriteType spriteType = entityDataUpdate.getSpriteType();
+            buffer.writeShort(spriteType.getId());
             break;
           case OBJECT_DATA:
             Map<ObjectAttribute, Object> attributes = entityDataUpdate.getObjectAttributes();
@@ -223,7 +239,7 @@ public class OutputMessageFactory {
   }
 
   private static void writeAction(DataOutputStream dos, Action action) throws IOException {
-    dos.writeByte(action.getType().getId());
+    dos.writeShort(action.getType().getId());
     switch (action.getDataType()) {
       case VOID:
         break;

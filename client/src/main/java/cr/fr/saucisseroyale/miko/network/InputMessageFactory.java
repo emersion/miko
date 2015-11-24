@@ -28,12 +28,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Factory permettant de parse des {@link FutureInputMessage} à partir de flux.
  *
  * @see #parseMessage(DataInputStream)
  */
 class InputMessageFactory {
+
+  private static Logger logger = LogManager.getLogger("miko.input");
 
   // Classe statique
   private InputMessageFactory() {
