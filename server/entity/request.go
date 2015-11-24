@@ -19,6 +19,13 @@ func (r *request) Wait() error {
 	return <-r.wait
 }
 
+func (r *request) Done(err error) {
+	select {
+	case r.wait <- err:
+	default:
+	}
+}
+
 func newRequest(t message.AbsoluteTick) *request {
 	return &request{
 		tick: t,

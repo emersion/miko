@@ -66,12 +66,13 @@ func (e *Engine) processRequest(req message.Request) {
 	switch r := req.(type) {
 	case *action.Request:
 		if !e.processActionRequest(r) {
+			req.Done(errors.New("Request has been rejected"))
 			return
 		}
 		e.action.AcceptRequest(r)
 	case entity.Request:
 		if !e.processEntityRequest(r) {
-			e.entity.RejectRequest(req, errors.New("Request has been rejected"))
+			req.Done(errors.New("Request has been rejected"))
 			return
 		}
 		e.entity.AcceptRequest(r)
@@ -170,11 +171,11 @@ func (e *Engine) Start() {
 
 			t := req.GetTick()
 			if t < minTick {
-				e.entity.RejectRequest(req, errors.New("Request is too old"))
+				req.Done(errors.New("Request is too old"))
 				continue
 			}
 			if t > e.clock.GetAbsoluteTick() {
-				e.entity.RejectRequest(req, errors.New("Request is in the future"))
+				req.Done(errors.New("Request is in the future"))
 				continue
 			}
 			if t < acceptedMinTick {

@@ -19,6 +19,13 @@ func (a *Action) Wait() error {
 	return <-a.wait
 }
 
+func (a *Action) Done(err error) {
+	select {
+	case a.wait <- err:
+	default:
+	}
+}
+
 func (a *Action) Execute() []delta.Delta {
 	return []delta.Delta{}
 }
