@@ -127,6 +127,8 @@ func (e *Engine) Start() {
 	entityFrontend := e.entity.Frontend()
 	actionFrontend := e.action.Frontend()
 
+	engineStart := time.Now().UnixNano()
+
 	for {
 		start := time.Now().UnixNano()
 		e.clock.Tick()
@@ -272,6 +274,9 @@ func (e *Engine) Start() {
 
 		// Compute new entities positions
 		e.moveEntities(e.clock.GetAbsoluteTick())
+
+		startedSince := time.Nanosecond * time.Duration(time.Now().UnixNano()-engineStart)
+		log.Println(startedSince - time.Duration(e.clock.GetAbsoluteTick())*clock.TickDuration)
 
 		end := time.Now().UnixNano()
 		duration := time.Nanosecond * time.Duration(end-start)
