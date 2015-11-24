@@ -164,8 +164,12 @@ func (s *Server) Unlock() {
 	}
 	s.locked = false
 
-	for _, end := range s.brdEnd {
-		end <- true
+	for i, io := range s.ios {
+		if io == nil {
+			continue
+		}
+
+		s.brdEnd[i] <- true
 	}
 }
 

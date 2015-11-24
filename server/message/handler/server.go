@@ -73,19 +73,18 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0)
 
 		req := ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere?
-		log.Println("Waiting response...")
 		err := req.Wait()
-		log.Println("Got response:", err)
+		log.Println("Entity registered!")
 		if err != nil {
 			return err
 		}
-
+		log.Println("Flushing entities diff")
 		// Broadcast new entity
 		err = builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
 		if err != nil {
 			return err
 		}
-
+		log.Println("Sending terrain")
 		// Send initial terrain
 		pos := session.Entity.Position
 		radius := message.BlockCoord(8)
