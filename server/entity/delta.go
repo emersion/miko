@@ -117,7 +117,7 @@ func deltasToDiffPool(deltas []*Delta) *message.EntityDiffPool {
 				continue
 			}
 
-			pool.Updated[d.To.ToMessage()] = d.Diff
+			pool.Updated[to] = d.Diff
 		} else if d.To != nil { // Create
 			pool.Created = append(pool.Created, d.To.ToMessage())
 		} else if d.From != nil { // Delete
