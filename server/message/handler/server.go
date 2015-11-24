@@ -113,7 +113,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			}
 		}
 		end := time.Now().UnixNano()
-		log.Println(time.Duration(end-start) * time.Nanosecond)
+		log.Println(time.Duration(end-start)*time.Nanosecond, "get:", getTime, "send:", sendTime)
 
 		return builder.SendPlayerJoined(io.Broadcaster(), ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
 	},
