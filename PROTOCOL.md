@@ -1,4 +1,4 @@
-# Protocole version *7*
+# Protocole version *8*
 
 ## Généralités
 
@@ -25,7 +25,7 @@ S | 4 | Non [1] | login_response | uint8 loginresponsecode
 C | 5 | Non | register | str pseudo + str password
 S | 6 | Non | register_response | uint8 registerresponsecode
 S | 7 | Oui | meta_action | uint16 entityid + uint8 metaactioncode + bytes metaactionbody
-S | 8 | Oui | terrain_update | bytes terrain
+S | 8 | Oui | chunk_update | bytes chunk
 C | 9 | Non | terrain_request | bytes terrainhint
 S | 10 | Oui | entities_update | bytes entities
 C | 11 | Oui | entity_update | bytes entity
@@ -38,6 +38,7 @@ S | 17 | Oui | chat_receive | uint16 entityid + str message
 C | 18 | Non | version | uint16 versionid
 S | 19 | Non | config | bytes config
 S | 20 | Non | entity_id_change | uint16 oldentityid + uint16 newentityid
+S | 21 | Oui | chunks_update | bytes chunks
 
 * Si le message possède un tick, il l'envoit avant son contenu : headers puis tick puis contenu. Le tick est un uint16 et est la frame de logique actuelle sur le simulateur du jeu envoyant le message, elle revient à 0 après avoir atteint son maximum (2^16 - 1)
 * [1] : Un tick est envoyé après le `loginresponsecode` si c'est le code "ok".
@@ -109,7 +110,7 @@ uint16 maxRollbackTicks
 * coordonnées d'un bloc: multiple de 256 de ses coordonnées en x et y
 * coordonnées d'une case dans un bloc: différence de ses coordonnées par rapport à la case en bas à gauche du bloc
 
-### terrain
+### chunk
 
 ```
 sint16 bx + sint16 by
@@ -125,6 +126,14 @@ size times:
 * size : nombre de cases envoyées
 * x, y : coordonnées de la case dans le bloc
 * value : valeur de la case
+
+### chunks
+
+```
+uint16 size
+size times:
+	chunk
+```
 
 ### terrain_hint
 
