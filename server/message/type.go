@@ -5,7 +5,7 @@ package message
 type ProtocolVersion uint16
 
 // The current protocol version.
-const CurrentVersion ProtocolVersion = 7
+const CurrentVersion ProtocolVersion = 8
 
 type Type uint8 // A message type.
 type ExitCode uint8
@@ -26,7 +26,7 @@ var Types = map[string]Type{
 	"register":          5,
 	"register_response": 6,
 	"meta_action":       7,
-	"terrain_update":    8,
+	"chunk_update":      8,
 	"terrain_request":   9,
 	"entities_update":   10,
 	"entity_update":     11,
@@ -39,6 +39,7 @@ var Types = map[string]Type{
 	"version":           18,
 	"config":            19,
 	"entity_id_change":  20,
+	"chunks_update":     21,
 }
 
 // Get a message type name from its type.

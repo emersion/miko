@@ -23,9 +23,10 @@ type Server struct {
 	clients []*Client
 	ios     []*message.IO
 
-	brd    []chan []byte
-	brdEnd []chan bool
-	locked bool
+	brd       []chan []byte
+	brdEnd    []chan bool
+	brdActive []bool
+	locked    bool
 
 	address string           // Address to open connection, e.g. localhost:9999
 	Joins   chan *message.IO // Channel for new connections
@@ -67,6 +68,7 @@ func (s *Server) newClient(conn net.Conn) {
 
 	s.brd = append(s.brd, make(chan []byte))
 	s.brdEnd = append(s.brdEnd, make(chan bool))
+	s.brdActive = append(s.brdActive, false)
 }
 
 // Start network server
@@ -106,6 +108,8 @@ func (s *Server) Lock() {
 			continue
 		}
 
+		s.brdActive[i] = true
+
 		buffer := [][]byte{}
 		locked := false
 		finished := false
@@ -134,6 +138,7 @@ func (s *Server) Lock() {
 					}
 				case <-s.brdEnd[i]:
 					finished = true
+					s.brdActive[i] = false
 
 					if locked {
 						io.Unlock()
@@ -156,9 +161,8 @@ func (s *Server) Unlock() {
 			continue
 		}
 
-		select {
-		case s.brdEnd[i] <- true:
-		default:
+		if s.brdActive[i] {
+			s.brdEnd[i] <- true
 		}
 	}
 }
@@ -171,9 +175,8 @@ func (s *Server) Write(data []byte) (n int, err error) {
 		}
 
 		if s.locked {
-			select {
-			case s.brd[i] <- data:
-			default:
+			if s.brdActive[i] {
+				s.brd[i] <- data
 			}
 		} else {
 			io.Write(data)
