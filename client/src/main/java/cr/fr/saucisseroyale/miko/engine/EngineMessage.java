@@ -16,7 +16,7 @@ import java.util.List;
 class EngineMessage implements Comparable<EngineMessage> {
 
   enum Type {
-    PLAYER_JOINED(1), PLAYER_LEFT(2), CHUNK_UPDATE(3), ACTIONS_DONE(4), ENTITY_DESTROY(5), ENTITY_CREATE(6), ENTITIES_UPDATE(7);
+    PLAYER_JOINED(1), PLAYER_LEFT(2), CHUNKS_UPDATE(3), ACTIONS_DONE(4), ENTITY_DESTROY(5), ENTITY_CREATE(6), ENTITIES_UPDATE(7);
 
     private final int order;
 
@@ -43,8 +43,8 @@ class EngineMessage implements Comparable<EngineMessage> {
     return new EngineMessage(tick, Type.PLAYER_LEFT, new Object[] {playerId});
   }
 
-  public static EngineMessage newChunkUpdateMessage(long tick, ChunkPoint chunkPoint, Chunk chunk) {
-    return new EngineMessage(tick, Type.CHUNK_UPDATE, new Object[] {chunkPoint, chunk});
+  public static EngineMessage newChunksUpdateMessage(long tick, List<Pair<ChunkPoint, Chunk>> chunks) {
+    return new EngineMessage(tick, Type.CHUNKS_UPDATE, new Object[] {chunks});
   }
 
   public static EngineMessage newActionsMessage(long tick, List<Pair<Integer, Action>> actions) {

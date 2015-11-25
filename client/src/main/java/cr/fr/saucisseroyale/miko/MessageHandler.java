@@ -23,7 +23,7 @@ public interface MessageHandler {
 
   public void chatReceived(int tickRemainder, int entityIdChat, String chatMessage);
 
-  public void chunkUpdate(int tickRemainder, ChunkPoint chunkPoint, Chunk chunk);
+  public void chunksUpdate(int tickRemainder, List<Pair<ChunkPoint, Chunk>> chunks);
 
   public void entityIdChange(int oldEntityId, int newEntityId);
 
