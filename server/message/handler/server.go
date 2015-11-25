@@ -5,7 +5,6 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"log"
-	"time"
 )
 
 var serverHandlers = &map[message.Type]TypeHandler{
@@ -88,31 +87,23 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		// Send initial terrain
 		pos := session.Entity.Position
 		radius := message.BlockCoord(8)
-		start := time.Now().UnixNano()
-		getTime := time.Duration(0)
-		sendTime := time.Duration(0)
+		blks := []*message.Block{}
 		for i := pos.BX - radius; i <= pos.BX+radius; i++ {
 			for j := pos.BY - radius; j <= pos.BY+radius; j++ {
-				s := time.Now().UnixNano()
 				blk, err := ctx.Terrain.GetBlockAt(i, j)
 				if err != nil {
 					log.Println("Cannot send initial terrain to client", err)
 					continue
 				}
-				e := time.Now().UnixNano()
-				getTime += time.Duration(e-s) * time.Nanosecond
 
-				s = time.Now().UnixNano()
-				err = builder.SendTerrainUpdate(io, ctx.Clock.GetRelativeTick(), blk)
-				if err != nil {
-					return err
-				}
-				e = time.Now().UnixNano()
-				sendTime += time.Duration(e-s) * time.Nanosecond
+				blks = append(blks, blk)
 			}
 		}
-		end := time.Now().UnixNano()
-		log.Println(time.Duration(end-start)*time.Nanosecond, "get:", getTime, "send:", sendTime)
+
+		err = builder.SendChunksUpdate(io, ctx.Clock.GetRelativeTick(), blks)
+		if err != nil {
+			return err
+		}
 
 		return builder.SendPlayerJoined(io.Broadcaster(), ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
 	},
@@ -140,7 +131,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return err
 			}
 
-			err = builder.SendTerrainUpdate(io, ctx.Clock.GetRelativeTick(), blk)
+			err = builder.SendChunkUpdate(io, ctx.Clock.GetRelativeTick(), blk)
 			if err != nil {
 				return err
 			}

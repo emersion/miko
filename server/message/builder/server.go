@@ -99,11 +99,11 @@ func WriteBlock(w io.Writer, blk *message.Block) error {
 	return nil
 }
 
-func SendTerrainUpdate(w io.Writer, t message.Tick, blk *message.Block) error {
+func SendChunkUpdate(w io.Writer, t message.Tick, blk *message.Block) error {
 	lock(w)
 	defer unlock(w)
 
-	if err := write(w, message.Types["terrain_update"]); err != nil {
+	if err := write(w, message.Types["chunk_update"]); err != nil {
 		return err
 	}
 	if err := write(w, t); err != nil {
@@ -112,6 +112,28 @@ func SendTerrainUpdate(w io.Writer, t message.Tick, blk *message.Block) error {
 	if err := WriteBlock(w, blk); err != nil {
 		return err
 	}
+	return nil
+}
+
+func SendChunksUpdate(w io.Writer, t message.Tick, blks []*message.Block) error {
+	lock(w)
+	defer unlock(w)
+
+	err := writeAll(w, []interface{}{
+		message.Types["chunks_update"],
+		t,
+		uint16(len(blks)),
+	})
+	if err != nil {
+		return err
+	}
+
+	for _, blk := range blks {
+		if err := WriteBlock(w, blk); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

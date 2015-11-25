@@ -99,7 +99,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 
 		return nil
 	},
-	message.Types["terrain_update"]: func(ctx *message.Context, io *message.IO) error {
+	message.Types["chunk_update"]: func(ctx *message.Context, io *message.IO) error {
 		t := ctx.Clock.ToAbsoluteTick(readTick(io))
 		blk := ReadBlock(io)
 		ctx.Terrain.SetBlock(blk, t)
