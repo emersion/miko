@@ -29,7 +29,7 @@ public class Miko implements MessageHandler {
     NETWORK, CONNECTION_REQUEST, CONNECTION, CONFIG, LOGIN_REQUEST, REGISTER, LOGIN, JOIN, EXIT;
   }
 
-  public static final int PROTOCOL_VERSION = 7;
+  public static final int PROTOCOL_VERSION = 8;
   private static final String DEFAULT_SERVER_ADDRESS = "miko.emersion.fr";
   private static final int DEFAULT_SERVER_PORT = 9999;
   public static final int TICK_TIME = 20 * 1000000; // milliseconds
@@ -266,13 +266,13 @@ public class Miko implements MessageHandler {
   }
 
   @Override
-  public void chunkUpdate(int tickRemainder, ChunkPoint chunkPoint, Chunk chunk) {
+  public void chunksUpdate(int tickRemainder, List<Pair<ChunkPoint, Chunk>> chunks) {
     messageReceived();
     if (state != MikoState.JOIN && state != MikoState.EXIT) {
-      logger.warn("Ignored chunkupdate message received in state {}", state);
+      logger.warn("Ignored chunksupdate message received in state {}", state);
       return;
     }
-    engine.chunkUpdate(tickRemainder, chunkPoint, chunk);
+    engine.chunksUpdate(tickRemainder, chunks);
   }
 
   @Override

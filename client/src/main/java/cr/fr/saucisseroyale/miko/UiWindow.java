@@ -358,7 +358,7 @@ class UiWindow {
           && displayMode.getHeight() == supportedDisplayMode.getHeight()
           && displayMode.getBitDepth() == supportedDisplayMode.getBitDepth()
           && (displayMode.getRefreshRate() == DisplayMode.REFRESH_RATE_UNKNOWN || displayMode.getRefreshRate() == supportedDisplayMode
-          .getRefreshRate())) {
+              .getRefreshRate())) {
         return true;
       }
     }

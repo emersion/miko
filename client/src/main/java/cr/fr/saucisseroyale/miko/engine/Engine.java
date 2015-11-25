@@ -420,11 +420,13 @@ public class Engine {
           playerManager.removePlayer(engineMessage.getTick(), (int) data[0]);
           logger.debug("Player left with entityId {} on tick {}", entityIdLeft, tick);
           break;
-        case CHUNK_UPDATE:
-          ChunkPoint chunkPoint = (ChunkPoint) data[0];
-          Chunk chunk = (Chunk) data[1];
-          terrainManager.setChunk(tick, chunkPoint, chunk);
-          logger.debug("Chunk update at cx {} cy {} on tick {}", chunkPoint.getChunkX(), chunkPoint.getChunkY(), tick);
+        case CHUNKS_UPDATE:
+          @SuppressWarnings("unchecked")
+          List<Pair<ChunkPoint, Chunk>> chunks = (List<Pair<ChunkPoint, Chunk>>) data[0];
+          for (Pair<ChunkPoint, Chunk> chunk : chunks) {
+            terrainManager.setChunk(tick, chunk.getFirst(), chunk.getSecond());
+          }
+          logger.debug("Chunks update on tick {}, size: {}", tick, chunks.size());
           break;
         case ACTIONS_DONE:
           @SuppressWarnings("unchecked")
@@ -475,8 +477,8 @@ public class Engine {
     logger.info("Received chat message from entityId {}", entityIdChat);
   }
 
-  public void chunkUpdate(int tickRemainder, ChunkPoint chunkPoint, Chunk chunk) {
-    messagesBuffer.add(EngineMessage.newChunkUpdateMessage(getTick(tickRemainder), chunkPoint, chunk));
+  public void chunksUpdate(int tickRemainder, List<Pair<ChunkPoint, Chunk>> chunks) {
+    messagesBuffer.add(EngineMessage.newChunksUpdateMessage(getTick(tickRemainder), chunks));
   }
 
   public void entityIdChange(int oldEntityId, int newEntityId) {

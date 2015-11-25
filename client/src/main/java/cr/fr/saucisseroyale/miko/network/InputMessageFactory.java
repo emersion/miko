@@ -118,23 +118,20 @@ class InputMessageFactory {
           default: // unknown
             throw newParseException();
         }
-      case TERRAIN_UPDATE:
+      case CHUNK_UPDATE:
         tickRemainder = dis.readUnsignedShort();
-        ChunkPoint chunkPoint = readChunkPoint(dis);
-        int defaultCode = dis.readUnsignedByte();
-        TerrainType defaultType = TerrainType.getType(defaultCode);
-        if (defaultType == null) {
-          throw newParseException();
-        }
-        int blocksSize = dis.readUnsignedShort();
-        Block[] blocks = new Block[blocksSize];
-        for (int i = 0; i < blocksSize; i++) {
-          Block block = readBlock(dis);
-          blocks[i] = block;
-        }
-        Chunk chunk = new Chunk(defaultType, Arrays.asList(blocks));
+        Pair<ChunkPoint, Chunk> chunkPair = readChunk(dis);
         logger.trace("Received chunk update, tickRemainder {}", tickRemainder);
-        return (handler) -> handler.chunkUpdate(tickRemainder, chunkPoint, chunk);
+        return (handler) -> handler.chunksUpdate(tickRemainder, Arrays.asList(chunkPair));
+      case CHUNKS_UPDATE:
+        tickRemainder = dis.readUnsignedShort();
+        int chunksUpdateSize = dis.readUnsignedShort();
+        List<Pair<ChunkPoint, Chunk>> chunks = new ArrayList<>(chunksUpdateSize);
+        for (int i = 0; i < chunksUpdateSize; i++) {
+          chunks.add(readChunk(dis));
+        }
+        logger.trace("Received chunks update, tickRemainder {}", tickRemainder);
+        return (handler) -> handler.chunksUpdate(tickRemainder, chunks);
       case ENTITIES_UPDATE:
         tickRemainder = dis.readUnsignedShort();
         int entitiesSize = dis.readUnsignedShort();
@@ -217,6 +214,23 @@ class InputMessageFactory {
     int chunkY = dis.readShort();
     ChunkPoint chunkPoint = new ChunkPoint(chunkX, chunkY);
     return chunkPoint;
+  }
+
+  private static final Pair<ChunkPoint, Chunk> readChunk(DataInputStream dis) throws IOException {
+    ChunkPoint chunkPoint = readChunkPoint(dis);
+    int defaultCode = dis.readUnsignedByte();
+    TerrainType defaultType = TerrainType.getType(defaultCode);
+    if (defaultType == null) {
+      throw newParseException();
+    }
+    int blocksSize = dis.readUnsignedShort();
+    Block[] blocks = new Block[blocksSize];
+    for (int i = 0; i < blocksSize; i++) {
+      Block block = readBlock(dis);
+      blocks[i] = block;
+    }
+    Chunk chunk = new Chunk(defaultType, Arrays.asList(blocks));
+    return new Pair<>(chunkPoint, chunk);
   }
 
   private static final EntityDataUpdate readEntityDataUpdate(DataInputStream dis) throws IOException {
