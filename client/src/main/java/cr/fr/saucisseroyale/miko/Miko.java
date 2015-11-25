@@ -164,7 +164,6 @@ public class Miko implements MessageHandler {
       networkClient.disconnect();
       uiConnect.setStatusText("Erreur de connexion : erreur d'établissement de connexion: " + e.getClass().getCanonicalName() + ": "
           + e.getLocalizedMessage());
-      e.printStackTrace();
       changeStateTo(MikoState.CONNECTION_REQUEST);
       return;
     }

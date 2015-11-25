@@ -3,18 +3,13 @@
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %-15logger - %msg%n"/>
-            <ThresholdFilter level="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
         </Console>
         <File name="File" fileName="allDebug.log" immediateFlush="false" append="false">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %-15logger - %msg%n"/>
         </File>
     </Appenders>
     <Loggers>
-        <Logger name="miko.engine" level="DEBUG" additivity="false">
-            <AppenderRef ref="Console" />
-            <AppenderRef ref="File"/>
-        </Logger>
-        <Root level="TRACE">
+        <Root level="DEBUG">
             <AppenderRef ref="Console" />
             <AppenderRef ref="File"/>
         </Root>
