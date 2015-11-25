@@ -27,9 +27,8 @@ type Server struct {
 	brdEnd []chan bool
 	locked bool
 
-	address string        // Address to open connection, e.g. localhost:9999
-	joins   chan net.Conn // Channel for new connections
-	Joins   chan *message.IO
+	address string           // Address to open connection, e.g. localhost:9999
+	Joins   chan *message.IO // Channel for new connections
 }
 
 func (c *Client) Write(data []byte) (n int, err error) {
@@ -70,20 +69,8 @@ func (s *Server) newClient(conn net.Conn) {
 	s.brdEnd = append(s.brdEnd, make(chan bool))
 }
 
-// Listens new connections channel and creating new client
-func (s *Server) listenChannels() {
-	for {
-		select {
-		case conn := <-s.joins:
-			s.newClient(conn)
-		}
-	}
-}
-
 // Start network server
 func (s *Server) Listen() {
-	go s.listenChannels()
-
 	tlsConfig, err := crypto.GetServerTlsConfig()
 	if err != nil {
 		log.Println("Warning: could not get TLS config")
@@ -104,7 +91,7 @@ func (s *Server) Listen() {
 
 	for {
 		conn, _ := listener.Accept()
-		s.joins <- conn
+		s.newClient(conn)
 	}
 }
 
@@ -169,7 +156,10 @@ func (s *Server) Unlock() {
 			continue
 		}
 
-		s.brdEnd[i] <- true
+		select {
+		case s.brdEnd[i] <- true:
+		default:
+		}
 	}
 }
 
@@ -181,7 +171,10 @@ func (s *Server) Write(data []byte) (n int, err error) {
 		}
 
 		if s.locked {
-			s.brd[i] <- data
+			select {
+			case s.brd[i] <- data:
+			default:
+			}
 		} else {
 			io.Write(data)
 		}
@@ -194,7 +187,6 @@ func New(address string) *Server {
 	log.Println("Creating server with address", address)
 	server := &Server{
 		address: address,
-		joins:   make(chan net.Conn),
 		Joins:   make(chan *message.IO),
 	}
 
