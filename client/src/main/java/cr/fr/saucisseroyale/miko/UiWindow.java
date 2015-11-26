@@ -162,7 +162,7 @@ class UiWindow {
     frame.createBufferStrategy(2);
     strategy = frame.getBufferStrategy();
     frame.getLayeredPane().add(mainComponent, MAIN_LAYER);
-    logger.info("Initialized and created window");
+    logger.debug("Initialized and created window");
   }
 
   /**

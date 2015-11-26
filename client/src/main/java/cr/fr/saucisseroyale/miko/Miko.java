@@ -186,7 +186,7 @@ public class Miko implements MessageHandler {
     }
     changeStateTo(MikoState.LOGIN);
     this.username = username;
-    logger.info("Logging in as {}:<password>", username);
+    logger.info("Logging in as {}", username);
     networkClient.putMessage(OutputMessageFactory.login(username, password));
   }
 
@@ -195,7 +195,7 @@ public class Miko implements MessageHandler {
       return;
     }
     changeStateTo(MikoState.REGISTER);
-    logger.info("Registering {}:<password>", username);
+    logger.info("Registering {}", username);
     networkClient.putMessage(OutputMessageFactory.register(username, password));
   }
 
