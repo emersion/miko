@@ -20,10 +20,6 @@ type Handler struct {
 
 // Handle a message of the specified type
 func (h *Handler) Handle(t message.Type, io *message.IO) error {
-	if io.Id == 0 {
-		log.Println("Received:", message.GetTypeName(t))
-	}
-
 	if h.ctx.IsServer() {
 		if t != message.Types["version"] && io.Version == 0 {
 			// Client didn't send his version number
