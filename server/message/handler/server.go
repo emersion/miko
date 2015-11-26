@@ -65,11 +65,13 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			return errors.New("Cannot get newly logged in user's session")
 		}
 
+		// TODO: health default value
 		session.Entity.Position.BX = 20
 		session.Entity.Position.BY = 20
-		session.Entity.Type = 0   // player
-		session.Entity.Sprite = 1 // player
-		session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0)
+		session.Entity.Type = 0                                            // player
+		session.Entity.Sprite = 1                                          // player
+		session.Entity.Attributes[message.EntityAttrId(1)] = uint16(1000)  // health
+		session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0) // cooldown_one
 
 		req := ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere?
 		err := req.Wait()
