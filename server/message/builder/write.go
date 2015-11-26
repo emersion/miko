@@ -49,13 +49,15 @@ func lock(w io.Writer) {
 	if locker, ok := w.(sync.Locker); ok {
 		locker.Lock()
 	} else {
-		log.Println("Warning: could not lock writer")
+		panic("Called lock() on a non-locker variable")
 	}
 }
 
 func unlock(w io.Writer) {
 	if locker, ok := w.(sync.Locker); ok {
 		locker.Unlock()
+	} else {
+		panic("Called unlock() on a non-locker variable")
 	}
 }
 

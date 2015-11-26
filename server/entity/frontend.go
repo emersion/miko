@@ -59,11 +59,6 @@ func (f *Frontend) IsDirty() bool {
 func (f *Frontend) Flush() *message.EntityDiffPool {
 	log.Println("Flushing entity frontend, deltas count:", len(f.deltas))
 	flattened := flattenDeltas(f.deltas)
-	for _, d := range flattened {
-		if d.From != nil && d.To != nil {
-			log.Println(d.From.Position, d.To.Position, d.Diff.Position)
-		}
-	}
 	pool := deltasToDiffPool(flattened)
 	f.deltas = []*Delta{}
 	return pool
