@@ -7,6 +7,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"io"
 	"log"
+	"time"
 )
 
 // A handler for a specific message
@@ -80,11 +81,24 @@ func (h *Handler) Listen(clientIO *message.IO) {
 			return
 		}
 
+		done := make(chan bool)
+		go (func() {
+			select {
+			case <-done:
+				return
+			case <-time.After(time.Second * 2):
+				log.Println("TIMED OUT:", message.GetTypeName(msgType))
+				panic("Message handling timed out")
+			}
+		})()
+
 		err = h.Handle(msgType, clientIO)
 		if err != nil {
 			log.Println("Handle failed:", err)
 			log.Println("Message type:", msgType)
 		}
+
+		done <- true
 	}
 }
 
