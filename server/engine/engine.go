@@ -199,12 +199,12 @@ func (e *Engine) Start() {
 		}
 
 		if accepted.Len() > 0 {
-			log.Println("Accepted", accepted.Len(), "requests from clients")
+			//log.Println("Accepted", accepted.Len(), "requests from clients")
 		}
 
 		// Initiate lag compensation if necessary
 		if acceptedMinTick < e.ctx.Clock.GetAbsoluteTick() {
-			log.Println("Back to the past!", e.clock.GetAbsoluteTick(), e.clock.GetAbsoluteTick()-acceptedMinTick)
+			//log.Println("Back to the past!", e.clock.GetAbsoluteTick(), e.clock.GetAbsoluteTick()-acceptedMinTick)
 			e.terrain.Rewind(e.terrain.GetTick() - acceptedMinTick)
 			e.entity.Rewind(e.entity.GetTick() - acceptedMinTick)
 		}
