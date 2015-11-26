@@ -2,6 +2,7 @@ package action
 
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"log"
 )
 
 const frontendChanSize = 128

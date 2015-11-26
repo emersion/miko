@@ -151,7 +151,7 @@ func New(address string) *Server {
 	server := &Server{
 		address: address,
 		Joins:   make(chan *message.IO),
-		brdLock: &sync.Mutex,
+		brdLock: &sync.Mutex{},
 	}
 
 	return server
