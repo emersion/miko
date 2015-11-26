@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"log"
 	"net"
+	"sync"
 
 	"git.emersion.fr/saucisse-royale/miko.git/server/crypto"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
@@ -22,11 +23,6 @@ type Client struct {
 type Server struct {
 	clients []*Client
 	ios     []*message.IO
-
-	brd       []chan []byte
-	brdEnd    []chan bool
-	brdActive []bool
-	locked    bool
 
 	address string           // Address to open connection, e.g. localhost:9999
 	Joins   chan *message.IO // Channel for new connections
@@ -65,10 +61,6 @@ func (s *Server) newClient(conn net.Conn) {
 
 	s.ios = append(s.ios, io)
 	c.Server.Joins <- io
-
-	s.brd = append(s.brd, make(chan []byte))
-	s.brdEnd = append(s.brdEnd, make(chan bool))
-	s.brdActive = append(s.brdActive, false)
 }
 
 // Start network server
@@ -98,91 +90,53 @@ func (s *Server) Listen() {
 }
 
 func (s *Server) Lock() {
-	if s.locked {
-		return
-	}
-	s.locked = true
+	var wg sync.WaitGroup
 
-	for i, io := range s.ios {
+	for _, io := range s.ios {
 		if io == nil {
 			continue
 		}
 
-		s.brdActive[i] = true
+		wg.Add(1)
 
-		buffer := [][]byte{}
-		locked := false
-		finished := false
+		go (func(io *message.IO) {
+			defer wg.Done()
 
-		go (func() {
 			io.Lock()
-
-			for _, data := range buffer {
-				io.Write(data)
-			}
-
-			locked = true
-			if finished {
-				io.Unlock()
-			}
-		})()
-
-		go (func() {
-			for {
-				select {
-				case data := <-s.brd[i]:
-					if !locked {
-						buffer = append(buffer, data)
-					} else {
-						io.Write(data)
-					}
-				case <-s.brdEnd[i]:
-					finished = true
-					s.brdActive[i] = false
-
-					if locked {
-						io.Unlock()
-					}
-					return
-				}
-			}
-		})()
+		})(io)
 	}
+
+	wg.Wait()
 }
 
 func (s *Server) Unlock() {
-	if !s.locked {
-		return
-	}
-	s.locked = false
-
-	for i, io := range s.ios {
+	for _, io := range s.ios {
 		if io == nil {
 			continue
 		}
 
-		if s.brdActive[i] {
-			s.brdEnd[i] <- true
-		}
+		io.Unlock()
 	}
 }
 
 // Broadcast a message to all clients
 func (s *Server) Write(data []byte) (n int, err error) {
-	for i, io := range s.ios {
+	N := 0
+
+	for _, io := range s.ios {
 		if io == nil {
 			continue
 		}
 
-		if s.locked {
-			if s.brdActive[i] {
-				s.brd[i] <- data
-			}
-		} else {
-			io.Write(data)
+		n, err := io.Write(data)
+		if err != nil {
+			log.Println("Warning: error while broadcasting data:", err)
 		}
+
+		N += n
 	}
-	return len(data), nil
+
+	return N, nil
 }
 
 // Creates new tcp server instance
