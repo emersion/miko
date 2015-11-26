@@ -29,6 +29,8 @@ func (f *Frontend) Flush() []*message.Action {
 		actions[i] = a.ToMessage()
 	}
 
+	log.Println("Flushing actions:", actions)
+
 	f.actions = []*Action{}
 	return actions
 }

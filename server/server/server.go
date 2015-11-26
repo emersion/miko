@@ -24,6 +24,8 @@ type Server struct {
 	clients []*Client
 	ios     []*message.IO
 
+	brdLock sync.Locker
+
 	address string           // Address to open connection, e.g. localhost:9999
 	Joins   chan *message.IO // Channel for new connections
 }
@@ -107,6 +109,8 @@ func (s *Server) Lock() {
 	}
 
 	wg.Wait()
+
+	s.brdLock.Lock()
 }
 
 func (s *Server) Unlock() {
@@ -117,6 +121,8 @@ func (s *Server) Unlock() {
 
 		io.Unlock()
 	}
+
+	s.brdLock.Unlock()
 }
 
 // Broadcast a message to all clients
@@ -145,6 +151,7 @@ func New(address string) *Server {
 	server := &Server{
 		address: address,
 		Joins:   make(chan *message.IO),
+		brdLock: &sync.Mutex,
 	}
 
 	return server
