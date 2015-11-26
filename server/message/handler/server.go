@@ -72,6 +72,21 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		session.Entity.Attributes[message.EntityAttrId(1)] = uint16(1000)  // health
 		session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0) // cooldown_one
 
+		// Register new entity
+		req := ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere?
+		err := req.Wait()
+		log.Println("Entity registered!")
+		if err != nil {
+			return err
+		}
+
+		// Broadcast new entity
+		log.Println("Flushing entities diff")
+		err = builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
+		if err != nil {
+			return err
+		}
+
 		// Send initial terrain
 		log.Println("Sending initial terrain")
 		pos := session.Entity.Position
@@ -88,7 +103,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				blks = append(blks, blk)
 			}
 		}
-		err := builder.SendChunksUpdate(io, ctx.Clock.GetRelativeTick(), blks)
+		err = builder.SendChunksUpdate(io, ctx.Clock.GetRelativeTick(), blks)
 		if err != nil {
 			return err
 		}
@@ -96,6 +111,10 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		// Send initial entities
 		log.Println("Sending initial entities")
 		for _, e := range ctx.Entity.List() {
+			if e.Id == session.Entity.Id {
+				continue
+			}
+
 			err := builder.SendEntityCreate(io, ctx.Clock.GetRelativeTick(), e)
 			if err != nil {
 				return err
@@ -104,25 +123,14 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		// Send current players
 		for _, s := range ctx.Auth.List() {
+			if s.Id == session.Id {
+				continue
+			}
+
 			err := builder.SendPlayerJoined(io, ctx.Clock.GetRelativeTick(), s.Entity.Id, s.Username)
 			if err != nil {
 				return err
 			}
-		}
-
-		// Register new entity
-		req := ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere?
-		err = req.Wait()
-		log.Println("Entity registered!")
-		if err != nil {
-			return err
-		}
-
-		// Broadcast new entity
-		log.Println("Flushing entities diff")
-		err = builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
-		if err != nil {
-			return err
 		}
 
 		return builder.SendPlayerJoined(io.Broadcaster(), ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
