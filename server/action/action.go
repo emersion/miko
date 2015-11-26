@@ -8,22 +8,10 @@ import (
 type Action struct {
 	*message.Action
 	tick message.AbsoluteTick
-	wait chan error
 }
 
 func (a *Action) GetTick() message.AbsoluteTick {
 	return a.tick
-}
-
-func (a *Action) Wait() error {
-	return <-a.wait
-}
-
-func (a *Action) Done(err error) {
-	select {
-	case a.wait <- err:
-	default:
-	}
 }
 
 func (a *Action) Execute() []delta.Delta {
@@ -42,7 +30,6 @@ func NewFromMessage(src *message.Action, t message.AbsoluteTick) *Action {
 	return &Action{
 		Action: src,
 		tick:   t,
-		wait:   make(chan error),
 	}
 }
 

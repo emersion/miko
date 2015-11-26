@@ -15,7 +15,7 @@ type Frontend struct {
 }
 
 func (f *Frontend) Execute(a *message.Action, t message.AbsoluteTick) message.Request {
-	req := &Request{NewFromMessage(a, t)}
+	req := newRequest(NewFromMessage(a, t))
 	f.Executes <- req
 	return req
 }

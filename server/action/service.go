@@ -23,9 +23,10 @@ func (s *Service) AcceptRequest(req *Request) (err error) {
 	s.actions.Insert(req.Action)
 	s.tick = req.GetTick()
 
-	select {
-	case req.wait <- err:
-	default:
+	req.Done(err)
+
+	if s.frontend != nil {
+		s.frontend.actions = append(s.frontend.actions, req.Action)
 	}
 
 	return
@@ -47,15 +48,25 @@ func (s *Service) Rewind(dt message.AbsoluteTick) (deltas []delta.Delta, err err
 	// Browse actions list backward (from newer to older)
 	for e := s.actions.LastBefore(s.tick); e != nil; e = e.Prev() {
 		a := e.Value.(Action)
+		inversed := a.Inverse().(*Action)
 
-		for _, d := range a.Inverse().(*Action).Execute() {
+		for _, d := range inversed.Execute() {
 			deltas = append(deltas, d)
+		}
+
+		if s.frontend != nil {
+			// TODO: cancel action
 		}
 	}
 
 	s.tick = target
 
 	return
+}
+
+// Cleanup data that is too old.
+func (s *Service) Cleanup(t message.AbsoluteTick) {
+	s.actions.Cleanup(t)
 }
 
 func (s *Service) Actions() *delta.List {

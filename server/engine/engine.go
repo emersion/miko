@@ -283,6 +283,7 @@ func (e *Engine) Start() {
 
 		// Cleanup
 		e.entity.Cleanup(e.clock.GetAbsoluteTick())
+		e.action.Cleanup(e.clock.GetAbsoluteTick())
 
 		end := time.Now().UnixNano()
 		duration := time.Nanosecond * time.Duration(end-start)
