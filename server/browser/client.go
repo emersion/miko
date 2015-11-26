@@ -2,7 +2,7 @@
 
 package main
 
-import (
+/*import (
 	"bufio"
 
 	"github.com/gopherjs/gopherjs/js"
@@ -13,10 +13,10 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
-)
+)*/
 
 func main() {
-	trn := client.NewTerrain(js.Global.Get("document").Call("getElementById", "terrain"))
+	/*trn := client.NewTerrain(js.Global.Get("document").Call("getElementById", "terrain"))
 	ent := client.NewEntityService(js.Global.Get("document").Call("getElementById", "entities"))
 
 	ctx := message.NewClientContext()
@@ -34,7 +34,7 @@ func main() {
 	}
 
 	reader := bufio.NewReader(c)
-	clientIO := message.NewIO(0, reader, c, nil)
+	clientIO := message.NewIO(0, reader, c, c, nil)
 
 	go hdlr.Listen(clientIO)
 
@@ -44,11 +44,6 @@ func main() {
 	if err != nil {
 		panic("SendVersion: " + err.Error())
 	}
-
-	/*err = builder.SendPing(clientIO)
-	if err != nil {
-		panic("SendPing: " + err.Error())
-	}*/
 
 	// TODO: wait for login response
 	err = builder.SendLogin(clientIO, "root", "root")

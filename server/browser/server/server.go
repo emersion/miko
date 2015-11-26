@@ -36,7 +36,7 @@ func (c *Client) listen() {
 	defer c.Close()
 
 	reader := bufio.NewReader(c.conn)
-	io := message.NewIO(c.id, reader, c.conn, c.Server)
+	io := message.NewIO(c.id, reader, c.conn, c.conn, c.Server)
 	c.Server.handler.Listen(io)
 }
 

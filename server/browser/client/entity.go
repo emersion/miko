@@ -18,10 +18,10 @@ func (s *EntityService) DrawEntity(entity *message.Entity) {
 
 func (s *EntityService) Draw() {
 	s.Canvas.ClearRect(0, 0, 500, 500)
-	// TODO
-	//for _, entity := range s.List() {
-	//	s.DrawEntity(entity)
-	//}
+
+	for _, entity := range s.List() {
+		s.DrawEntity(entity)
+	}
 }
 
 func (s *EntityService) Add(entity *message.Entity, t message.AbsoluteTick) {
