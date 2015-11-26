@@ -171,6 +171,9 @@ func NewEntityDiffPool() *EntityDiffPool {
 
 // An entity service.
 type EntityService interface {
+	// List all entities.
+	List() []*Entity
+
 	// Get a specific entity.
 	Get(id EntityId) *Entity
 

@@ -64,7 +64,6 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		if session == nil {
 			return errors.New("Cannot get newly logged in user's session")
 		}
-
 		// TODO: health default value
 		session.Entity.Position.BX = 20
 		session.Entity.Position.BY = 20
@@ -73,20 +72,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		session.Entity.Attributes[message.EntityAttrId(1)] = uint16(1000)  // health
 		session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0) // cooldown_one
 
-		req := ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere?
-		err := req.Wait()
-		log.Println("Entity registered!")
-		if err != nil {
-			return err
-		}
-		log.Println("Flushing entities diff")
-		// Broadcast new entity
-		err = builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
-		if err != nil {
-			return err
-		}
-		log.Println("Sending terrain")
 		// Send initial terrain
+		log.Println("Sending initial terrain")
 		pos := session.Entity.Position
 		radius := message.BlockCoord(8)
 		blks := []*message.Block{}
@@ -101,8 +88,39 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				blks = append(blks, blk)
 			}
 		}
+		err := builder.SendChunksUpdate(io, ctx.Clock.GetRelativeTick(), blks)
+		if err != nil {
+			return err
+		}
 
-		err = builder.SendChunksUpdate(io, ctx.Clock.GetRelativeTick(), blks)
+		// Send initial entities
+		log.Println("Sending initial entities")
+		for _, e := range ctx.Entity.List() {
+			err := builder.SendEntityCreate(io, ctx.Clock.GetRelativeTick(), e)
+			if err != nil {
+				return err
+			}
+		}
+
+		// Send current players
+		for _, s := range ctx.Auth.List() {
+			err := builder.SendPlayerJoined(io, ctx.Clock.GetRelativeTick(), s.Entity.Id, s.Username)
+			if err != nil {
+				return err
+			}
+		}
+
+		// Register new entity
+		req := ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere?
+		err = req.Wait()
+		log.Println("Entity registered!")
+		if err != nil {
+			return err
+		}
+
+		// Broadcast new entity
+		log.Println("Flushing entities diff")
+		err = builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
 		if err != nil {
 			return err
 		}

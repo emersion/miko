@@ -42,6 +42,18 @@ func (a *Service) GetSessionByEntity(id message.EntityId) *message.Session {
 	return nil
 }
 
+func (a *Service) List() []*message.Session {
+	l := []*message.Session{}
+
+	for _, session := range a.sessions {
+		if session != nil {
+			l = append(l, session)
+		}
+	}
+
+	return l
+}
+
 func (a *Service) Login(id int, username string, password string) message.LoginResponseCode {
 	code := "unknown_pseudo"
 	for _, user := range a.users {

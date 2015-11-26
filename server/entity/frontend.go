@@ -20,6 +20,16 @@ func (f *Frontend) Get(id message.EntityId) *message.Entity {
 	return f.backend.Get(id).ToMessage()
 }
 
+func (f *Frontend) List() []*message.Entity {
+	l := []*message.Entity{}
+
+	for _, entity := range f.backend.entities {
+		l = append(l, entity.ToMessage())
+	}
+
+	return l
+}
+
 func (f *Frontend) Add(entity *message.Entity, t message.AbsoluteTick) message.Request {
 	entity.Id = f.backend.allocateId()
 	req := &CreateRequest{newClientRequest(t), NewFromMessage(entity)}
