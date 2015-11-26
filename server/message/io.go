@@ -10,6 +10,16 @@ type bufferedWriter interface {
 	Flush() error
 }
 
+type State int
+
+const (
+	Connected    State = 1 << iota // New client connected
+	Accepted                       // Client sent its version and has been accepted
+	LoggedIn                       // Client is logged in
+	Ready                          // Client is ready to play
+	Disconnected                   // Client has disconnected
+)
+
 // An input/output for a specific client
 type IO struct {
 	reader          io.Reader
@@ -18,6 +28,7 @@ type IO struct {
 	broadcastWriter io.Writer
 	Id              int
 	Version         ProtocolVersion
+	State           State
 
 	locker *sync.Mutex
 	locked bool
@@ -32,6 +43,7 @@ func (io *IO) Write(p []byte) (int, error) {
 }
 
 func (io *IO) Close() error {
+	io.State = Disconnected
 	return io.closer.Close()
 }
 
@@ -63,6 +75,7 @@ func NewIO(id int, reader io.Reader, writer io.Writer, closer io.Closer, broadca
 		closer:          closer,
 		broadcastWriter: broadcastWriter,
 		Id:              id,
+		State:           Connected,
 
 		locker: &sync.Mutex{},
 	}

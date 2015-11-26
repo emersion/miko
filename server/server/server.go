@@ -93,7 +93,7 @@ func (s *Server) Lock() {
 	var wg sync.WaitGroup
 
 	for _, io := range s.ios {
-		if io == nil {
+		if io == nil || io.State != message.Ready {
 			continue
 		}
 
@@ -111,7 +111,7 @@ func (s *Server) Lock() {
 
 func (s *Server) Unlock() {
 	for _, io := range s.ios {
-		if io == nil {
+		if io == nil || io.State != message.Ready {
 			continue
 		}
 
@@ -124,7 +124,7 @@ func (s *Server) Write(data []byte) (n int, err error) {
 	N := 0
 
 	for _, io := range s.ios {
-		if io == nil {
+		if io == nil || io.State != message.Ready {
 			continue
 		}
 

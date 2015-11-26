@@ -27,6 +27,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return err
 			}
 		} else {
+			io.State = message.Accepted
+
 			if err := builder.SendConfig(io, ctx.Config); err != nil {
 				return err
 			}
@@ -53,39 +55,26 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			return err
 		}
 
-		log.Println("Client logged in:", username, code)
+		log.Println("Client requested login:", username, code)
 
 		if code != message.LoginResponseCodes["ok"] {
 			return nil
 		}
 
-		// Create entity
+		io.State = message.LoggedIn
+
+		// Get & populate entity
 		session := ctx.Auth.GetSession(io.Id)
 		if session == nil {
 			return errors.New("Cannot get newly logged in user's session")
 		}
-		// TODO: health default value
+		// TODO: health default value is hardcoded
 		session.Entity.Position.BX = 20
 		session.Entity.Position.BY = 20
 		session.Entity.Type = 0                                            // player
 		session.Entity.Sprite = 1                                          // player
 		session.Entity.Attributes[message.EntityAttrId(1)] = uint16(1000)  // health
 		session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0) // cooldown_one
-
-		// Register new entity
-		req := ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere?
-		err := req.Wait()
-		log.Println("Entity registered!")
-		if err != nil {
-			return err
-		}
-
-		// Broadcast new entity
-		log.Println("Flushing entities diff")
-		err = builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
-		if err != nil {
-			return err
-		}
 
 		// Send initial terrain
 		log.Println("Sending initial terrain")
@@ -103,7 +92,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				blks = append(blks, blk)
 			}
 		}
-		err = builder.SendChunksUpdate(io, ctx.Clock.GetRelativeTick(), blks)
+		err := builder.SendChunksUpdate(io, ctx.Clock.GetRelativeTick(), blks)
 		if err != nil {
 			return err
 		}
@@ -133,7 +122,38 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			}
 		}
 
-		return builder.SendPlayerJoined(io.Broadcaster(), ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
+		// Register new entity
+		req := ctx.Entity.Add(session.Entity, ctx.Clock.GetAbsoluteTick()) // TODO: move this elsewhere?
+		err = req.Wait()
+		log.Println("Entity registered!")
+		if err != nil {
+			return err
+		}
+
+		// Broadcast new entity to other clients
+		log.Println("Flushing entities diff")
+		err = builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
+		if err != nil {
+			return err
+		}
+
+		// Send new entity to this client
+		err = builder.SendEntityCreate(io, ctx.Clock.GetRelativeTick(), session.Entity)
+		if err != nil {
+			return err
+		}
+
+		// Mark the io as ready
+		// It will now receive all broadcasts
+		io.State = message.Ready
+
+		// Broadcast player_joined to everyone (including this client)
+		err = builder.SendPlayerJoined(io.Broadcaster(), ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	},
 	message.Types["register"]: func(ctx *message.Context, io *message.IO) error {
 		username := readString(io)
