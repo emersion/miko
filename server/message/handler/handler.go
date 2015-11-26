@@ -86,7 +86,7 @@ func (h *Handler) Listen(clientIO *message.IO) {
 			select {
 			case <-done:
 				return
-			case <-time.After(time.Second * 2):
+			case <-time.After(time.Second * 8):
 				log.Println("TIMED OUT:", message.GetTypeName(msgType))
 				panic("Message handling timed out")
 			}
