@@ -12,7 +12,8 @@ public enum TerrainType implements UniquelyIdentifiable {
 
   // @noformatting
   WHITE_GROUND(0,255,255,255),
-  BLACK_WALL(1,0,0,0);
+  BLACK_WALL(1,0,0,0),
+  UNKNOWN(255,127,127,127);
   // @formatting
 
   static {

@@ -216,9 +216,10 @@ public class OutputMessageFactory {
 
   public static FutureOutputMessage action(long tick, Action action) {
     return (dos) -> {
-      logger.trace("Sent action");
+      int sendTick = (int) (tick % (1 << 16));
+      logger.trace("Sent action on tick {}", sendTick);
       dos.writeByte(MessageType.ACTION.getId());
-      dos.writeShort((int) (tick % (1 << 16)));
+      dos.writeShort(sendTick);
       writeAction(dos, action);
     };
   }
