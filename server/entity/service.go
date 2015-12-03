@@ -101,7 +101,7 @@ func (s *Service) acceptUpdate(req *UpdateRequest) error {
 
 	current := s.Get(entity.Id)
 	if current == nil {
-		return errors.New("Cannot create entity: no such entity")
+		return errors.New("Cannot update entity: no such entity")
 	}
 
 	// Calculate delta
@@ -122,7 +122,8 @@ func (s *Service) acceptUpdate(req *UpdateRequest) error {
 		s.deltas.Insert(d)
 		//log.Println("Accepted update request, deltas count:", s.deltas.Len())
 	}
-	if s.frontend != nil {
+	// TODO: optimize this
+	if s.frontend != nil && !current.ToMessage().EqualsWithDiff(entity.ToMessage(), diff) {
 		s.frontend.deltas = append(s.frontend.deltas, d)
 	}
 

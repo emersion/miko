@@ -101,18 +101,19 @@ func (e *Engine) listenNewClients() {
 
 func (e *Engine) broadcastChanges() {
 	if e.ctx.Entity.IsDirty() {
-		//log.Println("Entity diff dirty, broadcasting to clients...")
+		log.Println("Entity diff dirty, broadcasting to clients...")
 		err := builder.SendEntitiesDiffToClients(e.srv, e.clock.GetRelativeTick(), e.ctx.Entity.Flush())
 		if err != nil {
 			log.Println("Cannot broadcast entities diff:", err)
 		}
 	}
 	if e.ctx.Action.IsDirty() {
-		//log.Println("Actions diff dirty, broadcasting to clients...")
-		err := builder.SendActionsDone(e.srv, e.clock.GetRelativeTick(), e.ctx.Action.Flush())
+		log.Println("Actions diff dirty, broadcasting to clients...")
+		e.ctx.Action.Flush()
+		/*err := builder.SendActionsDone(e.srv, e.clock.GetRelativeTick(), e.ctx.Action.Flush())
 		if err != nil {
 			log.Println("Cannot broadcast actions:", err)
-		}
+		}*/
 	}
 }
 
