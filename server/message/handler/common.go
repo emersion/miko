@@ -7,6 +7,11 @@ import (
 	"log"
 )
 
+func ReadType(r io.Reader) (t message.Type) {
+	read(r, &t)
+	return
+}
+
 func readTick(r io.Reader) (t message.Tick) {
 	read(r, &t)
 	return

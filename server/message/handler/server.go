@@ -4,8 +4,14 @@ import (
 	"errors"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
+	"io"
 	"log"
 )
+
+func ReadChatSend(r io.Reader) (msg string) {
+	msg = readString(r)
+	return
+}
 
 var serverHandlers = &map[message.Type]TypeHandler{
 	message.Types["version"]: func(ctx *message.Context, io *message.IO) error {
@@ -228,7 +234,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["chat_send"]: func(ctx *message.Context, io *message.IO) error {
-		msg := readString(io)
+		msg := ReadChatSend(io)
 
 		if !ctx.Auth.HasSession(io.Id) {
 			return errors.New("User not authenticated")
