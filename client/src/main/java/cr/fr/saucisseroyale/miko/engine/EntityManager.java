@@ -183,7 +183,7 @@ class EntityManager {
   }
 
   public IntStream getEntitiesStream(long tick) {
-    return map.entrySet().stream().filter((e) -> e.getValue().isEnabled(tick)).mapToInt((e) -> e.getKey());
+    return map.entrySet().stream().filter(e -> e.getValue().isEnabled(tick)).mapToInt(e -> e.getKey());
   }
 
   public Iterable<Integer> getEntities(long tick) {

@@ -1,6 +1,9 @@
 package cr.fr.saucisseroyale.miko;
 
 import java.awt.AWTEvent;
+import java.awt.AWTException;
+import java.awt.BufferCapabilities;
+import java.awt.BufferCapabilities.FlipContents;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.DisplayMode;
@@ -9,16 +12,21 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.ImageCapabilities;
+import java.awt.KeyboardFocusManager;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.PointerInfo;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -30,11 +38,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Fenêtre en plein écran avec des composants d'UI et un composant principal, peint manuellement.
+ * Fenêtre en mode plein écran ou fenêtré sans bordures avec des composants d'UI et un composant
+ * principal, peint manuellement.
  * <p>
- * Render actif en mode exclusif en plein écran. Les composants d'UI peuvent être cachés ou
- * affichés, et seront affichés les uns au dessus des autres dans l'ordre dans lequel ils sont
- * affichés. Le composant principal sera toujours en dessous de tous les composants d'UI visibles.
+ * Render actif en mode exclusif en plein écran, ou en mode fenêtré sans bordures. Les composants
+ * d'UI peuvent être cachés ou affichés, et seront affichés les uns au dessus des autres dans
+ * l'ordre dans lequel ils sont affichés. Le composant principal sera toujours en dessous de tous
+ * les composants d'UI visibles.
  * <p>
  * <ul>
  * <li>Pour ajouter un composant d'UI à la fenêtre, utiliser {@link #addUi(JComponent)}.
@@ -84,12 +94,45 @@ class UiWindow {
     }
   }
 
+  private static class RepaintDisabler extends RepaintManager {
+    // @noformatting
+    public RepaintDisabler() {
+      setDoubleBufferingEnabled(false);
+    }
+    @Override
+    public void addDirtyRegion(JComponent c, int x, int y, int w, int h) {}
+    @Override
+    public void addDirtyRegion(Window window, int x, int y, int w, int h) {}
+    @Override
+    public synchronized void addInvalidComponent(JComponent invalidComponent) {}
+    @Override
+    public void markCompletelyClean(JComponent aComponent) {}
+    @Override
+    public void markCompletelyDirty(JComponent aComponent) {}
+    @Override
+    public void paintDirtyRegions() {}
+    @Override
+    public Rectangle getDirtyRegion(JComponent aComponent) {
+      return new Rectangle(0, 0, aComponent.getWidth(), aComponent.getHeight());
+    }
+    @Override
+    public boolean isCompletelyDirty(JComponent aComponent) {
+      return true;
+    }
+    @Override
+    public synchronized void removeInvalidComponent(JComponent component) {}
+    @Override
+    public void validateInvalidComponents() {}
+    // @formatting
+  }
+
   private static final Integer UI_VISIBLE_LAYER = Integer.valueOf(1);
   private static final Integer UI_HIDDEN_LAYER = Integer.valueOf(-1);
   private static final Integer MAIN_LAYER = Integer.valueOf(0);
   private static Logger logger = LogManager.getLogger("miko.ui");
   private SynchronizedEventQueue eventQueue;
   private Runnable closeListener;
+  private IntConsumer globalKeyDownListener;
   private JFrame frame;
   private GraphicsDevice device;
   private DisplayMode displayMode;
@@ -97,20 +140,40 @@ class UiWindow {
   private Consumer<Graphics2D> renderable;
   private EventCatcherComponent mainComponent;
   private Object uiLock = new Object();
+  private boolean fullscreen;
   private int width;
   private int height;
 
   /**
-   * Construit un {@link UiWindow} avec les écran et mode d'affichage par défaut.
+   * Construit un {@link UiWindow} sur l'écran par défaut.
+   *
+   * @param fullscreen Si la fenêtre doit être en plein écran exclusif ou en fenêtré sans bordures.
+   *
+   * @see #UiWindow(GraphicsDevice, DisplayMode)
    */
-  public UiWindow() {
-    this(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice(), GraphicsEnvironment.getLocalGraphicsEnvironment()
-        .getDefaultScreenDevice().getDisplayMode());
+  public UiWindow(boolean fullscreen) {
+    device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+    displayMode = device.getDisplayMode();
+    this.fullscreen = fullscreen;
+    init();
   }
 
   /**
-   * Construit un {@link UiWindow} avec les écran et mode d'affichage spécifié, sans afficher la
-   * fenêtre.
+   * Construit un {@link UiWindow} sur l'écran spécifié.
+   *
+   * @param device L'écran sur lequel afficher la fenêtre.
+   * @param fullscreen Si la fenêtre doit être en plein écran exclusif ou en fenêtré sans bordures.
+   */
+  public UiWindow(GraphicsDevice device, boolean fullscreen) {
+    this.device = device;
+    displayMode = device.getDisplayMode();
+    this.fullscreen = fullscreen;
+    init();
+  }
+
+  /**
+   * Construit un {@link UiWindow} en plein écran sur l'écran spécifié, avec le mode d'affichage
+   * spécifié.
    *
    * @param device L'écran sur lequel afficher la fenêtre.
    * @param displayMode La mode d'affichage à utiliser pour afficher la fenêtre.
@@ -123,6 +186,11 @@ class UiWindow {
     }
     this.device = device;
     this.displayMode = displayMode;
+    fullscreen = true;
+    init();
+  }
+
+  private void init() {
     width = displayMode.getWidth();
     height = displayMode.getHeight();
     eventQueue = new SynchronizedEventQueue(uiLock);
@@ -141,25 +209,45 @@ class UiWindow {
         }
       }
     });
+    KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(e -> {
+      if (e.getID() == KeyEvent.KEY_PRESSED && globalKeyDownListener != null) {
+        globalKeyDownListener.accept(e.getKeyCode());
+      }
+      return false;
+    });
     mainComponent = new EventCatcherComponent(width, height);
+    RepaintManager.setCurrentManager(new RepaintDisabler());
+    if (!fullscreen) {
+      frame.setSize(width, height);
+      frame.setLocationRelativeTo(null);
+      Rectangle deviceBounds = device.getDefaultConfiguration().getBounds();
+      frame.setLocation(deviceBounds.x + deviceBounds.width - width, deviceBounds.y + deviceBounds.height - height);
+    }
   }
 
   /**
-   * Initialise et affiche la fenêtre.
+   * Affiche la fenêtre.
    */
-  public void initAndShow() {
-    RepaintManager repaintDisabler = new RepaintManager() {
-      @Override
-      public void addDirtyRegion(JComponent c, int x, int y, int w, int h) {}
-
-      @Override
-      public void addDirtyRegion(Window window, int x, int y, int w, int h) {}
-    };
-    repaintDisabler.setDoubleBufferingEnabled(false);
-    RepaintManager.setCurrentManager(repaintDisabler);
-    device.setFullScreenWindow(frame);
-    device.setDisplayMode(displayMode);
-    frame.createBufferStrategy(2);
+  public void show() {
+    if (fullscreen) {
+      device.setFullScreenWindow(frame);
+      device.setDisplayMode(displayMode);
+    }
+    frame.setVisible(true);
+    // create double accelerated (volatile) page-flipping buffer
+    // flipcontents undefined to skip awt graphics#clearrect call on each frame
+    BufferCapabilities bc = new BufferCapabilities(new ImageCapabilities(true), new ImageCapabilities(true), FlipContents.UNDEFINED);
+    // force vsync using the "private" class extendedbuffercapabilities
+    // if java ever releases an API for vsync (by adding some public
+    // API to buffercapabilities), remove the ugly call to sun.*
+    @SuppressWarnings("restriction")
+    BufferCapabilities vsyncBuffer =
+    new sun.java2d.pipe.hw.ExtendedBufferCapabilities(bc, sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON);
+    try {
+      frame.createBufferStrategy(2, vsyncBuffer);
+    } catch (AWTException e) {
+      e.printStackTrace();
+    }
     strategy = frame.getBufferStrategy();
     frame.getLayeredPane().add(mainComponent, MAIN_LAYER);
     logger.debug("Initialized and created window");
@@ -175,7 +263,7 @@ class UiWindow {
         paintComponents((Graphics2D) graphics);
         graphics.dispose();
       } while (strategy.contentsRestored());
-      strategy.show();
+      strategy.show(); // vsync (ie sleep) here
     } while (strategy.contentsLost());
   }
 
@@ -186,7 +274,7 @@ class UiWindow {
     device.setFullScreenWindow(null);
     frame.setVisible(false);
     frame.dispose();
-    logger.info("Closed and hid window");
+    logger.debug("Closed and hid window");
   }
 
   /**
@@ -270,6 +358,19 @@ class UiWindow {
    */
   public void setKeyListener(KeyListener keyListener) {
     mainComponent.setKeyListener(keyListener);
+  }
+
+  /**
+   * Définit le listener de touche pressée sur toute la fenêtre. Le listener sera appelé avec
+   * l'entier renvoyé par {@link KeyEvent#getKeyCode()} pour chaque évènement de touche pressée.
+   * <p>
+   * Les évènements de touche pressée atteignant le composant principal seront à la fois envoyés à
+   * ce listener et au listener principal défini par {@link #setKeyListener(KeyListener)}.
+   *
+   * @param listener Le listener de touche pressée.
+   */
+  public void setGlobalKeyDownListener(IntConsumer listener) {
+    globalKeyDownListener = listener;
   }
 
   /**

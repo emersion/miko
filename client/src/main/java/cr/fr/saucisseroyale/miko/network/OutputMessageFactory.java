@@ -39,21 +39,21 @@ public class OutputMessageFactory {
   }
 
   public static FutureOutputMessage ping() {
-    return (dos) -> {
+    return dos -> {
       logger.trace("Sent ping");
       dos.writeByte(MessageType.PING.getId());
     };
   }
 
   public static FutureOutputMessage pong() {
-    return (dos) -> {
+    return dos -> {
       logger.trace("Sent pong");
       dos.writeByte(MessageType.PONG.getId());
     };
   }
 
   public static FutureOutputMessage exit(ExitType type) {
-    return (dos) -> {
+    return dos -> {
       logger.trace("Sent exit");
       dos.writeByte(MessageType.EXIT.getId());
       dos.writeByte(type.getId());
@@ -61,7 +61,7 @@ public class OutputMessageFactory {
   }
 
   public static FutureOutputMessage login(String pseudo, String password) {
-    return (dos) -> {
+    return dos -> {
       logger.trace("Sent login");
       dos.writeByte(MessageType.LOGIN.getId());
       writeString(dos, pseudo);
@@ -70,7 +70,7 @@ public class OutputMessageFactory {
   }
 
   public static FutureOutputMessage register(String pseudo, String password) {
-    return (dos) -> {
+    return dos -> {
       logger.trace("Sent register");
       dos.writeByte(MessageType.REGISTER.getId());
       writeString(dos, pseudo);
@@ -93,7 +93,7 @@ public class OutputMessageFactory {
     if (size >= 1 << 8) {
       throw new IllegalArgumentException("The specified list is too long, max size: 255 chunks");
     }
-    return (dos) -> {
+    return dos -> {
       logger.trace("Sent terrain request");
       dos.writeByte(MessageType.TERRAIN_REQUEST.getId());
       dos.writeByte(size);
@@ -204,7 +204,7 @@ public class OutputMessageFactory {
       throw new RuntimeException(e);
     }
     int updateTypesByte = bitfieldToByte(updateTypes);
-    return (dos) -> {
+    return dos -> {
       logger.trace("Sent entityupdate");
       dos.writeByte(MessageType.ENTITY_UPDATE.getId());
       dos.writeShort((int) (tick % (1 << 16)));
@@ -215,7 +215,7 @@ public class OutputMessageFactory {
   }
 
   public static FutureOutputMessage action(long tick, Action action) {
-    return (dos) -> {
+    return dos -> {
       int sendTick = (int) (tick % (1 << 16));
       logger.trace("Sent action on tick {}", sendTick);
       dos.writeByte(MessageType.ACTION.getId());
@@ -225,7 +225,7 @@ public class OutputMessageFactory {
   }
 
   public static FutureOutputMessage chatSend(String message) {
-    return (dos) -> {
+    return dos -> {
       logger.trace("Sent chatsend");
       dos.writeByte(MessageType.CHAT_SEND.getId());
       writeString(dos, message);
@@ -233,7 +233,7 @@ public class OutputMessageFactory {
   }
 
   public static FutureOutputMessage version() {
-    return (dos) -> {
+    return dos -> {
       logger.trace("Sent version");
       dos.writeByte(MessageType.VERSION.getId());
       dos.writeShort(Miko.PROTOCOL_VERSION);

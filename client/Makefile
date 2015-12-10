@@ -1,9 +1,8 @@
 all:
-	mvn clean install
-package:
-	mvn package
+	mvn clean package
+	
 start:
-	make package
+	make all
 	java -jar target/miko-*.jar
 
-.PHONY: all
+.PHONY: all start

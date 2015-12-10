@@ -17,8 +17,10 @@ import cr.fr.saucisseroyale.miko.util.Pair;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.List;
+import java.util.prefs.Preferences;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,15 +28,20 @@ import org.apache.logging.log4j.Logger;
 public class Miko implements MessageHandler {
 
   private enum MikoState {
-    NETWORK, CONNECTION_REQUEST, CONNECTION, CONFIG, LOGIN_REQUEST, REGISTER, LOGIN, JOIN, EXIT;
+    NETWORK, CONNECTION_REQUEST, OPTIONS, CONNECTION, CONFIG, LOGIN_REQUEST, REGISTER, LOGIN, JOIN, EXIT;
   }
 
   public static final int PROTOCOL_VERSION = 8;
-  private static final String DEFAULT_SERVER_ADDRESS = "miko.emersion.fr";
-  private static final int DEFAULT_SERVER_PORT = 9999;
   public static final int TICK_TIME = 20 * 1000000; // milliseconds
   private static final long SERVER_TIMEOUT = 20 * 1000000000L; // seconds
+
+  private static final String DEFAULT_SERVER_ADDRESS = "miko.emersion.fr";
+  private static final int DEFAULT_SERVER_PORT = 9999;
+
   private static Logger logger = LogManager.getLogger("miko.main");
+
+  private static final Preferences uiPrefsNode = Preferences.userRoot().node("miko.ui");
+
   private long lastMessageReceived = Long.MAX_VALUE;
   private boolean pingSent;
   private String username;
@@ -42,6 +49,7 @@ public class Miko implements MessageHandler {
   private Engine engine;
   private UiComponents.Connect uiConnect;
   private UiComponents.Login uiLogin;
+  private UiComponents.Options uiOptions;
   private MikoState state = MikoState.NETWORK;
   private UiWindow window;
   private boolean closeRequested = false;
@@ -77,17 +85,31 @@ public class Miko implements MessageHandler {
     // throw new RuntimeException(e);
     // }
 
-    window = new UiWindow();
+    boolean fullscreen = uiPrefsNode.getBoolean("fullscreen", true);
+
+    window = new UiWindow(fullscreen);
     window.setRenderable(this::render);
-    uiConnect = new UiComponents.Connect(DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT, this::connectRequested);
+    uiConnect = new UiComponents.Connect(DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT, this::connectRequested, this::optionsRequested);
     uiLogin = new UiComponents.Login(this::registerRequested, this::loginRequested);
+    uiOptions = new UiComponents.Options(fullscreen);
     window.addUi(uiConnect);
     window.addUi(uiLogin);
+    window.addUi(uiOptions);
 
     keyStateManager = new KeyStateManager(window::getMousePosition);
     window.setKeyListener(keyStateManager);
 
-    window.initAndShow();
+    window.setGlobalKeyDownListener(code -> {
+      switch (code) {
+        case KeyEvent.VK_ESCAPE:
+          backRequested();
+          break;
+        default:
+          // ignore
+      }
+    });
+
+    window.show();
   }
 
   private void logic() {
@@ -112,8 +134,8 @@ public class Miko implements MessageHandler {
       }
       alpha = (float) accumulator / TICK_TIME;
       window.render(); // calls render(graphics)
+      Toolkit.getDefaultToolkit().sync(); // ensure vsync
       postLoop();
-      Toolkit.getDefaultToolkit().sync(); // vsync
     }
     exit();
   }
@@ -199,6 +221,43 @@ public class Miko implements MessageHandler {
     networkClient.putMessage(OutputMessageFactory.register(username, password));
   }
 
+  private void optionsRequested() {
+    if (state != MikoState.CONNECTION_REQUEST) {
+      return;
+    }
+    changeStateTo(MikoState.OPTIONS);
+  }
+
+  private void backRequested() {
+    switch (state) {
+      case NETWORK:
+      case CONNECTION_REQUEST:
+        exit();
+        break;
+      case OPTIONS:
+        changeStateTo(MikoState.CONNECTION_REQUEST);
+        break;
+      case EXIT:
+        // send exit message...
+        networkClient.putMessage(OutputMessageFactory.exit(ExitType.CLIENT_QUIT));
+        //$FALL-THROUGH$
+      case CONNECTION:
+      case JOIN:
+      case LOGIN:
+      case LOGIN_REQUEST:
+      case REGISTER:
+      case CONFIG:
+        // ...disconnect and return to connection panel
+        networkClient.disconnect();
+        logger.warn("Exited due to user request");
+        uiConnect.setStatusText("Déconnecté par l'utilisateur");
+        changeStateTo(MikoState.CONNECTION_REQUEST);
+        break;
+      default:
+        // ignore
+    }
+  }
+
   private void changeStateTo(MikoState newState) {
     logger.trace("Changing state from {} to {}", state, newState);
     state = newState;
@@ -207,6 +266,9 @@ public class Miko implements MessageHandler {
     switch (state) {
       case CONNECTION_REQUEST:
         window.showUi(uiConnect);
+        break;
+      case OPTIONS:
+        window.showUi(uiOptions);
         break;
       case CONNECTION:
         break;

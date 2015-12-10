@@ -3,6 +3,7 @@ package cr.fr.saucisseroyale.miko.network;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
@@ -37,7 +38,7 @@ public class NetworkClient {
       socketFactory = createSocketFactory();
       logger.debug("Created socket factory");
     } catch (Exception e) {
-      // TODO log cette erreur
+      logger.fatal("Failed creating socket factory while initating network client", e);
       throw new RuntimeException(e);
     }
   }
@@ -110,7 +111,7 @@ public class NetworkClient {
     disconnect();
   }
 
-  private static SSLSocketFactory createSocketFactory() throws Exception {
+  private static SSLSocketFactory createSocketFactory() throws GeneralSecurityException, IOException {
     KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
     try (InputStream keyStoreStream = NetworkClient.class.getResourceAsStream("/keystore")) {
       keyStore.load(keyStoreStream, "keypass".toCharArray());

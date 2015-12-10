@@ -65,10 +65,10 @@ class InputMessageFactory {
     switch (messageType) {
       case PING:
         logger.trace("Received ping");
-        return (handler) -> handler.ping();
+        return handler -> handler.ping();
       case PONG:
         logger.trace("Received pong");
-        return (handler) -> handler.pong();
+        return handler -> handler.pong();
       case EXIT:
         int exitCode = dis.readUnsignedByte();
         ExitType exitType = ExitType.getType(exitCode);
@@ -76,7 +76,7 @@ class InputMessageFactory {
           throw newParseException();
         }
         logger.trace("Received exit");
-        return (handler) -> handler.exit(exitType);
+        return handler -> handler.exit(exitType);
       case LOGIN_RESPONSE:
         int loginResponseCode = dis.readUnsignedByte();
         LoginResponseType loginResponseType = LoginResponseType.getType(loginResponseCode);
@@ -86,10 +86,10 @@ class InputMessageFactory {
         if (loginResponseType == LoginResponseType.OK) {
           tickRemainder = dis.readUnsignedShort();
           logger.trace("Received login success");
-          return (handler) -> handler.loginSuccess(tickRemainder);
+          return handler -> handler.loginSuccess(tickRemainder);
         } else {
           logger.trace("Received login fail");
-          return (handler) -> handler.loginFail(loginResponseType);
+          return handler -> handler.loginFail(loginResponseType);
         }
       case REGISTER_RESPONSE:
         int registerResponseCode = dis.readUnsignedByte();
@@ -98,7 +98,7 @@ class InputMessageFactory {
           throw newParseException();
         }
         logger.trace("Received register response");
-        return (handler) -> handler.registerResponse(registerResponseType);
+        return handler -> handler.registerResponse(registerResponseType);
       case META_ACTION:
         tickRemainder = dis.readUnsignedShort();
         int entityId = dis.readUnsignedShort();
@@ -111,10 +111,10 @@ class InputMessageFactory {
           case PLAYER_JOINED:
             String pseudo = readString(dis);
             logger.trace("Received player joined, tickRemainder {}", tickRemainder);
-            return (handler) -> handler.playerJoined(tickRemainder, entityId, pseudo);
+            return handler -> handler.playerJoined(tickRemainder, entityId, pseudo);
           case PLAYER_LEFT:
             logger.trace("Received player left, tickRemainder {}", tickRemainder);
-            return (handler) -> handler.playerLeft(tickRemainder, entityId);
+            return handler -> handler.playerLeft(tickRemainder, entityId);
           default: // unknown
             throw newParseException();
         }
@@ -122,7 +122,7 @@ class InputMessageFactory {
         tickRemainder = dis.readUnsignedShort();
         Pair<ChunkPoint, Chunk> chunkPair = readChunk(dis);
         logger.trace("Received chunk update, tickRemainder {}", tickRemainder);
-        return (handler) -> handler.chunksUpdate(tickRemainder, Arrays.asList(chunkPair));
+        return handler -> handler.chunksUpdate(tickRemainder, Arrays.asList(chunkPair));
       case CHUNKS_UPDATE:
         tickRemainder = dis.readUnsignedShort();
         int chunksUpdateSize = dis.readUnsignedShort();
@@ -131,7 +131,7 @@ class InputMessageFactory {
           chunks.add(readChunk(dis));
         }
         logger.trace("Received chunks update, tickRemainder {}", tickRemainder);
-        return (handler) -> handler.chunksUpdate(tickRemainder, chunks);
+        return handler -> handler.chunksUpdate(tickRemainder, chunks);
       case ENTITIES_UPDATE:
         tickRemainder = dis.readUnsignedShort();
         int entitiesSize = dis.readUnsignedShort();
@@ -141,7 +141,7 @@ class InputMessageFactory {
           entitiesUpdateList.add(entityDataUpdate);
         }
         logger.trace("Received entitiesUpdates, tickRemainder {}", tickRemainder);
-        return (handler) -> handler.entitiesUpdate(tickRemainder, entitiesUpdateList);
+        return handler -> handler.entitiesUpdate(tickRemainder, entitiesUpdateList);
       case ACTIONS:
         tickRemainder = dis.readUnsignedShort();
         int actionsSize = dis.readUnsignedShort();
@@ -152,39 +152,39 @@ class InputMessageFactory {
           actions.add(new Pair<>(id, action));
         }
         logger.trace("Received actions, tickRemainder {}", tickRemainder);
-        return (handler) -> handler.actions(tickRemainder, actions);
+        return handler -> handler.actions(tickRemainder, actions);
       case ENTITY_CREATE:
         tickRemainder = dis.readUnsignedShort();
         EntityDataUpdate entityCreateUpdate = readEntityDataUpdate(dis);
         logger.trace("Received entityCreate, tickRemainder {}", tickRemainder);
-        return (handler) -> handler.entityCreate(tickRemainder, entityCreateUpdate);
+        return handler -> handler.entityCreate(tickRemainder, entityCreateUpdate);
       case ENTITY_DESTROY:
         tickRemainder = dis.readUnsignedShort();
         int entityIdDestroy = dis.readUnsignedShort();
         logger.trace("Received entityDestroy, tickRemainder {}", tickRemainder);
-        return (handler) -> handler.entityDestroy(tickRemainder, entityIdDestroy);
+        return handler -> handler.entityDestroy(tickRemainder, entityIdDestroy);
       case CHAT_RECEIVE:
         tickRemainder = dis.readUnsignedShort();
         int entityIdChat = dis.readUnsignedShort();
         String chatMessage = readString(dis);
         logger.trace("Received chatReceive, tickRemainder {}", tickRemainder);
-        return (handler) -> handler.chatReceived(tickRemainder, entityIdChat, chatMessage);
+        return handler -> handler.chatReceived(tickRemainder, entityIdChat, chatMessage);
       case CONFIG:
         Config config = readConfig(dis);
         logger.trace("Received config");
-        return (handler) -> handler.config(config);
+        return handler -> handler.config(config);
       case ENTITY_ID_CHANGE:
         int oldEntityId = dis.readUnsignedShort();
         int newEntityId = dis.readUnsignedShort();
         logger.trace("Received entityIdChange");
-        return (handler) -> handler.entityIdChange(oldEntityId, newEntityId);
+        return handler -> handler.entityIdChange(oldEntityId, newEntityId);
       default: // unknown or client-only
         throw newParseException();
     }
   }
 
   static final FutureInputMessage networkError(Exception e) {
-    return (handler) -> handler.networkError(e);
+    return handler -> handler.networkError(e);
   }
 
   private static final Action readAction(DataInputStream dis) throws IOException {
