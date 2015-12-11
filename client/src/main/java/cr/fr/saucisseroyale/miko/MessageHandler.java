@@ -19,7 +19,7 @@ import java.util.List;
  */
 public interface MessageHandler {
 
-  public void actions(int tickRemainder, List<Pair<Integer, Action>> actions);
+  public void actions(int tickRemainder, List<Pair.Int<Action>> actions);
 
   public void chatReceived(int tickRemainder, int entityIdChat, String chatMessage);
 

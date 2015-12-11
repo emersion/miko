@@ -16,11 +16,12 @@ import cr.fr.saucisseroyale.miko.util.Pair;
 
 import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.List;
 import java.util.prefs.Preferences;
+
+import javax.swing.UIManager;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,7 +57,7 @@ public class Miko implements MessageHandler {
   private NetworkClient networkClient;
   private KeyStateManager keyStateManager;
   private long accumulator;
-  private float alpha; // for drawing, updated each loop
+  private float alpha; // for #render(), updated each loop
 
   private void exit() {
     logger.info("Starts exiting");
@@ -84,6 +85,15 @@ public class Miko implements MessageHandler {
     // // will never be thrown, SynthLookAndFeel#isSupportedLookAndFeel() never returns false
     // throw new RuntimeException(e);
     // }
+
+    // temporary l&f instead
+    try {
+      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    } catch (Exception e) {
+      // will never throw according to doc
+      // if it does, silently ignore
+      // don't even bother stack tracing
+    }
 
     boolean fullscreen = uiPrefsNode.getBoolean("fullscreen", true);
 
@@ -132,9 +142,8 @@ public class Miko implements MessageHandler {
         logic();
         accumulator -= TICK_TIME;
       }
-      alpha = (float) accumulator / TICK_TIME;
+      alpha = (float) accumulator / TICK_TIME; // update alpha for #render()
       window.render(); // calls render(graphics)
-      Toolkit.getDefaultToolkit().sync(); // ensure vsync
       postLoop();
     }
     exit();
@@ -232,7 +241,7 @@ public class Miko implements MessageHandler {
     switch (state) {
       case NETWORK:
       case CONNECTION_REQUEST:
-        exit();
+        closeRequested = true;
         break;
       case OPTIONS:
         changeStateTo(MikoState.CONNECTION_REQUEST);
@@ -307,7 +316,7 @@ public class Miko implements MessageHandler {
   }
 
   @Override
-  public void actions(int tickRemainder, List<Pair<Integer, Action>> actions) {
+  public void actions(int tickRemainder, List<Pair.Int<Action>> actions) {
     messageReceived();
     if (state != MikoState.EXIT) {
       logger.warn("Ignored actions message received in state {}", state);

@@ -100,7 +100,7 @@ public class SpriteManager {
             continue;
           }
           try (DirectoryStream<Path> imagePathStream = Files.newDirectoryStream(spritePath)) {
-            List<Pair<Integer, BufferedImage>> images = new LinkedList<>();
+            List<Pair.Int<BufferedImage>> images = new LinkedList<>();
             for (Path imagePath : imagePathStream) {
               String imageName = imagePath.getFileName().toString();
               if (!imageName.endsWith(".png")) {
@@ -116,7 +116,7 @@ public class SpriteManager {
               }
               try (InputStream is = Files.newInputStream(imagePath)) {
                 BufferedImage image = readImage(is);
-                images.add(new Pair<>(timecode, image));
+                images.add(new Pair.Int<>(timecode, image));
               }
             }
             sprites.put(spriteType, new Sprite(images));

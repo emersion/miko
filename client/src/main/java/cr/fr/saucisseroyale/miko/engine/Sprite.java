@@ -6,7 +6,6 @@ import cr.fr.saucisseroyale.miko.util.Pair;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,7 +17,7 @@ import java.util.stream.Collectors;
 public class Sprite {
 
   private final int spriteTimeDivider;
-  private final List<Pair<Integer, BufferedImage>> frames;
+  private final List<Pair.Int<BufferedImage>> frames;
 
   /**
    * Crée une animation avec une seule image.
@@ -27,7 +26,7 @@ public class Sprite {
    */
   public Sprite(BufferedImage image) {
     frames = new ArrayList<>(1);
-    frames.add(new Pair<>(1, image));
+    frames.add(new Pair.Int<>(1, image));
     spriteTimeDivider = 1;
   }
 
@@ -37,8 +36,16 @@ public class Sprite {
    *
    * @param frames La liste des images avec leur timecode associé.
    */
-  public Sprite(List<Pair<Integer, BufferedImage>> frames) {
-    this.frames = frames.stream().sorted(Comparator.comparing(Pair::getFirst)).collect(Collectors.toList());
+  public Sprite(List<Pair.Int<BufferedImage>> frames) {
+    this.frames = frames.stream().sorted((p1, p2) -> {
+      if (p1.getFirst() < p2.getFirst()) {
+        return -1;
+      }
+      if (p1.getFirst() > p2.getFirst()) {
+        return +1;
+      }
+      return 0;
+    }).collect(Collectors.toCollection(ArrayList::new));
     if (this.frames.get(0).getFirst() < 0) {
       throw new IllegalArgumentException("Timecodes must be positive");
     }
@@ -55,7 +62,7 @@ public class Sprite {
     // convert ticks to milliseconds!
     long spriteTimeMillis = spriteTime * Miko.TICK_TIME / 1000000;
     int remainder = (int) (spriteTimeMillis % spriteTimeDivider);
-    for (Pair<Integer, BufferedImage> frame : frames) {
+    for (Pair.Int<BufferedImage> frame : frames) {
       if (remainder < frame.getFirst()) {
         return frame.getSecond();
       }

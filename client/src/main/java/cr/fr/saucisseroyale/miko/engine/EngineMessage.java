@@ -10,7 +10,8 @@ import java.util.List;
 /**
  * Un message adressé à l'engine du jeu, stocké sous forme d'objet pour délayer son exécution.
  * <p>
- * Note: this class has a natural ordering that is inconsistent with equals.
+ * Note: L'ordre de naturel donné par {@link #compareTo(EngineMessage)} est incohérent avec
+ * {@link #equals(Object)} et ne sert que pour comparer l'ordre dans lequel traiter les messages.
  *
  */
 class EngineMessage implements Comparable<EngineMessage> {
@@ -47,7 +48,7 @@ class EngineMessage implements Comparable<EngineMessage> {
     return new EngineMessage(tick, Type.CHUNKS_UPDATE, new Object[] {chunks});
   }
 
-  public static EngineMessage newActionsMessage(long tick, List<Pair<Integer, Action>> actions) {
+  public static EngineMessage newActionsMessage(long tick, List<Pair.Int<Action>> actions) {
     return new EngineMessage(tick, Type.ACTIONS_DONE, new Object[] {actions});
   }
 

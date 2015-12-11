@@ -57,10 +57,10 @@ public final class MapPoint {
     return new TerrainPoint((int) x, (int) y);
   }
 
-  public Pair<Float, Float> subtract(MapPoint other) {
+  public Pair.DoubleFloat subtract(MapPoint other) {
     float deltaX = x - other.x;
     float deltaY = y - other.y;
-    return new Pair<>(deltaX, deltaY);
+    return new Pair.DoubleFloat(deltaX, deltaY);
   }
 
   @Override

@@ -1,11 +1,11 @@
 package cr.fr.saucisseroyale.miko.util;
 
 /**
- * An immutable generic triplet of data (3-tuple).
+ * Un triplet générique immutable de trois éléments (3-tuple).
  *
- * @param <T> The type of the first element.
- * @param <U> The type of the second element.
- * @param <V> The type of the third element.
+ * @param <T> Le type du premier élément.
+ * @param <U> Le type du deuxième élément.
+ * @param <V> Le type du troisième élément.
  *
  */
 public class Triplet<T, U, V> {
@@ -15,9 +15,9 @@ public class Triplet<T, U, V> {
   private final V third;
 
   /**
-   * @param first The first element of the triplet.
-   * @param second The second element of the triplet.
-   * @param third The third element of the triplet.
+   * @param first Le premier élément du triplet.
+   * @param second Le deuxième élément du triplet.
+   * @param third Le troisième élément du triplet.
    */
   public Triplet(T first, U second, V third) {
     this.first = first;
@@ -26,21 +26,21 @@ public class Triplet<T, U, V> {
   }
 
   /**
-   * @return The first element of the triplet.
+   * @return Le premier élément du triplet.
    */
   public T getFirst() {
     return first;
   }
 
   /**
-   * @return The second element of the triplet.
+   * @return Le deuxième élément du triplet.
    */
   public U getSecond() {
     return second;
   }
 
   /**
-   * @return The third element of the triplet.
+   * @return Le troisième élément du triplet.
    */
   public V getThird() {
     return third;

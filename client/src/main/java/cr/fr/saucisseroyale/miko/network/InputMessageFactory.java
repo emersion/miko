@@ -145,11 +145,11 @@ class InputMessageFactory {
       case ACTIONS:
         tickRemainder = dis.readUnsignedShort();
         int actionsSize = dis.readUnsignedShort();
-        List<Pair<Integer, Action>> actions = new ArrayList<>(actionsSize);
+        List<Pair.Int<Action>> actions = new ArrayList<>(actionsSize);
         for (int i = 0; i < actionsSize; i++) {
           int id = dis.readUnsignedShort();
           Action action = readAction(dis);
-          actions.add(new Pair<>(id, action));
+          actions.add(new Pair.Int<>(id, action));
         }
         logger.trace("Received actions, tickRemainder {}", tickRemainder);
         return handler -> handler.actions(tickRemainder, actions);

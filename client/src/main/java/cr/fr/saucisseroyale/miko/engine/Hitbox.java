@@ -17,7 +17,7 @@ public abstract class Hitbox {
   private static class Null extends Hitbox {
 
     @Override
-    public Iterable<Pair<Float, Float>> getKeyPoints(float deltaX, float deltaY) {
+    public Iterable<Pair.DoubleFloat> getKeyPoints(float deltaX, float deltaY) {
       return Collections.emptyList();
     }
   }
@@ -25,23 +25,23 @@ public abstract class Hitbox {
   private static class Circle extends Hitbox {
 
     private final float radius;
-    private final List<Pair<Float, Float>> keyPoints;
+    private final List<Pair.DoubleFloat> keyPoints;
 
     public Circle(float radius) {
       this.radius = radius;
       // for now approximate circle to ♦
       // TODO might be optimized to only 4 points
-      List<Pair<Float, Float>> pairList = new ArrayList<>(5);
-      pairList.add(new Pair<>(0f, 0f));
-      pairList.add(new Pair<>(-radius, 0f));
-      pairList.add(new Pair<>(radius, 0f));
-      pairList.add(new Pair<>(0f, -radius));
-      pairList.add(new Pair<>(0f, radius));
+      List<Pair.DoubleFloat> pairList = new ArrayList<>(5);
+      pairList.add(new Pair.DoubleFloat(0f, 0f));
+      pairList.add(new Pair.DoubleFloat(-radius, 0f));
+      pairList.add(new Pair.DoubleFloat(radius, 0f));
+      pairList.add(new Pair.DoubleFloat(0f, -radius));
+      pairList.add(new Pair.DoubleFloat(0f, radius));
       keyPoints = Collections.unmodifiableList(pairList);
     }
 
     @Override
-    public Iterable<Pair<Float, Float>> getKeyPoints(float deltaX, float deltaY) {
+    public Iterable<Pair.DoubleFloat> getKeyPoints(float deltaX, float deltaY) {
       return keyPoints;
     }
   }
@@ -50,36 +50,36 @@ public abstract class Hitbox {
 
     private final float widthHalf;
     private final float heightHalf;
-    private final List<Pair<Float, Float>> keyPoints;
+    private final List<Pair.DoubleFloat> keyPoints;
 
     public Rectangle(float width, float height) {
       widthHalf = width / 2;
       heightHalf = height / 2;
-      List<Pair<Float, Float>> pairs = new ArrayList<>(5);
-      pairs.add(new Pair<>(0f, 0f));
-      pairs.add(new Pair<>(widthHalf, heightHalf));
-      pairs.add(new Pair<>(widthHalf, -heightHalf));
-      pairs.add(new Pair<>(-widthHalf, heightHalf));
-      pairs.add(new Pair<>(-widthHalf, -heightHalf));
+      List<Pair.DoubleFloat> pairs = new ArrayList<>(5);
+      pairs.add(new Pair.DoubleFloat(0f, 0f));
+      pairs.add(new Pair.DoubleFloat(widthHalf, heightHalf));
+      pairs.add(new Pair.DoubleFloat(widthHalf, -heightHalf));
+      pairs.add(new Pair.DoubleFloat(-widthHalf, heightHalf));
+      pairs.add(new Pair.DoubleFloat(-widthHalf, -heightHalf));
       keyPoints = Collections.unmodifiableList(pairs);
     }
 
     @Override
-    public Iterable<Pair<Float, Float>> getKeyPoints(float deltaX, float deltaY) {
+    public Iterable<Pair.DoubleFloat> getKeyPoints(float deltaX, float deltaY) {
       if (deltaX == 0) {
         if (deltaY > 0) {
-          return new SingleElementIterable<>(new Pair<>(0f, heightHalf));
+          return new SingleElementIterable<>(new Pair.DoubleFloat(0f, heightHalf));
         } else if (deltaY < 0) {
-          return new SingleElementIterable<>(new Pair<>(0f, -heightHalf));
+          return new SingleElementIterable<>(new Pair.DoubleFloat(0f, -heightHalf));
         } else {
           return Collections.emptyList();
         }
       }
       if (deltaY == 0) {
         if (deltaX > 0) {
-          return new SingleElementIterable<>(new Pair<>(widthHalf, 0f));
+          return new SingleElementIterable<>(new Pair.DoubleFloat(widthHalf, 0f));
         } else {
-          return new SingleElementIterable<>(new Pair<>(-widthHalf, 0f));
+          return new SingleElementIterable<>(new Pair.DoubleFloat(-widthHalf, 0f));
         }
       }
       int excludeIndex;
@@ -88,7 +88,7 @@ public abstract class Hitbox {
       } else {
         excludeIndex = deltaY > 0 ? 3 : 4;
       }
-      List<Pair<Float, Float>> points = new ArrayList<>(4);
+      List<Pair.DoubleFloat> points = new ArrayList<>(4);
       for (int i = 0, n = keyPoints.size(); i < n; i++) {
         if (i != excludeIndex) {
           points.add(keyPoints.get(i));
@@ -145,7 +145,7 @@ public abstract class Hitbox {
    * @return Les points du contour utile, en paires de décalage en x et y par rapport au centre de
    *         la hitbox/l'entité.
    */
-  public abstract Iterable<Pair<Float, Float>> getKeyPoints(float deltaX, float deltaY);
+  public abstract Iterable<Pair.DoubleFloat> getKeyPoints(float deltaX, float deltaY);
 
   public static Hitbox newCircleHitbox(float radius) {
     return new Circle(radius);

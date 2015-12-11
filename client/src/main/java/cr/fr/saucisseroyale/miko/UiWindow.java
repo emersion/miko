@@ -113,7 +113,8 @@ class UiWindow {
     public void paintDirtyRegions() {}
     @Override
     public Rectangle getDirtyRegion(JComponent aComponent) {
-      return new Rectangle(0, 0, aComponent.getWidth(), aComponent.getHeight());
+      // pretend the component is completely dirty
+      return new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
     @Override
     public boolean isCompletelyDirty(JComponent aComponent) {
@@ -441,7 +442,7 @@ class UiWindow {
     // draw opaque background
     graphics.setBackground(Color.BLACK);
     graphics.clearRect(0, 0, width, height);
-    // render game
+    // render main component
     if (renderable != null) {
       renderable.accept(graphics);
     }

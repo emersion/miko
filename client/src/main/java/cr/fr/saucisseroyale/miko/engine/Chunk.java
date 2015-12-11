@@ -48,17 +48,18 @@ public final class Chunk {
     if (y < 0 || y >= 1 << 8) {
       throw new IllegalArgumentException("y must be between 0 and 255 inclusive");
     }
-    for (Block block : blocks) {
-      if (block.getX() == x && block.getY() == y) {
-        return block.getType();
-      }
-    }
-    return defaultType;
+    return getBlock0(x, y);
   }
 
   public TerrainType getBlock(BlockPoint blockPoint) {
+    int x = (int) blockPoint.getBlockX();
+    int y = (int) blockPoint.getBlockY();
+    return getBlock0(x, y);
+  }
+
+  private TerrainType getBlock0(int x, int y) {
     for (Block block : blocks) {
-      if (block.getX() == blockPoint.getBlockX() && block.getY() == blockPoint.getBlockY()) {
+      if (block.getX() == x && block.getY() == y) {
         return block.getType();
       }
     }

@@ -22,7 +22,7 @@ import java.util.ListIterator;
  */
 class Snapshots<T> {
 
-  private List<MutablePair<T, Long>> snapshots;
+  private List<MutablePair.Long<T>> snapshots;
   private long first, last;
 
   /**
@@ -56,32 +56,32 @@ class Snapshots<T> {
   }
 
   private T getSnapshotFromBeginning(long tick) {
-    ListIterator<MutablePair<T, Long>> snapshotIterator = snapshots.listIterator();
+    ListIterator<MutablePair.Long<T>> snapshotIterator = snapshots.listIterator();
     while (snapshotIterator.hasNext()) {
-      MutablePair<T, Long> pair = snapshotIterator.next();
-      if (pair.getSecond() == tick) {
-        return pair.getFirst();
+      MutablePair.Long<T> pair = snapshotIterator.next();
+      if (pair.getFirst() == tick) {
+        return pair.getSecond();
       }
-      if (pair.getSecond() > tick) {
+      if (pair.getFirst() > tick) {
         snapshotIterator.previous();
         if (!snapshotIterator.hasPrevious()) {
           return null;
         }
-        return snapshotIterator.previous().getFirst();
+        return snapshotIterator.previous().getSecond();
       }
     }
     if (snapshots.isEmpty()) {
       return null;
     }
-    return snapshotIterator.previous().getFirst();
+    return snapshotIterator.previous().getSecond();
   }
 
   private T getSnapshotFromEnd(long tick) {
-    ListIterator<MutablePair<T, Long>> snapshotIterator = snapshots.listIterator(snapshots.size());
+    ListIterator<MutablePair.Long<T>> snapshotIterator = snapshots.listIterator(snapshots.size());
     while (snapshotIterator.hasPrevious()) {
-      MutablePair<T, Long> pair = snapshotIterator.previous();
-      if (pair.getSecond() <= tick) {
-        return pair.getFirst();
+      MutablePair.Long<T> pair = snapshotIterator.previous();
+      if (pair.getFirst() <= tick) {
+        return pair.getSecond();
       }
     }
     return null;
@@ -112,37 +112,37 @@ class Snapshots<T> {
   }
 
   private void setSnapshotFromBeginning(long tick, T snapshot) {
-    ListIterator<MutablePair<T, Long>> snapshotIterator = snapshots.listIterator();
+    ListIterator<MutablePair.Long<T>> snapshotIterator = snapshots.listIterator();
     while (snapshotIterator.hasNext()) {
-      MutablePair<T, Long> pair = snapshotIterator.next();
-      if (pair.getSecond() == tick) {
-        pair.setFirst(snapshot);
+      MutablePair.Long<T> pair = snapshotIterator.next();
+      if (pair.getFirst() == tick) {
+        pair.setSecond(snapshot);
         return;
       }
-      if (pair.getSecond() > tick) {
+      if (pair.getFirst() > tick) {
         snapshotIterator.previous();
-        snapshotIterator.add(new MutablePair<>(snapshot, tick));
+        snapshotIterator.add(new MutablePair.Long<>(tick, snapshot));
         return;
       }
     }
-    snapshots.add(new MutablePair<>(snapshot, tick));
+    snapshots.add(new MutablePair.Long<>(tick, snapshot));
   }
 
   private void setSnapshotFromEnd(long tick, T snapshot) {
-    ListIterator<MutablePair<T, Long>> snapshotIterator = snapshots.listIterator(snapshots.size());
+    ListIterator<MutablePair.Long<T>> snapshotIterator = snapshots.listIterator(snapshots.size());
     while (snapshotIterator.hasPrevious()) {
-      MutablePair<T, Long> pair = snapshotIterator.previous();
-      if (pair.getSecond() == tick) {
-        pair.setFirst(snapshot);
+      MutablePair.Long<T> pair = snapshotIterator.previous();
+      if (pair.getFirst() == tick) {
+        pair.setSecond(snapshot);
         return;
       }
-      if (pair.getSecond() < tick) {
+      if (pair.getFirst() < tick) {
         snapshotIterator.next();
-        snapshotIterator.add(new MutablePair<>(snapshot, tick));
+        snapshotIterator.add(new MutablePair.Long<>(tick, snapshot));
         return;
       }
     }
-    snapshots.add(new MutablePair<>(snapshot, tick));
+    snapshots.add(new MutablePair.Long<>(tick, snapshot));
   }
 
   /**
@@ -155,17 +155,17 @@ class Snapshots<T> {
    * @param tick Le tick (inclus) jusqu'auquel les snapshots ne seront plus demandés.
    */
   public void disposeUntilTick(long tick) {
-    ListIterator<MutablePair<T, Long>> snapshotIterator = snapshots.listIterator();
+    ListIterator<MutablePair.Long<T>> snapshotIterator = snapshots.listIterator();
     while (snapshotIterator.hasNext()) {
-      MutablePair<T, Long> pair = snapshotIterator.next();
-      if (pair.getSecond() > tick) {
+      MutablePair.Long<T> pair = snapshotIterator.next();
+      if (pair.getFirst() > tick) {
         break;
       }
     }
     if (!snapshotIterator.hasPrevious()) {
       return;
     }
-    first = snapshotIterator.previous().getSecond();
+    first = snapshotIterator.previous().getFirst();
     while (snapshotIterator.hasPrevious()) {
       snapshotIterator.previous();
       snapshotIterator.remove();

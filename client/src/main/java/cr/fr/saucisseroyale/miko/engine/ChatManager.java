@@ -14,7 +14,7 @@ import java.util.stream.Stream;
 class ChatManager {
 
   private static final long MESSAGES_DURATION = 20 * 1000000000L; // 20 seconds
-  private List<Pair<Long, String>> messages = new LinkedList<>();
+  private List<Pair.Long<String>> messages = new LinkedList<>();
 
   /**
    * Ajoute un message à la liste des messages du chat.
@@ -23,7 +23,7 @@ class ChatManager {
    */
   public void addMessage(String message) {
     long time = System.nanoTime();
-    messages.add(new Pair<>(time, message));
+    messages.add(new Pair.Long<>(time, message));
   }
 
   /**
@@ -34,14 +34,14 @@ class ChatManager {
    */
   public Stream<String> getMessages() {
     long oldMessageslimit = System.nanoTime() - MESSAGES_DURATION;
-    Iterator<Pair<Long, String>> messagesIterator = messages.iterator();
+    Iterator<Pair.Long<String>> messagesIterator = messages.iterator();
     while (messagesIterator.hasNext()) {
-      Pair<Long, String> message = messagesIterator.next();
+      Pair.Long<String> message = messagesIterator.next();
       if (message.getFirst() >= oldMessageslimit) {
         break;
       }
       messagesIterator.remove();
     }
-    return messages.stream().map(Pair<Long, String>::getSecond);
+    return messages.stream().map(Pair.Long<String>::getSecond);
   }
 }
