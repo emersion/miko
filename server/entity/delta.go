@@ -68,10 +68,12 @@ func (d *Delta) Inverse() delta.Delta {
 // Ensure that there is only one delta per entity in the deltas list.
 // Warning: some information is lost, for instance if an entity is created then
 // deleted, an empty delta is added to the list.
-func flattenDeltas(deltas []*Delta) []*Delta {
+func flattenDeltas(deltas *delta.List) []*Delta {
 	m := make(map[message.EntityId]*Delta)
 
-	for _, d := range deltas {
+	for e := deltas.First(); e != nil; e = e.Next() {
+		d := e.Value.(*Delta)
+
 		if current, ok := m[d.EntityId]; ok {
 			// TODO: check that current.To and d.From are compatible
 			current.To = d.To

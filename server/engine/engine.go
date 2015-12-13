@@ -109,11 +109,10 @@ func (e *Engine) broadcastChanges() {
 	}
 	if e.ctx.Action.IsDirty() {
 		log.Println("Actions diff dirty, broadcasting to clients...")
-		e.ctx.Action.Flush()
-		/*err := builder.SendActionsDone(e.srv, e.clock.GetRelativeTick(), e.ctx.Action.Flush())
+		err := builder.SendActionsDone(e.srv, e.clock.GetRelativeTick(), e.ctx.Action.Flush())
 		if err != nil {
 			log.Println("Cannot broadcast actions:", err)
-		}*/
+		}
 	}
 }
 
@@ -126,8 +125,10 @@ func (e *Engine) startBroadcastingChanges() {
 }
 
 func (e *Engine) Start() {
-	go e.listenNewClients()
-	go e.startBroadcastingChanges()
+	if e.srv != nil {
+		go e.listenNewClients()
+		go e.startBroadcastingChanges()
+	}
 
 	entityFrontend := e.entity.Frontend()
 	actionFrontend := e.action.Frontend()

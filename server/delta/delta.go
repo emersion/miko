@@ -95,6 +95,10 @@ func (l *List) Remove(e *list.Element) Delta {
 	return l.deltas.Remove(e).(Delta)
 }
 
+func (l *List) Reset() {
+	l.deltas = l.deltas.Init()
+}
+
 // Create a new list of deltas.
 func NewList() *List {
 	return &List{

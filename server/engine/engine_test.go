@@ -4,14 +4,12 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/engine"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
-	"git.emersion.fr/saucisse-royale/miko.git/server/server"
 	"testing"
 	"time"
 )
 
 func TestEngine(t *testing.T) {
-	srv := server.New("")
-	e := engine.New(srv)
+	e := engine.New(nil)
 	ctx := e.Context()
 
 	go e.Start()
@@ -19,47 +17,62 @@ func TestEngine(t *testing.T) {
 	time.Sleep(5 * clock.TickDuration)
 
 	// Create a new entity
+	createdAt := ctx.Clock.GetAbsoluteTick()
+	t.Log("Adding new entity at tick", createdAt)
 	ent := message.NewEntity()
 	ent.Id = 1
 	ent.Position.X = 10
 	ent.Position.Y = 15
-	ctx.Entity.Add(ent, ctx.Clock.GetAbsoluteTick())
+	req := ctx.Entity.Add(ent, createdAt)
+	if err := req.Wait(); err != nil {
+		t.Fatal("Cannot create entity:", err)
+	}
 
 	time.Sleep(5 * clock.TickDuration)
 
 	// Update the entity
+	updatedAt := ctx.Clock.GetAbsoluteTick()
+	t.Log("Updating the entity at tick", updatedAt)
 	update := message.NewEntity()
 	update.Id = ent.Id
 	update.Speed.Norm = 10
 	diff := &message.EntityDiff{SpeedNorm: true}
-	ctx.Entity.Update(update, diff, ctx.Clock.GetAbsoluteTick())
+	req = ctx.Entity.Update(update, diff, updatedAt)
+	if err := req.Wait(); err != nil {
+		t.Fatal("Cannot update entity:", err)
+	}
 
 	time.Sleep(2 * clock.TickDuration)
 
 	// Update the entity a second time, in the past
+	reupdatedAt := ctx.Clock.GetAbsoluteTick() - 5
+	t.Log("Updating the entity a second time at tick", reupdatedAt)
 	update = message.NewEntity()
 	update.Id = ent.Id
 	update.Speed.Norm = 20
-	ctx.Entity.Update(update, diff, ctx.Clock.GetAbsoluteTick()-10)
+	req = ctx.Entity.Update(update, diff, reupdatedAt)
+	if err := req.Wait(); err != nil {
+		t.Fatal("Cannot update entity:", err)
+	}
 
 	time.Sleep(clock.TickDuration)
 
 	pool := ctx.Entity.Flush()
 	if len(pool.Created) != 1 {
-		t.Error("Created an entity, but it isn't in the diff pool")
+		t.Fatal("Created an entity, but it isn't in the diff pool")
 	}
 	if len(pool.Updated) != 0 {
-		t.Error("Updated an entity, but it shouldn't be in the diff pool since it just has been created")
+		t.Fatal("Updated an entity, but it shouldn't be in the diff pool since it just has been created")
 	}
 	if len(pool.Deleted) != 0 {
-		t.Error("No entity deleted, but there is one in the diff pool")
+		t.Fatal("No entity deleted, but there is one in the diff pool")
 	}
 
 	if pool.Created[0].Id != ent.Id {
-		t.Error("The entity in the diff pool has a wrong id")
+		t.Fatal("The entity in the diff pool has a wrong id")
 	}
 	if pool.Created[0].Speed.Norm != 10 {
-		t.Error("The entity in the diff pool has a wrong speed norm")
+		t.Fatal("The entity in the diff pool has a wrong speed norm, got", pool.Created[0].Speed.Norm, "instead of", 10)
 	}
 
 	// Update the entity another time
@@ -72,24 +85,24 @@ func TestEngine(t *testing.T) {
 
 	pool = ctx.Entity.Flush()
 	if len(pool.Created) != 0 {
-		t.Error("No entity created, but there is one in the diff pool")
+		t.Fatal("No entity created, but there is one in the diff pool")
 	}
 	if len(pool.Updated) != 1 {
-		t.Error("Updated an entity, but it isn't in the diff pool")
+		t.Fatal("Updated an entity, but it isn't in the diff pool")
 	}
 	if len(pool.Deleted) != 0 {
-		t.Error("No entity deleted, but there is one in the diff pool")
+		t.Fatal("No entity deleted, but there is one in the diff pool")
 	}
 
 	for updated, diff := range pool.Updated {
 		if updated.Id != ent.Id {
-			t.Error("The entity in the diff pool has a wrong id")
+			t.Fatal("The entity in the diff pool has a wrong id")
 		}
 		if updated.Speed.Norm != 15 {
-			t.Error("The entity in the diff pool has a wrong speed norm")
+			t.Fatal("The entity in the diff pool has a wrong speed norm")
 		}
 		if !diff.SpeedNorm {
-			t.Error("The diff doesn't mark the speed norm as outdated, but it has just been updated")
+			t.Fatal("The diff doesn't mark the speed norm as outdated, but it has just been updated")
 		}
 	}
 

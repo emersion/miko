@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/delta"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"log"
 )
@@ -9,7 +10,7 @@ const frontendChanSize = 128
 
 type Frontend struct {
 	backend *Service
-	deltas  []*Delta
+	deltas  *delta.List
 
 	Creates chan *CreateRequest
 	Updates chan *UpdateRequest
@@ -52,21 +53,22 @@ func (f *Frontend) Delete(id message.EntityId, t message.AbsoluteTick) message.R
 // Check if the diff pool is empty. If not, it means that entities updates need
 // to be sent to clients.
 func (f *Frontend) IsDirty() bool {
-	return (len(f.deltas) > 0)
+	return (f.deltas.Len() > 0)
 }
 
 // Flush the diff pool. This returns the current one and replace it by a new one.
 func (f *Frontend) Flush() *message.EntityDiffPool {
-	log.Println("Flushing entity frontend, deltas count:", len(f.deltas))
+	log.Println("Flushing entity frontend, deltas count:", f.deltas.Len())
 	flattened := flattenDeltas(f.deltas)
 	pool := deltasToDiffPool(flattened)
-	f.deltas = []*Delta{}
+	f.deltas.Reset()
 	return pool
 }
 
 func newFrontend(backend *Service) *Frontend {
 	return &Frontend{
 		backend: backend,
+		deltas:  delta.NewList(),
 		Creates: make(chan *CreateRequest, frontendChanSize),
 		Updates: make(chan *UpdateRequest, frontendChanSize),
 		Deletes: make(chan *DeleteRequest, frontendChanSize),
