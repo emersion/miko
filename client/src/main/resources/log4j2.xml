@@ -4,7 +4,7 @@
 		<Console name="Console" target="SYSTEM_OUT">
 			<PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %-15logger - %msg%n" />
 		</Console>
-		<File name="File" fileName="allDebug.log" immediateFlush="false"
+		<File name="File" fileName="miko.log" immediateFlush="false"
 			append="false">
 			<PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %-15logger - %msg%n" />
 		</File>

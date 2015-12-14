@@ -6,10 +6,10 @@ import java.awt.BufferCapabilities;
 import java.awt.BufferCapabilities.FlipContents;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.DisplayMode;
 import java.awt.EventQueue;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.ImageCapabilities;
@@ -56,9 +56,9 @@ import org.apache.logging.log4j.Logger;
  */
 class UiWindow {
 
+  // we won't serialize it
   @SuppressWarnings("serial")
   private static class EventCatcherComponent extends Component {
-
     private KeyListener keyListener;
 
     public EventCatcherComponent(int width, int height) {
@@ -131,12 +131,10 @@ class UiWindow {
   private static final Integer UI_HIDDEN_LAYER = Integer.valueOf(-1);
   private static final Integer MAIN_LAYER = Integer.valueOf(0);
   private static Logger logger = LogManager.getLogger("miko.ui");
-  private SynchronizedEventQueue eventQueue;
   private Runnable closeListener;
   private IntConsumer globalKeyDownListener;
-  private JFrame frame;
+  private JFrame frame; // will be null when we're disposed
   private GraphicsDevice device;
-  private DisplayMode displayMode;
   private BufferStrategy strategy;
   private Consumer<Graphics2D> renderable;
   private EventCatcherComponent mainComponent;
@@ -146,57 +144,85 @@ class UiWindow {
   private int height;
 
   /**
-   * Construit un {@link UiWindow} sur l'écran par défaut.
+   * Tente de créer et afficher la fenêtre sur l'écran par défaut.
+   * <p>
+   * La fenêtre ne sera pas forcément affichée en plein écran ; récupérer l'état final avec
+   * {@link #isFullscreen()}.
    *
    * @param fullscreen Si la fenêtre doit être en plein écran exclusif ou en fenêtré sans bordures.
    *
-   * @see #UiWindow(GraphicsDevice, DisplayMode)
+   * @throws IllegalStateException Si {@code show} ou {@link #dispose()} a déjà été appelé.
    */
   public UiWindow(boolean fullscreen) {
-    device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-    displayMode = device.getDisplayMode();
-    this.fullscreen = fullscreen;
-    init();
+    this(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice(), fullscreen);
   }
 
   /**
-   * Construit un {@link UiWindow} sur l'écran spécifié.
+   * Tente de créer et afficher la fenêtre sur l'écran spécifié.
+   * <p>
+   * La fenêtre ne sera pas forcément affichée en plein écran ; récupérer l'état final avec
+   * {@link #isFullscreen()}.
    *
-   * @param device L'écran sur lequel afficher la fenêtre.
-   * @param fullscreen Si la fenêtre doit être en plein écran exclusif ou en fenêtré sans bordures.
+   * @param device L'écran sur lequel tenter d'afficher la fenêtre.
+   * @param requestedFullscreen Si la fenêtre doit être en plein écran exclusif ou en fenêtré sans
+   *        bordures.
+   *
+   * @throws IllegalStateException Si {@code show} ou {@link #dispose()} a déjà été appelé.
    */
-  public UiWindow(GraphicsDevice device, boolean fullscreen) {
+  public UiWindow(GraphicsDevice device, boolean requestedFullscreen) {
     this.device = device;
-    displayMode = device.getDisplayMode();
-    this.fullscreen = fullscreen;
-    init();
-  }
-
-  /**
-   * Construit un {@link UiWindow} en plein écran sur l'écran spécifié, avec le mode d'affichage
-   * spécifié.
-   *
-   * @param device L'écran sur lequel afficher la fenêtre.
-   * @param displayMode La mode d'affichage à utiliser pour afficher la fenêtre.
-   *
-   * @throws IllegalArgumentException Si l'écran ne supporte pas le mode d'affichage spécifié.
-   */
-  public UiWindow(GraphicsDevice device, DisplayMode displayMode) {
-    if (!isSupportedDisplayMode(device, displayMode)) {
-      throw new IllegalArgumentException("DisplayMode unsupported on this GraphicsDevice");
+    // make sure we have control over repainting before trying anything
+    Toolkit.getDefaultToolkit().getSystemEventQueue().push(new SynchronizedEventQueue(uiLock));
+    RepaintManager.setCurrentManager(new RepaintDisabler());
+    Class<?> openglGraphicsConfigClass;
+    try {
+      openglGraphicsConfigClass = Class.forName("sun.java2d.opengl.OGLGraphicsConfig");
+    } catch (ClassNotFoundException e) {
+      String errorMessage = "Interface OGLGraphicsConfig not found.";
+      logger.fatal(errorMessage);
+      throw new InternalError(errorMessage);
     }
-    this.device = device;
-    this.displayMode = displayMode;
-    fullscreen = true;
-    init();
-  }
-
-  private void init() {
-    width = displayMode.getWidth();
-    height = displayMode.getHeight();
-    eventQueue = new SynchronizedEventQueue(uiLock);
-    Toolkit.getDefaultToolkit().getSystemEventQueue().push(eventQueue);
-    frame = new JFrame();
+    GraphicsConfiguration bestConfiguration = null;
+    for (GraphicsConfiguration gc : device.getConfigurations()) {
+      // drop non opengl configurations
+      if (!openglGraphicsConfigClass.isAssignableFrom(gc.getClass())) {
+        continue;
+      }
+      // drop non page-flipping configurations
+      if (!gc.getBufferCapabilities().isPageFlipping()) {
+        continue;
+      }
+      // additionally drop fullscreen-only page-flipping configurations if we're requesting windowed
+      // mode
+      if (!requestedFullscreen && gc.getBufferCapabilities().isFullScreenRequired()) {
+        continue;
+      }
+      // drop non accelerated configurations
+      if (!gc.getImageCapabilities().isAccelerated()) {
+        continue;
+      }
+      // drop non double accelereated configurations
+      if (!gc.getBufferCapabilities().getFrontBufferCapabilities().isAccelerated()
+          || !gc.getBufferCapabilities().getBackBufferCapabilities().isAccelerated()) {
+        continue;
+      }
+      // drop null flip contents to make sure we do support vsync
+      if (gc.getBufferCapabilities().getFlipContents() == null) {
+        continue;
+      }
+      bestConfiguration = gc;
+      break;
+    }
+    if (bestConfiguration == null) {
+      String errorMessage = "No suitable GraphicsConfiguration found. Try updating your video card drivers.";
+      logger.fatal(errorMessage);
+      throw new RuntimeException(errorMessage);
+    }
+    width = bestConfiguration.getBounds().width;
+    height = bestConfiguration.getBounds().height;
+    mainComponent = new EventCatcherComponent(width, height);
+    // create the frame
+    frame = new JFrame(bestConfiguration);
     frame.setUndecorated(true);
     frame.setResizable(false);
     frame.setFocusTraversalKeysEnabled(false);
@@ -216,31 +242,24 @@ class UiWindow {
       }
       return false;
     });
-    mainComponent = new EventCatcherComponent(width, height);
-    RepaintManager.setCurrentManager(new RepaintDisabler());
+    // show the frame
+    if (requestedFullscreen && device.isFullScreenSupported()) {
+      device.setFullScreenWindow(frame);
+    }
+    fullscreen = device.getFullScreenWindow() != null;
     if (!fullscreen) {
       frame.setSize(width, height);
-      frame.setLocationRelativeTo(null);
       Rectangle deviceBounds = device.getDefaultConfiguration().getBounds();
       frame.setLocation(deviceBounds.x + deviceBounds.width - width, deviceBounds.y + deviceBounds.height - height);
+      frame.setVisible(true);
     }
-  }
-
-  /**
-   * Affiche la fenêtre.
-   */
-  public void show() {
-    if (fullscreen) {
-      device.setFullScreenWindow(frame);
-      device.setDisplayMode(displayMode);
-    }
-    frame.setVisible(true);
-    // create double accelerated (volatile) page-flipping buffer
-    // flipcontents undefined to skip awt graphics#clearrect call on each frame
-    BufferCapabilities bc = new BufferCapabilities(new ImageCapabilities(true), new ImageCapabilities(true), FlipContents.UNDEFINED);
-    // force vsync using the "private" class extendedbuffercapabilities
-    // if java ever releases an API for vsync (by adding some public
-    // API to buffercapabilities), remove the ugly call to sun.*
+    // create double accelerated (volatile) page-flipping buffer with vsync
+    // the only way to have vsync on with the opengl pipeline on windows and linux is to have
+    // flipcontents on COPIED so that the VolatileSurfaceManager create WGLVSyncOffScreenSurfaceData
+    // (on Windows) or GLXVSyncOffScreenSurfaceData (on Linux) as backbuffers
+    // see initAcceleratedSurface() in WGLVolatileSurfaceManager and GLXVolatileSurfaceManager
+    BufferCapabilities bc = new BufferCapabilities(new ImageCapabilities(true), new ImageCapabilities(true), FlipContents.COPIED);
+    // we must use a sun.* class in order to tell the surfacemanager we want vsync
     @SuppressWarnings("restriction")
     BufferCapabilities vsyncBuffer =
     new sun.java2d.pipe.hw.ExtendedBufferCapabilities(bc, sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON);
@@ -256,26 +275,34 @@ class UiWindow {
 
   /**
    * Affiche les composants sur la fenêtre.
+   *
+   * @throws IllegalStateException Si {@code show} n'a pas été appelé, ou {@link #dispose()} a déjà
+   *         été appelé.
    */
   public void render() {
+    checkFrameNotDisposed();
     do {
       do {
         Graphics graphics = strategy.getDrawGraphics();
         paintComponents((Graphics2D) graphics);
         graphics.dispose();
       } while (strategy.contentsRestored());
+      long beforeShowTime = System.nanoTime();
       strategy.show(); // vsync (ie sleep) here
+      System.out.println("Temps de sleep en microsecondes : " + (System.nanoTime() - beforeShowTime) / 1000);
     } while (strategy.contentsLost());
   }
 
   /**
-   * Ferme la fenêtre et libère les ressources associées à celle-ci.
+   * Ferme la fenêtre et libère les ressources associées à celle-ci. Une fois fermée, elle ne pourra
+   * plus être réaffichée.
    */
-  public void close() {
-    device.setFullScreenWindow(null);
-    frame.setVisible(false);
-    frame.dispose();
-    logger.debug("Closed and hid window");
+  public void dispose() {
+    if (frame != null) {
+      frame.dispose();
+      frame = null;
+      logger.debug("Closed and hid window");
+    }
   }
 
   /**
@@ -284,6 +311,7 @@ class UiWindow {
    * @param component Le composant à ajouter à la fenêtre.
    */
   public void addUi(JComponent component) {
+    checkFrameNotDisposed();
     addUi(component, true);
   }
 
@@ -294,6 +322,7 @@ class UiWindow {
    * @param resize Si le composant doit être redimensionné à la taille de la fenêtre.
    */
   public void addUi(JComponent component, boolean resize) {
+    checkFrameNotDisposed();
     if (resize) {
       component.setSize(getWidth(), getHeight());
     }
@@ -307,16 +336,18 @@ class UiWindow {
    * @param component Le composant à rendre visible.
    */
   public void showUi(JComponent component) {
+    checkFrameNotDisposed();
     component.setVisible(true);
     frame.getLayeredPane().setLayer(component, UI_VISIBLE_LAYER, 0);
   }
 
   /**
-   * Cache un copposant d'UI.
+   * Cache un composant d'UI.
    *
    * @param component Le composant à cacher.
    */
   public void hideUi(JComponent component) {
+    checkFrameNotDisposed();
     component.setVisible(false);
     frame.getLayeredPane().setLayer(component, UI_HIDDEN_LAYER, 0);
   }
@@ -325,6 +356,7 @@ class UiWindow {
    * Cache tous les composants d'UI.
    */
   public void hideAllUi() {
+    checkFrameNotDisposed();
     for (Component c : frame.getLayeredPane().getComponentsInLayer(UI_VISIBLE_LAYER)) {
       hideUi((JComponent) c);
     }
@@ -339,6 +371,7 @@ class UiWindow {
    * @param renderable Le composant principal.
    */
   public void setRenderable(Consumer<Graphics2D> renderable) {
+    checkFrameNotDisposed();
     this.renderable = renderable;
   }
 
@@ -349,6 +382,7 @@ class UiWindow {
    * @param closeListener Le listener de fermeture.
    */
   public void setCloseRequestedListener(Runnable closeListener) {
+    checkFrameNotDisposed();
     this.closeListener = closeListener;
   }
 
@@ -358,6 +392,7 @@ class UiWindow {
    * @param keyListener Le listener de clavier.
    */
   public void setKeyListener(KeyListener keyListener) {
+    checkFrameNotDisposed();
     mainComponent.setKeyListener(keyListener);
   }
 
@@ -371,6 +406,7 @@ class UiWindow {
    * @param listener Le listener de touche pressée.
    */
   public void setGlobalKeyDownListener(IntConsumer listener) {
+    checkFrameNotDisposed();
     globalKeyDownListener = listener;
   }
 
@@ -378,6 +414,7 @@ class UiWindow {
    * @return La largeur de la fenêtre.
    */
   public int getWidth() {
+    checkFrameNotDisposed();
     return width;
   }
 
@@ -385,6 +422,7 @@ class UiWindow {
    * @return La hauteur de la fenêtre.
    */
   public int getHeight() {
+    checkFrameNotDisposed();
     return height;
   }
 
@@ -392,7 +430,16 @@ class UiWindow {
    * @return Le device sur lequel la frame est affichée.
    */
   public GraphicsDevice getDevice() {
+    checkFrameNotDisposed();
     return device;
+  }
+
+  /**
+   * @return true si la fenêtre est en plein écran exclusif.
+   */
+  public boolean isFullscreen() {
+    checkFrameNotDisposed();
+    return fullscreen;
   }
 
   /**
@@ -406,6 +453,7 @@ class UiWindow {
    *         pas au-dessus.
    */
   public Point getMousePosition() {
+    checkFrameNotDisposed();
     PointerInfo pointerInfo = MouseInfo.getPointerInfo();
     if (pointerInfo.getDevice() != device) {
       return null;
@@ -454,17 +502,10 @@ class UiWindow {
     }
   }
 
-  private static final boolean isSupportedDisplayMode(GraphicsDevice device, DisplayMode displayMode) {
-    for (DisplayMode supportedDisplayMode : device.getDisplayModes()) {
-      if (displayMode.getWidth() == supportedDisplayMode.getWidth()
-          && displayMode.getHeight() == supportedDisplayMode.getHeight()
-          && displayMode.getBitDepth() == supportedDisplayMode.getBitDepth()
-          && (displayMode.getRefreshRate() == DisplayMode.REFRESH_RATE_UNKNOWN || displayMode.getRefreshRate() == supportedDisplayMode
-          .getRefreshRate())) {
-        return true;
-      }
+  private void checkFrameNotDisposed() {
+    if (frame == null) {
+      throw new IllegalStateException("The window has already been disposed.");
     }
-    return false;
   }
 
 }

@@ -59,10 +59,15 @@ public class Miko implements MessageHandler {
   private long accumulator;
   private float alpha; // for #render(), updated each loop
 
+  static {
+    // set properties before anything is loaded
+    System.setProperty("sun.java2d.opengl", "true"); // use the opengl pipeline
+  }
+
   private void exit() {
     logger.info("Starts exiting");
     if (window != null) {
-      window.close();
+      window.dispose();
     }
     if (networkClient != null) {
       networkClient.disconnect();
@@ -95,7 +100,7 @@ public class Miko implements MessageHandler {
       // don't even bother stack tracing
     }
 
-    boolean fullscreen = uiPrefsNode.getBoolean("fullscreen", true);
+    boolean fullscreen = uiPrefsNode.getBoolean("fullscreen", false);
 
     window = new UiWindow(fullscreen);
     window.setRenderable(this::render);
@@ -118,8 +123,6 @@ public class Miko implements MessageHandler {
           // ignore
       }
     });
-
-    window.show();
   }
 
   private void logic() {
@@ -310,6 +313,13 @@ public class Miko implements MessageHandler {
   }
 
   public static void main(String... args) throws Exception {
+    if (args.length == 1) {
+      if (args[0].equalsIgnoreCase("fs")) {
+        uiPrefsNode.putBoolean("fullscreen", true);
+      } else if (args[0].equalsIgnoreCase("nfs")) {
+        uiPrefsNode.putBoolean("fullscreen", false);
+      }
+    }
     logger.info("Starting Miko version {}", PROTOCOL_VERSION);
     Miko miko = new Miko();
     miko.run();
