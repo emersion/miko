@@ -33,7 +33,7 @@ var Types = map[string]Type{
 	"actions_done":      12,
 	"action_do":         13,
 	"entity_create":     14,
-	"entitiy_destroy":   15,
+	"entity_destroy":    15,
 	"chat_send":         16,
 	"chat_receive":      17,
 	"version":           18,
