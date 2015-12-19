@@ -130,6 +130,11 @@ func (d *EntityDiff) Merge(other *EntityDiff) *EntityDiff {
 	return d
 }
 
+// Check if this entity diff equals anotehr one.
+func (d *EntityDiff) Equals(other *EntityDiff) bool {
+	return (d.GetBitfield() == other.GetBitfield())
+}
+
 // Create a new entity diff.
 func NewEntityDiff() *EntityDiff {
 	return &EntityDiff{}

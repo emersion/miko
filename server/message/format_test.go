@@ -253,3 +253,146 @@ func TestEntityCreate(t *testing.T) {
 		}
 	})
 }
+
+func TestEntitiesUpdate(t *testing.T) {
+	tick := message.Tick(42)
+
+	entity1 := message.NewEntity()
+	entity1.Id = 69
+	entity1.Position.X = 22
+	entity1.Position.Y = 65
+	diff1 := message.NewEntityDiff()
+	diff1.Position = true
+
+	entity2 := message.NewEntity()
+	entity2.Id = 76
+	entity2.Speed.Angle = 67
+	entity2.Speed.Norm = 43
+	diff2 := message.NewEntityDiff()
+	diff2.SpeedAngle = true
+	diff2.SpeedNorm = true
+
+	entities := []*message.Entity{entity1, entity2}
+	diffs := []*message.EntityDiff{diff1, diff2}
+
+	testMessage(t, message.Types["entities_update"], func(io *message.IO) error {
+		return builder.SendEntitiesUpdate(io, tick, entities, diffs)
+	}, func(io *message.IO, t *testing.T) {
+		rt, rentities, rdiffs := handler.ReadEntitiesUpdate(io)
+		if rt != tick {
+			t.Fatal("Sent tick", tick, "but received", rt)
+		}
+
+		if len(entities) != len(rentities) {
+			t.Fatal("Sent", len(entities), "entities but received", len(rentities))
+		}
+		for i, entity := range entities {
+			diff := diffs[i]
+			rentity := rentities[i]
+			rdiff := rdiffs[i]
+
+			if !diff.Equals(rdiff) {
+				t.Fatal("Sent diff", diff, " at offset", i, "but received", rdiff)
+			}
+			if !entity.EqualsWithDiff(rentity, diff) {
+				t.Fatal("Sent entity", entity, " at offset", i, "with diff", diff, "but received", rentity)
+			}
+		}
+	})
+}
+
+func TestEntityDestroy(t *testing.T) {
+	tick := message.Tick(42)
+	entityId := message.EntityId(93)
+
+	testMessage(t, message.Types["entity_destroy"], func(io *message.IO) error {
+		return builder.SendEntityDestroy(io, tick, entityId)
+	}, func(io *message.IO, t *testing.T) {
+		rt, id := handler.ReadEntityDestroy(io)
+		if rt != tick {
+			t.Fatal("Sent tick", tick, "but received", rt)
+		}
+		if entityId != id {
+			t.Fatal("Sent entity id", entityId, "but received", id)
+		}
+	})
+}
+
+func TestActionsDone(t *testing.T) {
+	tick := message.Tick(42)
+
+	action1 := message.NewAction()
+	action1.Id = 25
+	action1.Initiator = 65
+
+	actions := []*message.Action{action1}
+	// TODO: more actions tests, with action params
+
+	testMessage(t, message.Types["actions_done"], func(io *message.IO) error {
+		return builder.SendActionsDone(io, tick, actions)
+	}, func(io *message.IO, t *testing.T) {
+		rt, ractions := handler.ReadActionsDone(io)
+		if rt != tick {
+			t.Fatal("Sent tick", tick, "but received", rt)
+		}
+
+		if len(actions) != len(ractions) {
+			t.Fatal("Sent", len(actions), "actions but received", len(ractions))
+		}
+		for i, action := range actions {
+			raction := ractions[i]
+			if !action.Equals(raction) {
+				t.Fatal("Sent action", action, "but received", raction)
+			}
+		}
+	})
+}
+
+func TestChatReceive(t *testing.T) {
+	tick := message.Tick(42)
+	username := "délthàs-s@@s"
+	msg := "How r u guys? aéoaéoaèo"
+
+	testMessage(t, message.Types["chat_receive"], func(io *message.IO) error {
+		return builder.SendChatReceive(io, tick, username, msg)
+	}, func(io *message.IO, t *testing.T) {
+		rt, rusername, rmsg := handler.ReadChatReceive(io)
+		if rt != tick {
+			t.Fatal("Sent tick", tick, "but received", rt)
+		}
+		if rusername != username {
+			t.Fatal("Sent username", username, "but received", rusername)
+		}
+		if rmsg != msg {
+			t.Fatal("Sent message", msg, "but received", rmsg)
+		}
+	})
+}
+
+func TestConfig(t *testing.T) {
+	config := &message.Config{}
+
+	testMessage(t, message.Types["config"], func(io *message.IO) error {
+		return builder.SendConfig(io, config)
+	}, func(io *message.IO, t *testing.T) {
+		handler.ReadConfig(io)
+		// TODO: check received config
+	})
+}
+
+func TestEntityIdChange(t *testing.T) {
+	oldId := message.EntityId(24)
+	newId := message.EntityId(87)
+
+	testMessage(t, message.Types["entity_id_change"], func(io *message.IO) error {
+		return builder.SendEntityIdChange(io, oldId, newId)
+	}, func(io *message.IO, t *testing.T) {
+		roldId, rnewId := handler.ReadEntityIdChange(io)
+		if roldId != oldId {
+			t.Fatal("Sent old id", oldId, "but received", roldId)
+		}
+		if rnewId != newId {
+			t.Fatal("Sent new id", newId, "but received", rnewId)
+		}
+	})
+}

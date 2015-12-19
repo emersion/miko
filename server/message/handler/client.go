@@ -33,9 +33,12 @@ func ReadBlock(r io.Reader) *message.Block {
 }
 
 func ReadActionDone(r io.Reader) (action *message.Action) {
+	action = message.NewAction()
+
 	read(r, &action.Initiator)
 	read(r, &action.Id)
 	// TODO: action params
+
 	return
 }
 
@@ -91,8 +94,65 @@ func ReadEntityCreate(r io.Reader) (t message.Tick, entity *message.Entity) {
 	return
 }
 
-func ReadVersionResponse(r io.Reader) (code message.VersionResponseCode) {
-	read(r, &code)
+func ReadEntitiesUpdate(r io.Reader) (t message.Tick, entities []*message.Entity, diffs []*message.EntityDiff) {
+	read(r, &t)
+
+	var size uint16
+	read(r, &size)
+
+	entities = make([]*message.Entity, size)
+	diffs = make([]*message.EntityDiff, size)
+
+	for i := 0; i < int(size); i++ {
+		entity, diff := ReadEntity(r)
+
+		entities[i] = entity
+		diffs[i] = diff
+	}
+
+	return
+}
+
+func ReadEntityDestroy(r io.Reader) (t message.Tick, id message.EntityId) {
+	read(r, &t)
+	read(r, &id)
+	return
+}
+
+func ReadActionsDone(r io.Reader) (t message.Tick, actions []*message.Action) {
+	read(r, &t)
+
+	var size uint16
+	read(r, &size)
+
+	actions = make([]*message.Action, size)
+	for i := 0; i < int(size); i++ {
+		actions[i] = ReadActionDone(r)
+	}
+
+	return
+}
+
+func ReadChatReceive(r io.Reader) (t message.Tick, username, msg string) {
+	read(r, &t)
+	username = readString(r)
+	msg = readString(r)
+	return
+}
+
+func ReadConfig(r io.Reader) (config *message.Config) {
+	config = &message.Config{}
+	read(r, &config.MaxRollbackTicks)
+	read(r, &config.DefaultPlayerSpeed)
+	read(r, &config.PlayerBallCooldown)
+	read(r, &config.DefaultBallSpeed)
+	read(r, &config.DefaultBallLifespan)
+	return
+}
+
+func ReadEntityIdChange(r io.Reader) (oldId message.EntityId, newId message.EntityId) {
+	read(r, &oldId)
+	read(r, &newId)
 	return
 }
 
