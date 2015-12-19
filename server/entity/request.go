@@ -49,6 +49,11 @@ func NewUpdateRequest(t message.AbsoluteTick, entity *Entity, diff *message.Enti
 	return &UpdateRequest{newRequest(t), entity, diff}
 }
 
+// TODO: move this somewhere else?
+func NewDeleteRequest(t message.AbsoluteTick, entityId message.EntityId) *DeleteRequest {
+	return &DeleteRequest{newRequest(t), entityId}
+}
+
 type Request interface {
 	message.Request
 }
