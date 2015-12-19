@@ -244,8 +244,12 @@ func SendEntityIdChange(w io.Writer, oldId message.EntityId, newId message.Entit
 }
 
 func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.EntityDiffPool) error {
+	if pool.IsEmpty() {
+		return nil
+	}
+	log.Println("Sending entities diff:", pool)
+
 	// TODO: broadcast only to clients who need it
-	log.Println("Sent entities diff:", pool)
 
 	// Created entities
 	for _, entity := range pool.Created {

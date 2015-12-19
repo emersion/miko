@@ -171,7 +171,7 @@ type EntityDiffPool struct {
 
 // Check if this diff pool is empty.
 func (dp *EntityDiffPool) IsEmpty() bool {
-	return len(dp.Created) == 0 && len(dp.Updated) == 0 && len(dp.Deleted) == 0
+	return (len(dp.Created) == 0 && len(dp.Updated) == 0 && len(dp.Deleted) == 0)
 }
 
 // Create a new diff pool.
