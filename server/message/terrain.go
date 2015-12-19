@@ -36,3 +36,10 @@ func (b *Block) Fill(t PointType) {
 		}
 	}
 }
+
+// Create a new block.
+func NewBlock() *Block {
+	return &Block{
+		Points: new(BlockPoints),
+	}
+}

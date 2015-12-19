@@ -71,6 +71,11 @@ func (e *Entity) EqualsWithDiff(other *Entity, diff *EntityDiff) bool {
 	return true
 }
 
+// Check if all of this entity's attributes equals the other's ones.
+func (e *Entity) Equals(other *Entity) bool {
+	return e.EqualsWithDiff(other, NewFilledEntityDiff(true))
+}
+
 // Initialize a new entity.
 func NewEntity() *Entity {
 	return &Entity{

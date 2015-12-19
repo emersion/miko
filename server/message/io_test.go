@@ -9,24 +9,6 @@ import (
 	"testing"
 )
 
-type mockReader struct{}
-
-func (r *mockReader) Read(p []byte) (n int, err error) {
-	return
-}
-
-type mockWriter struct{}
-
-func (w *mockWriter) Write(p []byte) (n int, err error) {
-	return
-}
-
-type mockCloser struct{}
-
-func (c *mockCloser) Close() (err error) {
-	return
-}
-
 type mockServer struct {
 	ios []*message.IO
 }
@@ -51,9 +33,7 @@ func (s *mockServer) Unlock() {
 }
 
 func TestIO_one(t *testing.T) {
-	b := &bytes.Buffer{}
-	c := &mockCloser{}
-	io := message.NewIO(0, b, b, c, nil)
+	io := newMockIO()
 
 	// One message sent over one io
 	builder.SendPing(io)
@@ -93,6 +73,7 @@ func TestIO_multiple(t *testing.T) {
 	var buffers []*bytes.Buffer
 
 	for i := 0; i < 10; i++ {
+		// TODO: use newMockIO()
 		b := &bytes.Buffer{}
 		c := &mockCloser{}
 		io := message.NewIO(0, b, b, c, s)

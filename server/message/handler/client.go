@@ -16,8 +16,6 @@ func ReadBlock(r io.Reader) *message.Block {
 	read(r, &defaultType)
 	read(r, &size)
 
-	log.Println("Receiving terrain, size:", size)
-
 	blk.Points = new(message.BlockPoints)
 	blk.Fill(defaultType)
 
@@ -28,7 +26,6 @@ func ReadBlock(r io.Reader) *message.Block {
 		read(r, &y)
 		read(r, &t)
 
-		log.Println(" Point at:", x, y, t)
 		blk.Points[x][y] = t
 	}
 
@@ -42,13 +39,55 @@ func ReadActionDone(r io.Reader) (action *message.Action) {
 	return
 }
 
-func ReadLoginResponse(r io.Reader) (code message.LoginResponseCode, t message.Tick) {
+func ReadLoginResponse(r io.Reader) (t message.Tick, code message.LoginResponseCode) {
 	read(r, &code)
 
 	if code == message.LoginResponseCodes["ok"] {
 		read(r, &t)
 	}
 
+	return
+}
+
+func ReadRegisterResponse(r io.Reader) (code message.RegisterResponseCode) {
+	read(r, &code)
+	return
+}
+
+func ReadMetaAction(r io.Reader) (t message.Tick, entityId message.EntityId, code message.MetaActionCode, username string) {
+	read(r, &t)
+	read(r, &entityId)
+	read(r, &code)
+
+	if code == message.MetaActionCodes["player_joined"] {
+		username = readString(r)
+	}
+
+	return
+}
+
+func ReadChunkUpdate(r io.Reader) (t message.Tick, blk *message.Block) {
+	read(r, &t)
+	blk = ReadBlock(r)
+	return
+}
+
+func ReadChunksUpdate(r io.Reader) (t message.Tick, blks []*message.Block) {
+	read(r, &t)
+
+	var size uint16
+	read(r, &size)
+
+	blks = make([]*message.Block, size)
+	for i := 0; i < int(size); i++ {
+		blks[i] = ReadBlock(r)
+	}
+	return
+}
+
+func ReadEntityCreate(r io.Reader) (t message.Tick, entity *message.Entity) {
+	read(r, &t)
+	entity, _ = ReadEntity(r)
 	return
 }
 
@@ -65,7 +104,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return io.Close()
 	},
 	message.Types["login_response"]: func(ctx *message.Context, io *message.IO) error {
-		code, t := ReadLoginResponse(io)
+		t, code := ReadLoginResponse(io)
 
 		if code == message.LoginResponseCodes["ok"] {
 			ctx.Clock.Sync(t)
@@ -75,15 +114,10 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["meta_action"]: func(ctx *message.Context, io *message.IO) error {
-		var entityId message.EntityId
-		var code message.MetaActionCode
-
-		readTick(io) // TODO: properly handle this tick
-		read(io, &entityId)
-		read(io, &code)
+		// TODO: properly handle this tick
+		_, entityId, code, username := ReadMetaAction(io)
 
 		if code == message.MetaActionCodes["player_joined"] {
-			username := readString(io)
 			log.Println("Player joined:", entityId, username)
 
 			if username == ctx.Me.Username {
@@ -100,9 +134,8 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["chunk_update"]: func(ctx *message.Context, io *message.IO) error {
-		t := ctx.Clock.ToAbsoluteTick(readTick(io))
-		blk := ReadBlock(io)
-		ctx.Terrain.SetBlock(blk, t)
+		t, blk := ReadChunkUpdate(io)
+		ctx.Terrain.SetBlock(blk, ctx.Clock.ToAbsoluteTick(t))
 		return nil
 	},
 	message.Types["entities_update"]: func(ctx *message.Context, io *message.IO) error {
