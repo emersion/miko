@@ -39,7 +39,12 @@ func testMessage(t *testing.T, msgType message.Type, send sender, receive receiv
 
 	receive(io, t)
 
-	// TODO: ensure io buffer is empty (no remaining data)
+	// Check that there is no more data waiting to be consumed
+	remaining := make([]byte, 1)
+	n, _ := io.Read(remaining)
+	if n != 0 {
+		t.Fatal("Some data hasn't been consumed by receiver")
+	}
 }
 
 func TestPing(t *testing.T) {
