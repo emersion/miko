@@ -6,6 +6,11 @@ import (
 
 type Null struct{}
 
-func (hb *Null) Contour(other Hitbox) []*entity.Position {
+func (hb *Null) Contour() []*entity.Position {
 	return []*entity.Position{}
+}
+
+func (hb *Null) intersects(other Hitbox) (intersects bool, err error) {
+	intersects = false
+	return
 }
