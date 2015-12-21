@@ -12,7 +12,7 @@ const (
 type Context struct {
 	contextType
 
-	Config *Config
+	Config Config
 
 	Entity  EntityService
 	Action  ActionService

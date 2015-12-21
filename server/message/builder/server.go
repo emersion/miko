@@ -224,15 +224,15 @@ func SendChatReceive(w io.Writer, t message.Tick, username string, msg string) e
 	})
 }
 
-func SendConfig(w io.Writer, config *message.Config) error {
-	return sendAll(w, []interface{}{
-		message.Types["config"],
-		config.MaxRollbackTicks,
-		config.DefaultPlayerSpeed,
-		config.PlayerBallCooldown,
-		config.DefaultBallSpeed,
-		config.DefaultBallLifespan,
-	})
+func SendConfig(w io.Writer, config message.Config) error {
+	lock(w)
+	defer unlock(w)
+
+	if err := write(w, message.Types["config"]); err != nil {
+		return err
+	}
+
+	return writeAll(w, config.Export())
 }
 
 func SendEntityIdChange(w io.Writer, oldId message.EntityId, newId message.EntityId) error {

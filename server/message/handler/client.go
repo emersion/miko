@@ -140,16 +140,6 @@ func ReadChatReceive(r io.Reader) (t message.Tick, username, msg string) {
 	return
 }
 
-func ReadConfig(r io.Reader) (config *message.Config) {
-	config = &message.Config{}
-	read(r, &config.MaxRollbackTicks)
-	read(r, &config.DefaultPlayerSpeed)
-	read(r, &config.PlayerBallCooldown)
-	read(r, &config.DefaultBallSpeed)
-	read(r, &config.DefaultBallLifespan)
-	return
-}
-
 func ReadEntityIdChange(r io.Reader) (oldId message.EntityId, newId message.EntityId) {
 	read(r, &oldId)
 	read(r, &newId)

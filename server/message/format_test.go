@@ -374,17 +374,6 @@ func TestChatReceive(t *testing.T) {
 	})
 }
 
-func TestConfig(t *testing.T) {
-	config := &message.Config{}
-
-	testMessage(t, message.Types["config"], func(io *message.IO) error {
-		return builder.SendConfig(io, config)
-	}, func(io *message.IO, t *testing.T) {
-		handler.ReadConfig(io)
-		// TODO: check received config
-	})
-}
-
 func TestEntityIdChange(t *testing.T) {
 	oldId := message.EntityId(24)
 	newId := message.EntityId(87)

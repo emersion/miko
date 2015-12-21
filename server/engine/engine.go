@@ -25,8 +25,10 @@ type Engine struct {
 	entity  *entity.Service
 	action  *action.Service
 	terrain *terrain.Terrain
-	ctx     *message.Context
-	srv     *server.Server
+	config  *Config
+
+	ctx *message.Context
+	srv *server.Server
 
 	clients map[int]*message.IO
 
@@ -47,10 +49,10 @@ func (e *Engine) processActionRequest(req *action.Request) bool {
 		ball.Type = 1   // ball
 		ball.Sprite = 2 // ball
 		ball.Position = initiator.Position
-		ball.Speed.Norm = float64(e.ctx.Config.DefaultBallSpeed)
+		ball.Speed.Norm = float64(e.config.DefaultBallSpeed)
 		ball.Speed.Angle = float64(req.Action.Params[0].(float32))
-		ball.Attributes[message.EntityAttrId(0)] = e.ctx.Config.DefaultBallLifespan // ticks_left
-		ball.Attributes[message.EntityAttrId(2)] = initiator.Id                     // sender
+		ball.Attributes[message.EntityAttrId(0)] = e.config.DefaultBallLifespan // ticks_left
+		ball.Attributes[message.EntityAttrId(2)] = initiator.Id                 // sender
 		r := entity.NewCreateRequest(req.GetTick(), ball)
 		e.entity.AcceptRequest(r)
 
@@ -330,6 +332,7 @@ func New(srv *server.Server) *Engine {
 		entity:  entity.NewService(),
 		action:  action.NewService(),
 		terrain: terrain.New(),
+		config:  DefaultConfig(),
 
 		clients: make(map[int]*message.IO),
 		stop:    make(chan bool),
@@ -341,14 +344,7 @@ func New(srv *server.Server) *Engine {
 	ctx.Action = e.action.Frontend()
 	ctx.Terrain = e.terrain
 	ctx.Clock = e.clock
-
-	ctx.Config = &message.Config{
-		MaxRollbackTicks:    uint16(message.MaxRewind),
-		DefaultPlayerSpeed:  7,
-		PlayerBallCooldown:  20,
-		DefaultBallSpeed:    9,
-		DefaultBallLifespan: 100,
-	}
+	ctx.Config = e.config
 
 	// Initialize engine submodules
 	e.mover = NewMover(e)
