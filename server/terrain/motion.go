@@ -1,4 +1,4 @@
-package entity
+package terrain
 
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"

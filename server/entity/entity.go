@@ -1,7 +1,9 @@
 package entity
 
 import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/hitbox"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 )
 
 // An entity.
@@ -10,8 +12,8 @@ import (
 type Entity struct {
 	Id         message.EntityId
 	Type       message.EntityType
-	Position   *Position
-	Speed      *Speed
+	Position   *terrain.Position
+	Speed      *terrain.Speed
 	Sprite     message.Sprite
 	Attributes map[message.EntityAttrId]interface{}
 }
@@ -50,7 +52,7 @@ func (e *Entity) ApplyDiff(d *message.EntityDiff, src *Entity) {
 	}
 
 	if d.SpeedNorm || d.SpeedAngle && e.Speed == nil {
-		e.Speed = &Speed{}
+		e.Speed = &terrain.Speed{}
 	}
 	if d.SpeedNorm {
 		e.Speed.Norm = src.Speed.Norm
@@ -68,11 +70,24 @@ func (e *Entity) ApplyDiff(d *message.EntityDiff, src *Entity) {
 	}
 }
 
+// Get this entity's hitbox.
+func (e *Entity) Hitbox() hitbox.Hitbox {
+	switch e.Sprite {
+	case 0: // placeholder
+		return hitbox.NewNull()
+	case 1: // player
+		return hitbox.NewCircle(e.Position, 10)
+	case 2: // ball
+		return hitbox.NewCircle(e.Position, 10)
+	}
+	return nil
+}
+
 // Create a new empty entity.
 func New() *Entity {
 	return &Entity{
-		Position:   &Position{},
-		Speed:      &Speed{},
+		Position:   &terrain.Position{},
+		Speed:      &terrain.Speed{},
 		Attributes: map[message.EntityAttrId]interface{}{},
 	}
 }
@@ -82,8 +97,8 @@ func NewFromMessage(src *message.Entity) *Entity {
 	return &Entity{
 		Id:         src.Id,
 		Type:       src.Type,
-		Position:   NewPositionFromMessage(src.Position),
-		Speed:      NewSpeedFromMessage(src.Speed),
+		Position:   terrain.NewPositionFromMessage(src.Position),
+		Speed:      terrain.NewSpeedFromMessage(src.Speed),
 		Sprite:     src.Sprite,
 		Attributes: src.Attributes,
 	}

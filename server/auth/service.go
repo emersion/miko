@@ -77,6 +77,15 @@ func (a *Service) Login(id int, username string, password string) message.LoginR
 
 	if code == "ok" {
 		entity := message.NewEntity()
+
+		// TODO: default values are hardcoded
+		entity.Position.BX = 20
+		entity.Position.BY = 20
+		entity.Type = 0                                            // player
+		entity.Sprite = 1                                          // player
+		entity.Attributes[message.EntityAttrId(1)] = uint16(1000)  // health
+		entity.Attributes[message.EntityAttrId(30000)] = uint16(0) // cooldown_one
+
 		a.sessions[id] = &message.Session{
 			Id:       id,
 			Username: username,

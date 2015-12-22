@@ -81,18 +81,11 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		io.State = message.LoggedIn
 
-		// Get & populate entity
+		// Get entity
 		session := ctx.Auth.GetSession(io.Id)
 		if session == nil {
 			return errors.New("Cannot get newly logged in user's session")
 		}
-		// TODO: health default value is hardcoded
-		session.Entity.Position.BX = 20
-		session.Entity.Position.BY = 20
-		session.Entity.Type = 0                                            // player
-		session.Entity.Sprite = 1                                          // player
-		session.Entity.Attributes[message.EntityAttrId(1)] = uint16(1000)  // health
-		session.Entity.Attributes[message.EntityAttrId(30000)] = uint16(0) // cooldown_one
 
 		// Send initial terrain
 		log.Println("Sending initial terrain")

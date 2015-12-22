@@ -2,15 +2,15 @@ package hitbox
 
 import (
 	"errors"
-	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
+	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 )
 
 type Point struct {
-	center *entity.Position
+	center *terrain.Position
 }
 
-func (hb *Point) Contour() []*entity.Position {
-	return []*entity.Position{hb.center}
+func (hb *Point) Contour() []*terrain.Position {
+	return []*terrain.Position{hb.center}
 }
 
 func (hb *Point) intersects(other Hitbox) (intersects bool, err error) {
@@ -30,6 +30,6 @@ func (hb *Point) intersects(other Hitbox) (intersects bool, err error) {
 	return
 }
 
-func NewPoint(center *entity.Position) *Point {
+func NewPoint(center *terrain.Position) *Point {
 	return &Point{center}
 }

@@ -1,20 +1,20 @@
 package hitbox
 
 import (
-	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
+	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 )
 
 type Circle struct {
-	center *entity.Position
+	center *terrain.Position
 	radius float64
 }
 
-func (hb *Circle) Contour() []*entity.Position {
-	contour := []*entity.Position{}
+func (hb *Circle) Contour() []*terrain.Position {
+	contour := []*terrain.Position{}
 	// TODO
 	return contour
 }
 
-func NewCircle(center *entity.Position, radius float64) *Circle {
+func NewCircle(center *terrain.Position, radius float64) *Circle {
 	return &Circle{center, radius}
 }

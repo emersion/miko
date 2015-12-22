@@ -2,7 +2,7 @@
 package hitbox
 
 import (
-	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
+	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 	"math"
 )
 
@@ -10,12 +10,12 @@ func round(f float64) int {
 	return int(math.Floor(f + .5))
 }
 
-func dist(a, b *entity.Position) float64 {
+func dist(a, b *terrain.Position) float64 {
 	return math.Sqrt(math.Pow(a.X-b.X, 2) + math.Pow(a.Y-b.Y, 2))
 }
 
 type Hitbox interface {
-	Contour() []*entity.Position
+	Contour() []*terrain.Position
 }
 
 type hitbox interface {

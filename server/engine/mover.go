@@ -4,16 +4,17 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 	"time"
 )
 
-func CheckRoute(route entity.Route, ent *entity.Entity, trn message.Terrain) *entity.Position {
-	var last entity.RouteStep
+func CheckRoute(route terrain.Route, ent *entity.Entity, trn message.Terrain) *terrain.Position {
+	var last terrain.RouteStep
 	for _, step := range route {
 		t, err := trn.GetPointAt(step[0], step[1])
 
 		if err != nil || t != message.PointType(0) {
-			return &entity.Position{float64(last[0]), float64(last[1])}
+			return &terrain.Position{float64(last[0]), float64(last[1])}
 		}
 
 		last = step
@@ -53,7 +54,7 @@ func (m *Mover) UpdateEntity(ent *entity.Entity, now message.AbsoluteTick) *enti
 	}
 
 	// Check terrain
-	route := entity.GetRouteBetween(pos, nextPos)
+	route := terrain.GetRouteBetween(pos, nextPos)
 
 	stoppedAt := CheckRoute(route, ent, m.engine.ctx.Terrain)
 	if stoppedAt != nil {
