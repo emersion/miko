@@ -18,17 +18,11 @@ func SendPong(w io.Writer) error {
 }
 
 func SendExit(w io.Writer, code message.ExitCode) error {
-	return sendAll(w, []interface{}{
-		message.Types["exit"],
-		code,
-	})
+	return send(w, message.Types["exit"], code)
 }
 
 func writeEntityUpdateBody(w io.Writer, entity *message.Entity, diff *message.EntityDiff) error {
-	if err := write(w, entity.Id); err != nil {
-		return err
-	}
-	if err := write(w, diff.GetBitfield()); err != nil {
+	if err := Write(w, entity.Id, diff.GetBitfield()); err != nil {
 		return err
 	}
 
@@ -58,5 +52,5 @@ func writeEntityUpdateBody(w io.Writer, entity *message.Entity, diff *message.En
 		}
 	}
 
-	return writeAll(w, data)
+	return Write(w, data...)
 }

@@ -6,14 +6,14 @@ import (
 )
 
 func SendVersion(w io.Writer) error {
-	return sendAll(w, []interface{}{
+	return send(w, []interface{}{
 		message.Types["version"],
 		message.CurrentVersion,
 	})
 }
 
 func SendLogin(w io.Writer, username string, password string) error {
-	return sendAll(w, []interface{}{
+	return send(w, []interface{}{
 		message.Types["login"],
 		username,
 		password,
@@ -21,7 +21,7 @@ func SendLogin(w io.Writer, username string, password string) error {
 }
 
 func SendRegister(w io.Writer, username string, password string) error {
-	return sendAll(w, []interface{}{
+	return send(w, []interface{}{
 		message.Types["register"],
 		username,
 		password,
@@ -32,10 +32,7 @@ func SendEntityUpdate(w io.Writer, t message.Tick, entity *message.Entity, diff 
 	lock(w)
 	defer unlock(w)
 
-	if err := write(w, message.Types["entity_update"]); err != nil {
-		return err
-	}
-	if err := write(w, t); err != nil {
+	if err := Write(w, message.Types["entity_update"], t); err != nil {
 		return err
 	}
 
@@ -46,14 +43,11 @@ func SendActionDo(w io.Writer, t message.Tick, action *message.Action) error {
 	lock(w)
 	defer unlock(w)
 
-	if err := write(w, message.Types["action_do"]); err != nil {
-		return err
-	}
-	if err := write(w, t); err != nil {
+	if err := Write(w, message.Types["action_do"], t); err != nil {
 		return err
 	}
 
-	if err := write(w, action.Id); err != nil {
+	if err := Write(w, action.Id); err != nil {
 		return err
 	}
 
@@ -63,13 +57,7 @@ func SendActionDo(w io.Writer, t message.Tick, action *message.Action) error {
 }
 
 func SendChatSend(w io.Writer, msg string) error {
-	lock(w)
-	defer unlock(w)
-
-	if err := write(w, message.Types["chat_send"]); err != nil {
-		return err
-	}
-	return writeString(w, msg)
+	return send(w, message.Types["chat_send"], msg)
 }
 
 func SendEntitiesDiffToServer(w io.Writer, t message.Tick, pool *message.EntityDiffPool) error {

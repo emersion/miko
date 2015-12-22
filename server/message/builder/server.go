@@ -16,32 +16,18 @@ func SendLoginResp(w io.Writer, code message.LoginResponseCode, t message.Tick) 
 		data = append(data, t)
 	}
 
-	return sendAll(w, data)
+	return send(w, data...)
 }
 
 func SendRegisterResp(w io.Writer, code message.RegisterResponseCode) error {
-	return sendAll(w, []interface{}{
-		message.Types["register_response"],
-		code,
-	})
+	return send(w, message.Types["register_response"], code)
 }
 
 func SendPlayerJoined(w io.Writer, t message.Tick, id message.EntityId, username string) error {
-	return sendAll(w, []interface{}{
-		message.Types["meta_action"],
-		t,
-		id,
-		message.MetaActionCodes["player_joined"],
-		username,
-	})
+	return send(w, message.Types["meta_action"], t, id, message.MetaActionCodes["player_joined"], username)
 }
 func SendPlayerLeft(w io.Writer, t message.Tick, id message.EntityId) error {
-	return sendAll(w, []interface{}{
-		message.Types["meta_action"],
-		t,
-		id,
-		message.MetaActionCodes["player_left"],
-	})
+	return send(w, message.Types["meta_action"], t, id, message.MetaActionCodes["player_left"])
 }
 
 func WriteBlock(w io.Writer, blk *message.Block) error {
@@ -64,16 +50,8 @@ func WriteBlock(w io.Writer, blk *message.Block) error {
 		}
 	}
 
-	if err := write(w, blk.X); err != nil {
-		return err
-	}
-	if err := write(w, blk.Y); err != nil {
-		return err
-	}
-	if err := write(w, defaultType); err != nil {
-		return err
-	}
-	if err := write(w, uint16(blk.Size()-defaultTypeCount)); err != nil {
+	size := blk.Size() - defaultTypeCount
+	if err := Write(w, blk.X, blk.Y, defaultType, uint16(size)); err != nil {
 		return err
 	}
 
@@ -84,13 +62,7 @@ func WriteBlock(w io.Writer, blk *message.Block) error {
 				continue
 			}
 
-			if err := write(w, message.PointCoord(i)); err != nil {
-				return err
-			}
-			if err := write(w, message.PointCoord(j)); err != nil {
-				return err
-			}
-			if err := write(w, ptType); err != nil {
+			if err := Write(w, message.PointCoord(i), message.PointCoord(j), ptType); err != nil {
 				return err
 			}
 		}
@@ -103,27 +75,17 @@ func SendChunkUpdate(w io.Writer, t message.Tick, blk *message.Block) error {
 	lock(w)
 	defer unlock(w)
 
-	if err := write(w, message.Types["chunk_update"]); err != nil {
+	if err := Write(w, message.Types["chunk_update"], t); err != nil {
 		return err
 	}
-	if err := write(w, t); err != nil {
-		return err
-	}
-	if err := WriteBlock(w, blk); err != nil {
-		return err
-	}
-	return nil
+	return WriteBlock(w, blk)
 }
 
 func SendChunksUpdate(w io.Writer, t message.Tick, blks []*message.Block) error {
 	lock(w)
 	defer unlock(w)
 
-	err := writeAll(w, []interface{}{
-		message.Types["chunks_update"],
-		t,
-		uint16(len(blks)),
-	})
+	err := Write(w, message.Types["chunks_update"], t, uint16(len(blks)))
 	if err != nil {
 		return err
 	}
@@ -141,10 +103,7 @@ func SendEntityCreate(w io.Writer, t message.Tick, entity *message.Entity) error
 	lock(w)
 	defer unlock(w)
 
-	if err := write(w, message.Types["entity_create"]); err != nil {
-		return err
-	}
-	if err := write(w, t); err != nil {
+	if err := Write(w, message.Types["entity_create"], t); err != nil {
 		return err
 	}
 
@@ -155,13 +114,7 @@ func SendEntitiesUpdate(w io.Writer, t message.Tick, entities []*message.Entity,
 	lock(w)
 	defer unlock(w)
 
-	if err := write(w, message.Types["entities_update"]); err != nil {
-		return err
-	}
-	if err := write(w, t); err != nil {
-		return err
-	}
-	if err := write(w, uint16(len(entities))); err != nil {
+	if err := Write(w, message.Types["entities_update"], t, uint16(len(entities))); err != nil {
 		return err
 	}
 
@@ -177,36 +130,24 @@ func SendEntitiesUpdate(w io.Writer, t message.Tick, entities []*message.Entity,
 }
 
 func SendEntityDestroy(w io.Writer, t message.Tick, id message.EntityId) error {
-	return sendAll(w, []interface{}{
-		message.Types["entity_destroy"],
-		t,
-		id,
-	})
+	return send(w, message.Types["entity_destroy"], t, id)
 }
 
 func SendActionsDone(w io.Writer, t message.Tick, actions []*message.Action) error {
 	lock(w)
 	defer unlock(w)
 
-	err := writeAll(w, []interface{}{
-		message.Types["actions_done"],
-		t,
-		uint16(len(actions)),
-	})
+	err := Write(w, message.Types["actions_done"], t, uint16(len(actions)))
 	if err != nil {
 		return err
 	}
 
 	for _, action := range actions {
-		err := writeAll(w, []interface{}{
-			action.Initiator,
-			action.Id,
-		})
+		err := Write(w, action.Initiator, action.Id)
 		if err != nil {
 			return err
 		}
-
-		err = writeAll(w, action.Params)
+		err = Write(w, action.Params...)
 		if err != nil {
 			return err
 		}
@@ -216,31 +157,23 @@ func SendActionsDone(w io.Writer, t message.Tick, actions []*message.Action) err
 }
 
 func SendChatReceive(w io.Writer, t message.Tick, username string, msg string) error {
-	return sendAll(w, []interface{}{
-		message.Types["chat_receive"],
-		t,
-		username,
-		msg,
-	})
+	return send(w, message.Types["chat_receive"], t, username, msg)
 }
 
 func SendConfig(w io.Writer, config message.Config) error {
 	lock(w)
 	defer unlock(w)
 
-	if err := write(w, message.Types["config"]); err != nil {
+	if err := Write(w, message.Types["config"]); err != nil {
 		return err
 	}
 
-	return writeAll(w, config.Export())
+	_, err := config.WriteTo(w)
+	return err
 }
 
 func SendEntityIdChange(w io.Writer, oldId message.EntityId, newId message.EntityId) error {
-	return sendAll(w, []interface{}{
-		message.Types["entity_id_change"],
-		oldId,
-		newId,
-	})
+	return send(w, message.Types["entity_id_change"], oldId, newId)
 }
 
 func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.EntityDiffPool) error {

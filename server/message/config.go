@@ -1,7 +1,11 @@
 package message
 
+import (
+	"io"
+)
+
 // The server config.
 type Config interface {
-	Export() []interface{}
-	Import([]interface{})
+	io.ReaderFrom
+	io.WriterTo
 }

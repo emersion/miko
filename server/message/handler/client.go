@@ -11,10 +11,9 @@ func ReadBlock(r io.Reader) *message.Block {
 
 	var defaultType message.PointType
 	var size uint16
-	read(r, &blk.X)
-	read(r, &blk.Y)
-	read(r, &defaultType)
-	read(r, &size)
+	Read(r, &blk.X, &blk.Y)
+	Read(r, &defaultType)
+	Read(r, &size)
 
 	blk.Points = new(message.BlockPoints)
 	blk.Fill(defaultType)
@@ -22,9 +21,7 @@ func ReadBlock(r io.Reader) *message.Block {
 	var x, y message.PointCoord
 	var t message.PointType
 	for i := 0; i < int(size); i++ {
-		read(r, &x)
-		read(r, &y)
-		read(r, &t)
+		Read(r, &x, &y, &t)
 
 		blk.Points[x][y] = t
 	}
@@ -35,51 +32,48 @@ func ReadBlock(r io.Reader) *message.Block {
 func ReadActionDone(r io.Reader) (action *message.Action) {
 	action = message.NewAction()
 
-	read(r, &action.Initiator)
-	read(r, &action.Id)
+	Read(r, &action.Initiator, &action.Id)
 	// TODO: action params
 
 	return
 }
 
 func ReadLoginResponse(r io.Reader) (t message.Tick, code message.LoginResponseCode) {
-	read(r, &code)
+	Read(r, &code)
 
 	if code == message.LoginResponseCodes["ok"] {
-		read(r, &t)
+		Read(r, &t)
 	}
 
 	return
 }
 
 func ReadRegisterResponse(r io.Reader) (code message.RegisterResponseCode) {
-	read(r, &code)
+	Read(r, &code)
 	return
 }
 
 func ReadMetaAction(r io.Reader) (t message.Tick, entityId message.EntityId, code message.MetaActionCode, username string) {
-	read(r, &t)
-	read(r, &entityId)
-	read(r, &code)
+	Read(r, &t, &entityId, &code)
 
 	if code == message.MetaActionCodes["player_joined"] {
-		username = readString(r)
+		Read(r, &username)
 	}
 
 	return
 }
 
 func ReadChunkUpdate(r io.Reader) (t message.Tick, blk *message.Block) {
-	read(r, &t)
+	Read(r, &t)
 	blk = ReadBlock(r)
 	return
 }
 
 func ReadChunksUpdate(r io.Reader) (t message.Tick, blks []*message.Block) {
-	read(r, &t)
+	Read(r, &t)
 
 	var size uint16
-	read(r, &size)
+	Read(r, &size)
 
 	blks = make([]*message.Block, size)
 	for i := 0; i < int(size); i++ {
@@ -89,16 +83,16 @@ func ReadChunksUpdate(r io.Reader) (t message.Tick, blks []*message.Block) {
 }
 
 func ReadEntityCreate(r io.Reader) (t message.Tick, entity *message.Entity) {
-	read(r, &t)
+	Read(r, &t)
 	entity, _ = ReadEntity(r)
 	return
 }
 
 func ReadEntitiesUpdate(r io.Reader) (t message.Tick, entities []*message.Entity, diffs []*message.EntityDiff) {
-	read(r, &t)
+	Read(r, &t)
 
 	var size uint16
-	read(r, &size)
+	Read(r, &size)
 
 	entities = make([]*message.Entity, size)
 	diffs = make([]*message.EntityDiff, size)
@@ -114,16 +108,15 @@ func ReadEntitiesUpdate(r io.Reader) (t message.Tick, entities []*message.Entity
 }
 
 func ReadEntityDestroy(r io.Reader) (t message.Tick, id message.EntityId) {
-	read(r, &t)
-	read(r, &id)
+	Read(r, &t, &id)
 	return
 }
 
 func ReadActionsDone(r io.Reader) (t message.Tick, actions []*message.Action) {
-	read(r, &t)
+	Read(r, &t)
 
 	var size uint16
-	read(r, &size)
+	Read(r, &size)
 
 	actions = make([]*message.Action, size)
 	for i := 0; i < int(size); i++ {
@@ -134,15 +127,17 @@ func ReadActionsDone(r io.Reader) (t message.Tick, actions []*message.Action) {
 }
 
 func ReadChatReceive(r io.Reader) (t message.Tick, username, msg string) {
-	read(r, &t)
-	username = readString(r)
-	msg = readString(r)
+	Read(r, &t, &username, &msg)
 	return
 }
 
+func ReadConfig(r io.Reader, config message.Config) error {
+	config.ReadFrom(r)
+	return nil
+}
+
 func ReadEntityIdChange(r io.Reader) (oldId message.EntityId, newId message.EntityId) {
-	read(r, &oldId)
-	read(r, &newId)
+	Read(r, &oldId, &newId)
 	return
 }
 
@@ -192,7 +187,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		t := ctx.Clock.ToAbsoluteTick(readTick(io))
 
 		var size uint16
-		read(io, &size)
+		Read(io, &size)
 
 		for i := 0; i < int(size); i++ {
 			entity, diff := ReadEntity(io)
@@ -222,7 +217,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		t := ctx.Clock.ToAbsoluteTick(readTick(io))
 
 		var entityId message.EntityId
-		read(io, &entityId)
+		Read(io, &entityId)
 		ctx.Entity.Delete(entityId, t)
 		ctx.Entity.Flush()
 
@@ -233,7 +228,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		readTick(io) // TODO: properly handle this tick
 
 		var size uint16
-		read(io, &size)
+		Read(io, &size)
 
 		for i := 0; i < int(size); i++ {
 			action := ReadActionDone(io)
@@ -244,8 +239,9 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["chat_receive"]: func(ctx *message.Context, io *message.IO) error {
-		username := readString(io)
-		msg := readString(io)
+		var username, msg string
+		Read(io, &username)
+		Read(io, &msg)
 
 		log.Println("Chat:", username, msg)
 		return nil

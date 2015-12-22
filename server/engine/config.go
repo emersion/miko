@@ -1,7 +1,11 @@
 package engine
 
 import (
+	"io"
+
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
 )
 
 type Config struct {
@@ -12,22 +16,16 @@ type Config struct {
 	DefaultBallLifespan uint16
 }
 
-func (c *Config) Export() []interface{} {
-	return []interface{}{
-		c.MaxRollbackTicks,
-		c.DefaultPlayerSpeed,
-		c.PlayerBallCooldown,
-		c.DefaultBallSpeed,
-		c.DefaultBallLifespan,
-	}
+func (c *Config) WriteTo(w io.Writer) (n int64, err error) {
+	err = builder.Write(w, c.MaxRollbackTicks, c.DefaultPlayerSpeed,
+		c.PlayerBallCooldown, c.DefaultBallSpeed, c.DefaultBallLifespan)
+	return
 }
 
-func (c *Config) Import(data []interface{}) {
-	c.MaxRollbackTicks = data[0].(uint16)
-	c.DefaultPlayerSpeed = data[1].(float32)
-	c.PlayerBallCooldown = data[2].(uint16)
-	c.DefaultBallSpeed = data[3].(float32)
-	c.DefaultBallLifespan = data[4].(uint16)
+func (c *Config) ReadFrom(r io.Reader) (n int64, err error) {
+	err = handler.Read(r, &c.MaxRollbackTicks, &c.DefaultPlayerSpeed,
+		&c.PlayerBallCooldown, &c.DefaultBallSpeed, &c.DefaultBallLifespan)
+	return
 }
 
 func DefaultConfig() *Config {

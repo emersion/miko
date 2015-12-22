@@ -2,10 +2,10 @@ package builder
 
 import (
 	"encoding/binary"
-	//"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"io"
-	//"log"
 	"sync"
+	//"log"
+	//"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 func write(w io.Writer, data interface{}) error {
@@ -29,17 +29,18 @@ func writeString(w io.Writer, data string) error {
 	return nil
 }
 
-func writeAll(w io.Writer, data []interface{}) error {
+func Write(w io.Writer, data ...interface{}) error {
 	for _, item := range data {
-		var err error
-		switch item.(type) {
-		case string:
-			err = writeString(w, item.(string))
-		default:
-			err = write(w, item)
-		}
-		if err != nil {
-			return err
+		if str, ok := item.(string); ok {
+			err := writeString(w, str)
+			if err != nil {
+				return err
+			}
+		} else {
+			err := write(w, item)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -61,16 +62,9 @@ func unlock(w io.Writer) {
 	}
 }
 
-func send(w io.Writer, data interface{}) error {
+func send(w io.Writer, data ...interface{}) error {
 	lock(w)
 	defer unlock(w)
 
-	return write(w, data)
-}
-
-func sendAll(w io.Writer, data []interface{}) error {
-	lock(w)
-	defer unlock(w)
-
-	return writeAll(w, data)
+	return Write(w, data...)
 }

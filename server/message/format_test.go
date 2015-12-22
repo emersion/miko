@@ -2,10 +2,12 @@ package message_test
 
 import (
 	"bytes"
+	"io"
+	"testing"
+
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
-	"testing"
 )
 
 type mockCloser struct{}
@@ -370,6 +372,46 @@ func TestChatReceive(t *testing.T) {
 		}
 		if rmsg != msg {
 			t.Fatal("Sent message", msg, "but received", rmsg)
+		}
+	})
+}
+
+type config struct {
+	Int    int64
+	Float  float64
+	String string
+}
+
+func (c *config) WriteTo(w io.Writer) (n int64, err error) {
+	err = builder.Write(w, c.Int, c.Float, c.String)
+	return
+}
+
+func (c *config) ReadFrom(r io.Reader) (n int64, err error) {
+	err = handler.Read(r, &c.Int, &c.Float, &c.String)
+	return
+}
+
+func TestConfig(t *testing.T) {
+	conf := &config{42, 69.97543, "Hello World!"}
+
+	testMessage(t, message.Types["config"], func(io *message.IO) error {
+		return builder.SendConfig(io, conf)
+	}, func(io *message.IO, t *testing.T) {
+		rconf := &config{}
+		err := handler.ReadConfig(io, rconf)
+		if err != nil {
+			t.Fatal("Error while reading config:", err)
+		}
+
+		if conf.Int != rconf.Int {
+			t.Fatal("Sent config item Int with value", conf.Int, "but received", rconf.Int)
+		}
+		if conf.Float != rconf.Float {
+			t.Fatal("Sent config item Float with value", conf.Float, "but received", rconf.Float)
+		}
+		if conf.String != rconf.String {
+			t.Fatal("Sent config item String with value", conf.String, "but received", rconf.String)
 		}
 	})
 }

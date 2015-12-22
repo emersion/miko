@@ -8,20 +8,33 @@ import (
 	"log"
 )
 
+func ReadVersion(r io.Reader) (version message.ProtocolVersion) {
+	Read(r, &version)
+	return
+}
+
+func ReadLogin(r io.Reader) (username, password string) {
+	Read(r, &username, &password)
+	return
+}
+
+func ReadRegister(r io.Reader) (username, password string) {
+	Read(r, &username, &password)
+	return
+}
+
 func ReadChatSend(r io.Reader) (msg string) {
-	msg = readString(r)
+	Read(r, &msg)
 	return
 }
 
 var serverHandlers = &map[message.Type]TypeHandler{
 	message.Types["version"]: func(ctx *message.Context, io *message.IO) error {
-		var version message.ProtocolVersion
-		read(io, &version)
-		io.Version = version
+		io.Version = ReadVersion(io)
 
-		if version != message.CurrentVersion {
+		if io.Version != message.CurrentVersion {
 			code := message.ExitCodes["client_outdated"]
-			if version > message.CurrentVersion {
+			if io.Version > message.CurrentVersion {
 				code = message.ExitCodes["server_outdated"]
 			}
 
@@ -53,8 +66,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["login"]: func(ctx *message.Context, io *message.IO) error {
-		username := readString(io)
-		password := readString(io)
+		username, password := ReadLogin(io)
 
 		code := ctx.Auth.Login(io.Id, username, password)
 		if err := builder.SendLoginResp(io, code, ctx.Clock.GetRelativeTick()); err != nil {
@@ -162,8 +174,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		return nil
 	},
 	message.Types["register"]: func(ctx *message.Context, io *message.IO) error {
-		username := readString(io)
-		password := readString(io)
+		username, password := ReadRegister(io)
 
 		code := ctx.Auth.Register(io.Id, username, password)
 
@@ -173,12 +184,11 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	},
 	message.Types["terrain_request"]: func(ctx *message.Context, io *message.IO) error {
 		var size uint8
-		read(io, &size)
+		Read(io, &size)
 
 		for i := 0; i < int(size); i++ {
 			var x, y message.BlockCoord
-			read(io, &x)
-			read(io, &y)
+			Read(io, &x, &y)
 
 			blk, err := ctx.Terrain.GetBlockAt(x, y)
 			if err != nil {
@@ -215,14 +225,13 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		}
 
 		t := ctx.Clock.ToAbsoluteTick(readTick(io))
-		read(io, &action.Id)
+		Read(io, &action.Id)
 
 		// TODO: move action params somewhere else
 		if action.Id == 0 { // throw_ball
 			var angle float32
 			var tmpId message.EntityId
-			read(io, &angle)
-			read(io, &tmpId)
+			Read(io, &angle, &tmpId)
 			log.Println("Received ball action:", angle, tmpId)
 
 			action.Params = []interface{}{angle, tmpId}
