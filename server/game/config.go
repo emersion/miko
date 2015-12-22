@@ -1,4 +1,4 @@
-package engine
+package game
 
 import (
 	"io"
@@ -11,9 +11,9 @@ import (
 type Config struct {
 	MaxRollbackTicks    uint16
 	DefaultPlayerSpeed  float32
-	PlayerBallCooldown  uint16
+	PlayerBallCooldown  Cooldown
 	DefaultBallSpeed    float32
-	DefaultBallLifespan uint16
+	DefaultBallLifespan Health
 }
 
 func (c *Config) WriteTo(w io.Writer) (n int64, err error) {

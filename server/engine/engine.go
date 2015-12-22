@@ -8,6 +8,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/auth"
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
+	"git.emersion.fr/saucisse-royale/miko.git/server/game"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
@@ -25,7 +26,7 @@ type Engine struct {
 	entity  *entity.Service
 	action  *action.Service
 	terrain *terrain.Terrain
-	config  *Config
+	config  *game.Config
 
 	ctx *message.Context
 	srv *server.Server
@@ -41,18 +42,18 @@ func (e *Engine) processEntityRequest(req entity.Request) bool {
 }
 
 func (e *Engine) processActionRequest(req *action.Request) bool {
-	if req.Action.Id == 0 { // throw_ball
+	if req.Action.Id == game.ThrowBallAction {
 		log.Println("Accepting ball", req)
 
 		initiator := e.entity.Get(req.Action.Initiator)
 		ball := entity.New()
-		ball.Type = 1   // ball
-		ball.Sprite = 2 // ball
+		ball.Type = game.BallEntity
+		ball.Sprite = game.BallSprite
 		ball.Position = initiator.Position
 		ball.Speed.Norm = float64(e.config.DefaultBallSpeed)
 		ball.Speed.Angle = float64(req.Action.Params[0].(float32))
-		ball.Attributes[message.EntityAttrId(0)] = e.config.DefaultBallLifespan // ticks_left
-		ball.Attributes[message.EntityAttrId(2)] = initiator.Id                 // sender
+		ball.Attributes[game.TicksLeftAttr] = e.config.DefaultBallLifespan
+		ball.Attributes[game.SenderAttr] = initiator.Id
 		r := entity.NewCreateRequest(req.GetTick(), ball)
 		e.entity.AcceptRequest(r)
 
@@ -332,7 +333,7 @@ func New(srv *server.Server) *Engine {
 		entity:  entity.NewService(),
 		action:  action.NewService(),
 		terrain: terrain.New(),
-		config:  DefaultConfig(),
+		config:  game.DefaultConfig(),
 
 		clients: make(map[int]*message.IO),
 		stop:    make(chan bool),

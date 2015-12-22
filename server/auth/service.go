@@ -2,6 +2,7 @@
 package auth
 
 import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/game"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
@@ -81,10 +82,10 @@ func (a *Service) Login(id int, username string, password string) message.LoginR
 		// TODO: default values are hardcoded
 		entity.Position.BX = 20
 		entity.Position.BY = 20
-		entity.Type = 0                                            // player
-		entity.Sprite = 1                                          // player
-		entity.Attributes[message.EntityAttrId(1)] = uint16(1000)  // health
-		entity.Attributes[message.EntityAttrId(30000)] = uint16(0) // cooldown_one
+		entity.Type = game.PlayerEntity
+		entity.Sprite = game.PlayerSprite
+		entity.Attributes[game.HealthAttr] = game.Health(1000)
+		entity.Attributes[game.CooldownOneAttr] = game.Cooldown(0)
 
 		a.sessions[id] = &message.Session{
 			Id:       id,
