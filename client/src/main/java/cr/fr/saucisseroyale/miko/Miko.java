@@ -18,10 +18,9 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.List;
 import java.util.prefs.Preferences;
-
-import javax.swing.UIManager;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,11 +58,6 @@ public class Miko implements MessageHandler {
   private long accumulator;
   private float alpha; // for #render(), updated each loop
 
-  static {
-    // set properties before anything is loaded
-    System.setProperty("sun.java2d.opengl", "true"); // use the opengl pipeline
-  }
-
   private void exit() {
     logger.info("Starts exiting");
     if (window != null) {
@@ -75,30 +69,27 @@ public class Miko implements MessageHandler {
     System.exit(0);
   }
 
-  private void initWindow() {
-    // TODO uncomment this when stylesheet design is done
-    // SynthLookAndFeel lookAndFeel = new SynthLookAndFeel();
-    // try {
-    // lookAndFeel.load(Miko.class.getResourceAsStream("/style.xml"), Miko.class);
-    // } catch (ParseException e) {
-    // // should never happen on normal releases
-    // throw new RuntimeException(e);
-    // }
-    // try {
-    // UIManager.setLookAndFeel(lookAndFeel);
-    // } catch (UnsupportedLookAndFeelException e) {
-    // // will never be thrown, SynthLookAndFeel#isSupportedLookAndFeel() never returns false
-    // throw new RuntimeException(e);
-    // }
+  private void disconnect() {
+    networkClient.disconnect();
+    lastMessageReceived = Long.MAX_VALUE;
+    changeStateTo(MikoState.CONNECTION_REQUEST);
+  }
 
-    // temporary l&f instead
+  private void initWindow() {
+
+    // TODO utiliser un synth l&f une fois que le xml est écrit.
     try {
-      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-    } catch (Exception e) {
-      // will never throw according to doc
-      // if it does, silently ignore
-      // don't even bother stack tracing
+      UiWindow.initUI(Miko.class.getResourceAsStream("/style.xml"), Miko.class);
+    } catch (ParseException e) {
+      // should never happen in production
+      // dump stack trace for developers
+      logger.fatal("Couldn't parse Miko UI Style", e);
+      e.printStackTrace();
+      exit();
     }
+
+    // utiliser un par défaut en attendant
+    UiWindow.initUI();
 
     boolean fullscreen = uiPrefsNode.getBoolean("fullscreen", false);
 
@@ -195,10 +186,8 @@ public class Miko implements MessageHandler {
       networkClient.connect(address, port);
     } catch (IOException e) {
       logger.warn("Connection error, disconnecting");
-      networkClient.disconnect();
-      uiConnect.setStatusText("Erreur de connexion : erreur d'établissement de connexion: " + e.getClass().getCanonicalName() + ": "
-          + e.getLocalizedMessage());
-      changeStateTo(MikoState.CONNECTION_REQUEST);
+      uiConnect.setStatusText("Erreur d'établissement de connexion: " + e.getClass().getCanonicalName() + ": " + e.getLocalizedMessage());
+      disconnect();
       return;
     }
     changeStateTo(MikoState.CONFIG);
@@ -260,10 +249,9 @@ public class Miko implements MessageHandler {
       case REGISTER:
       case CONFIG:
         // ...disconnect and return to connection panel
-        networkClient.disconnect();
         logger.warn("Exited due to user request");
         uiConnect.setStatusText("Déconnecté par l'utilisateur");
-        changeStateTo(MikoState.CONNECTION_REQUEST);
+        disconnect();
         break;
       default:
         // ignore
@@ -397,7 +385,6 @@ public class Miko implements MessageHandler {
 
   @Override
   public void exit(ExitType exitType) {
-    networkClient.disconnect();
     logger.warn("Exited because of {} exit message", exitType);
     String statusMessage;
     switch (exitType) {
@@ -430,7 +417,7 @@ public class Miko implements MessageHandler {
         break;
     }
     uiConnect.setStatusText(statusMessage);
-    changeStateTo(MikoState.CONNECTION_REQUEST);
+    disconnect();
   }
 
   @Override
@@ -481,17 +468,15 @@ public class Miko implements MessageHandler {
               tickRemainder);
     } catch (IOException e) {
       uiConnect.setStatusText("Erreur lors de la création du jeu : erreur de lecture de données.");
-      changeStateTo(MikoState.CONNECTION_REQUEST);
+      disconnect();
     }
   }
 
   @Override
   public void networkError(Exception e) {
-    logger.error("Network error, disconnecting");
-    networkClient.disconnect();
+    logger.error("Network error, disconnecting", e);
     uiConnect.setStatusText("Déconnexion forcée : erreur de réseau : " + e.getClass().getCanonicalName() + ": " + e.getLocalizedMessage());
-    e.printStackTrace();
-    changeStateTo(MikoState.CONNECTION_REQUEST);
+    disconnect();
   }
 
   @Override

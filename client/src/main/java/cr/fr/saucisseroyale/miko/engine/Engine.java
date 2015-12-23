@@ -74,7 +74,8 @@ public class Engine {
 
   private int playerEntityId = -1;
 
-  private long lastDisposedTick = Long.MIN_VALUE;
+  private long lastDisposedTick = -1;
+  private long lastReceivedTick = -1;
   private long lastTick;
   private boolean initialized = false;
 
@@ -196,16 +197,21 @@ public class Engine {
           long spriteTime = entityManager.getSpriteTime(lastTick, entityId);
           spriteManager.drawSpriteType(graphics, spriteType, spriteTime, terrainPoint.getX(), terrainPoint.getY());
         };
+
     entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.PLAYER).forEach(draw);
     entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.BALL).forEach(draw);
 
-    // TODO draw chat
+    int chatLineHeight = graphics.getFontMetrics().getHeight();
+    int yChatPosition = screenHeight - chatLineHeight;
+    for (String line : chatManager.getMessages()) {
+      graphics.drawString(line, 10, yChatPosition);
+      yChatPosition -= chatLineHeight;
+    }
   }
 
   public void freeTime() {
     // we've got some time to dipose the old ticks
-    long disposeTick = lastTick - (config.getMaxRollbackTicks() + 100); // +100 to be safe, TODO
-    // choose better number
+    long disposeTick = lastReceivedTick - config.getMaxRollbackTicks();
     terrainManager.disposeUntilTick(disposeTick);
     entityManager.disposeUntilTick(disposeTick);
     playerManager.disposeUntilTick(disposeTick);
@@ -409,6 +415,9 @@ public class Engine {
     long previousUpdatedTick = -1L;
     for (EngineMessage engineMessage : messagesBuffer) {
       long tick = engineMessage.getTick();
+      if (tick <= lastDisposedTick) {
+        throw new IllegalStateException("Tick " + tick + " has already been disposed");
+      }
       if (previousUpdatedTick != -1 && previousUpdatedTick != tick) {
         // redo logic until this tick
         for (long updateTick = previousUpdatedTick; updateTick < tick; updateTick++) {
@@ -469,6 +478,7 @@ public class Engine {
     }
     messagesBuffer = new ArrayList<>();
     if (previousUpdatedTick != -1) {
+      lastReceivedTick = previousUpdatedTick > lastReceivedTick ? previousUpdatedTick : lastReceivedTick;
       // update to current tick
       for (long updateTick = previousUpdatedTick; updateTick < lastTick; updateTick++) {
         updateTickAfter(updateTick);
@@ -527,6 +537,14 @@ public class Engine {
     }
     playerEntityId = entityId;
     logger.debug("Set player entity id to {}", entityId);
+  }
+
+  public void wroteMessage(String message) {
+    // TODO call this from miko
+    String formattedMessage = formatMessage(lastTick, playerEntityId, message);
+    chatManager.addMessage(formattedMessage);
+    messageOutput.accept(OutputMessageFactory.chatSend(message));
+    logger.info("Sent chat message");
   }
 
   private long getTick(int tickRemainder) {

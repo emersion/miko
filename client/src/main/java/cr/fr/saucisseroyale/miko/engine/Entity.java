@@ -16,8 +16,6 @@ import java.util.Set;
  */
 class Entity {
 
-  // TODO vérifier si c'est plus rapide avec arraysnaphosts qu'avec linkedsnapshots
-
   private final Snapshots<MapPoint> mapPoints;
   private final Snapshots<Float> speedAngles;
   private final Snapshots<Float> speedNorms;
@@ -29,6 +27,7 @@ class Entity {
   private long tickSwitchedSprite;
 
   public Entity() {
+    // TODO linked ou array snapshots?
     mapPoints = new Snapshots<>();
     speedAngles = new Snapshots<>();
     speedNorms = new Snapshots<>();

@@ -2,10 +2,11 @@ package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.util.Pair;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 /**
  * Un gestionnaire des messages de chat reçus par le client.
@@ -32,7 +33,7 @@ class ChatManager {
    *
    * @return Les messages récents.
    */
-  public Stream<String> getMessages() {
+  public List<String> getMessages() {
     long oldMessageslimit = System.nanoTime() - MESSAGES_DURATION;
     Iterator<Pair.Long<String>> messagesIterator = messages.iterator();
     while (messagesIterator.hasNext()) {
@@ -42,6 +43,6 @@ class ChatManager {
       }
       messagesIterator.remove();
     }
-    return messages.stream().map(Pair.Long<String>::getSecond);
+    return messages.stream().map(Pair.Long<String>::getSecond).collect(Collectors.toCollection(ArrayList::new));
   }
 }

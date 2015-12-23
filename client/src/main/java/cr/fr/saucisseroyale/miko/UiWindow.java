@@ -25,14 +25,20 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferStrategy;
+import java.io.InputStream;
+import java.text.ParseException;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.LookAndFeel;
 import javax.swing.RepaintManager;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
+import javax.swing.plaf.synth.SynthLookAndFeel;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,6 +53,8 @@ import org.apache.logging.log4j.Logger;
  * les composants d'UI visibles.
  * <p>
  * <ul>
+ * <li>Pour initialiser le système d'UI <b>(impératif avant d'utiliser les autres méthodes)</b>,
+ * utiliser {@link #initUI()} ou {@link #initUI(InputStream, Class)}.
  * <li>Pour ajouter un composant d'UI à la fenêtre, utiliser {@link #addUi(JComponent)}.
  * <li>Pour le rendre visible, utiliser {@link #showUi(JComponent)}.
  * <li>Pour le cacher, utiliser {@link #hideUi(JComponent)}.
@@ -130,7 +138,8 @@ class UiWindow {
   private static final Integer UI_VISIBLE_LAYER = Integer.valueOf(1);
   private static final Integer UI_HIDDEN_LAYER = Integer.valueOf(-1);
   private static final Integer MAIN_LAYER = Integer.valueOf(0);
-  private static Logger logger = LogManager.getLogger("miko.ui");
+  private static final Class<?> openglGraphicsConfigClass;
+  private static Logger logger;
   private Runnable closeListener;
   private IntConsumer globalKeyDownListener;
   private JFrame frame; // will be null when we're disposed
@@ -143,8 +152,72 @@ class UiWindow {
   private int width;
   private int height;
 
+  static {
+    // initialize logger before we use it
+    logger = LogManager.getLogger("miko.ui");
+    // set properties before anything is loaded
+    boolean isWindowsGraphicsEnvironment = System.getProperty("java.awt.graphicsenv").equals("sun.awt.Win32GraphicsEnvironment");
+    if (isWindowsGraphicsEnvironment) {
+      logger.debug("Direct3D pipeline requested");
+      System.setProperty("sun.java2d.d3d", "true"); // use the d3d pipeline
+      System.setProperty("sun.java2d.opengl", "false"); // disable the opengl pipeline
+      openglGraphicsConfigClass = null;
+    } else {
+      logger.debug("OpenGL pipeline requested");
+      System.setProperty("sun.java2d.opengl", "true"); // use the opengl pipeline
+      System.setProperty("sun.java2d.xrender", "false"); // disable the xrender pipeline
+      try {
+        openglGraphicsConfigClass = Class.forName("sun.java2d.opengl.OGLGraphicsConfig");
+      } catch (ClassNotFoundException e) {
+        String errorMessage = "Interface OGLGraphicsConfig not found, try updating your drivers. OpenGL needs to be supported.";
+        logger.fatal(errorMessage);
+        throw new InternalError(errorMessage);
+      }
+    }
+  }
+
   /**
-   * Tente de créer et afficher la fenêtre sur l'écran par défaut.
+   * Initialise le système d'Ui avec un {@link SynthLookAndFeel}. Le {@link LookAndFeel} de la
+   * fenêtre sera choisi comme par appel de {@link SynthLookAndFeel#load(InputStream, Class)} avec
+   * les arguments spécifiés en paramètre.
+   * <p>
+   * <b>Doit être appelé avant appel à toute classe liée aux graphismes.</b>
+   *
+   * @param input Le stream depuis lequel charger la configuration de SynthL&F.
+   * @param resourceBase Utilisé pour resolve les chemins de certains fichiers utilisés dans le L&F.
+   *
+   * @throws ParseException S'il y a une erreur lors du parsing de la configuration de Synth L&F.
+   */
+  public static void initUI(InputStream input, Class<?> resourceBase) throws ParseException {
+    SynthLookAndFeel lookAndFeel = new SynthLookAndFeel();
+    lookAndFeel.load(input, resourceBase);
+    try {
+      UIManager.setLookAndFeel(lookAndFeel);
+    } catch (UnsupportedLookAndFeelException e) {
+      // will never be thrown, SynthLookAndFeel#isSupportedLookAndFeel() never returns false
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Initialise le système d'Ui avec un {@link LookAndFeel} par défaut.
+   * <p>
+   * <b>Doit être appelé avant appel à toute classe liée aux graphismes.</b>
+   *
+   */
+  public static void initUI() {
+    try {
+      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+      // will never be thrown according to UIManager documentation
+      // throw RE if it does
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Tente de créer et afficher la fenêtre sur un écran. L'écran choisi peut dépendre de la position
+   * de la souris au moment de l'appel à cette méthode.
    * <p>
    * La fenêtre ne sera pas forcément affichée en plein écran ; récupérer l'état final avec
    * {@link #isFullscreen()}.
@@ -154,75 +227,46 @@ class UiWindow {
    * @throws IllegalStateException Si {@code show} ou {@link #dispose()} a déjà été appelé.
    */
   public UiWindow(boolean fullscreen) {
-    this(GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice(), fullscreen);
+    this(MouseInfo.getPointerInfo().getDevice(), fullscreen);
   }
 
   /**
    * Tente de créer et afficher la fenêtre sur l'écran spécifié.
    * <p>
-   * La fenêtre ne sera pas forcément affichée en plein écran ; récupérer l'état final avec
-   * {@link #isFullscreen()}.
+   * La fenêtre ne sera pas forcément affichée en plein écran ou sur l'écran spécifié ; récupérer
+   * l'état final avec {@link #isFullscreen()} et {@link #getDevice()}.
    *
-   * @param device L'écran sur lequel tenter d'afficher la fenêtre.
+   * @param requestedDevice L'écran sur lequel tenter d'afficher la fenêtre.
    * @param requestedFullscreen Si la fenêtre doit être en plein écran exclusif ou en fenêtré sans
    *        bordures.
    *
    * @throws IllegalStateException Si {@code show} ou {@link #dispose()} a déjà été appelé.
    */
-  public UiWindow(GraphicsDevice device, boolean requestedFullscreen) {
-    this.device = device;
+  public UiWindow(GraphicsDevice requestedDevice, boolean requestedFullscreen) {
     // make sure we have control over repainting before trying anything
     Toolkit.getDefaultToolkit().getSystemEventQueue().push(new SynchronizedEventQueue(uiLock));
     RepaintManager.setCurrentManager(new RepaintDisabler());
-    Class<?> openglGraphicsConfigClass;
-    try {
-      openglGraphicsConfigClass = Class.forName("sun.java2d.opengl.OGLGraphicsConfig");
-    } catch (ClassNotFoundException e) {
-      String errorMessage = "Interface OGLGraphicsConfig not found.";
-      logger.fatal(errorMessage);
-      throw new InternalError(errorMessage);
+    GraphicsConfiguration configuration;
+    if (openglGraphicsConfigClass == null) {
+      // using the d3d pipeline
+      // using the default configuration will work fine
+      configuration = requestedDevice.getDefaultConfiguration();
+    } else {
+      // use the opengl pipeline
+      configuration = getBestOGLGraphicsConfiguration(requestedDevice, requestedFullscreen);
     }
-    GraphicsConfiguration bestConfiguration = null;
-    for (GraphicsConfiguration gc : device.getConfigurations()) {
-      // drop non opengl configurations
-      if (!openglGraphicsConfigClass.isAssignableFrom(gc.getClass())) {
-        continue;
-      }
-      // drop non page-flipping configurations
-      if (!gc.getBufferCapabilities().isPageFlipping()) {
-        continue;
-      }
-      // additionally drop fullscreen-only page-flipping configurations if we're requesting windowed
-      // mode
-      if (!requestedFullscreen && gc.getBufferCapabilities().isFullScreenRequired()) {
-        continue;
-      }
-      // drop non accelerated configurations
-      if (!gc.getImageCapabilities().isAccelerated()) {
-        continue;
-      }
-      // drop non double accelereated configurations
-      if (!gc.getBufferCapabilities().getFrontBufferCapabilities().isAccelerated()
-          || !gc.getBufferCapabilities().getBackBufferCapabilities().isAccelerated()) {
-        continue;
-      }
-      // drop null flip contents to make sure we do support vsync
-      if (gc.getBufferCapabilities().getFlipContents() == null) {
-        continue;
-      }
-      bestConfiguration = gc;
-      break;
-    }
-    if (bestConfiguration == null) {
+    // throw if no device is compatible
+    if (configuration == null) {
       String errorMessage = "No suitable GraphicsConfiguration found. Try updating your video card drivers.";
       logger.fatal(errorMessage);
       throw new RuntimeException(errorMessage);
     }
-    width = bestConfiguration.getBounds().width;
-    height = bestConfiguration.getBounds().height;
+    device = configuration.getDevice();
+    width = configuration.getBounds().width;
+    height = configuration.getBounds().height;
     mainComponent = new EventCatcherComponent(width, height);
     // create the frame
-    frame = new JFrame(bestConfiguration);
+    frame = new JFrame(configuration);
     frame.setUndecorated(true);
     frame.setResizable(false);
     frame.setFocusTraversalKeysEnabled(false);
@@ -246,7 +290,7 @@ class UiWindow {
     if (requestedFullscreen && device.isFullScreenSupported()) {
       device.setFullScreenWindow(frame);
     }
-    fullscreen = device.getFullScreenWindow() != null;
+    fullscreen = device.getFullScreenWindow() != null && device.getFullScreenWindow().equals(frame);
     if (!fullscreen) {
       frame.setSize(width, height);
       Rectangle deviceBounds = device.getDefaultConfiguration().getBounds();
@@ -258,11 +302,12 @@ class UiWindow {
     // flipcontents on COPIED so that the VolatileSurfaceManager create WGLVSyncOffScreenSurfaceData
     // (on Windows) or GLXVSyncOffScreenSurfaceData (on Linux) as backbuffers
     // see initAcceleratedSurface() in WGLVolatileSurfaceManager and GLXVolatileSurfaceManager
+    // it will work on d3d as well, no need to choose a different BufferCapabilities if using d3d
     BufferCapabilities bc = new BufferCapabilities(new ImageCapabilities(true), new ImageCapabilities(true), FlipContents.COPIED);
     // we must use a sun.* class in order to tell the surfacemanager we want vsync
     @SuppressWarnings("restriction")
     BufferCapabilities vsyncBuffer =
-    new sun.java2d.pipe.hw.ExtendedBufferCapabilities(bc, sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON);
+        new sun.java2d.pipe.hw.ExtendedBufferCapabilities(bc, sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON);
     try {
       frame.createBufferStrategy(2, vsyncBuffer);
     } catch (AWTException e) {
@@ -287,9 +332,7 @@ class UiWindow {
         paintComponents((Graphics2D) graphics);
         graphics.dispose();
       } while (strategy.contentsRestored());
-      long beforeShowTime = System.nanoTime();
       strategy.show(); // vsync (ie sleep) here
-      System.out.println("Temps de sleep en microsecondes : " + (System.nanoTime() - beforeShowTime) / 1000);
     } while (strategy.contentsLost());
   }
 
@@ -455,10 +498,12 @@ class UiWindow {
   public Point getMousePosition() {
     checkFrameNotDisposed();
     PointerInfo pointerInfo = MouseInfo.getPointerInfo();
-    if (pointerInfo.getDevice() != device) {
+    if (!pointerInfo.getDevice().equals(device)) {
       return null;
     }
+    Rectangle screenBounds = frame.getGraphicsConfiguration().getBounds();
     Point mousePoint = pointerInfo.getLocation();
+    mousePoint.translate(-screenBounds.x, -screenBounds.y);
     for (Component component : frame.getLayeredPane().getComponentsInLayer(UI_VISIBLE_LAYER)) {
       Point componentPoint = new Point(mousePoint);
       SwingUtilities.convertPointFromScreen(mousePoint, component);
@@ -506,6 +551,71 @@ class UiWindow {
     if (frame == null) {
       throw new IllegalStateException("The window has already been disposed.");
     }
+  }
+
+  private static GraphicsConfiguration getBestOGLGraphicsConfiguration(GraphicsDevice device, boolean fullscreen) {
+    // try using the provided device
+    GraphicsConfiguration bestConfiguration = getBestOGLGraphicsConfigurationOnDevice(device, fullscreen);
+    if (bestConfiguration != null) {
+      return bestConfiguration;
+    }
+    GraphicsDevice defaultDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+    // try using the default device if it fails
+    if (!defaultDevice.equals(device)) {
+      bestConfiguration = getBestOGLGraphicsConfigurationOnDevice(device, fullscreen);
+      if (bestConfiguration != null) {
+        return bestConfiguration;
+      }
+    }
+    // try using any possible device if it fails
+    for (GraphicsDevice otherDevice : GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()) {
+      if (otherDevice.equals(defaultDevice) || otherDevice.equals(device)) {
+        continue;
+      }
+      bestConfiguration = getBestOGLGraphicsConfigurationOnDevice(otherDevice, fullscreen);
+      if (bestConfiguration != null) {
+        return bestConfiguration;
+      }
+    }
+    // try again with fullscreen exclusive mode
+    if (!fullscreen) {
+      return getBestOGLGraphicsConfiguration(device, true);
+    }
+    // no configuration found
+    return null;
+  }
+
+  private static GraphicsConfiguration getBestOGLGraphicsConfigurationOnDevice(GraphicsDevice device, boolean fullscreen) {
+    for (GraphicsConfiguration gc : device.getConfigurations()) {
+      // drop non opengl configurations
+      if (!openglGraphicsConfigClass.isAssignableFrom(gc.getClass())) {
+        continue;
+      }
+      // drop non page-flipping configurations
+      if (!gc.getBufferCapabilities().isPageFlipping()) {
+        continue;
+      }
+      // additionally drop fullscreen-only page-flipping configurations if we're requesting windowed
+      // mode
+      if (!fullscreen && gc.getBufferCapabilities().isFullScreenRequired()) {
+        continue;
+      }
+      // drop non accelerated configurations
+      if (!gc.getImageCapabilities().isAccelerated()) {
+        continue;
+      }
+      // drop non double accelereated configurations
+      if (!gc.getBufferCapabilities().getFrontBufferCapabilities().isAccelerated()
+          || !gc.getBufferCapabilities().getBackBufferCapabilities().isAccelerated()) {
+        continue;
+      }
+      // drop null flip contents to make sure we do support vsync
+      if (gc.getBufferCapabilities().getFlipContents() == null) {
+        continue;
+      }
+      return gc;
+    }
+    return null;
   }
 
 }
