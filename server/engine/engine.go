@@ -174,10 +174,6 @@ func (e *Engine) Start() {
 				break
 			}
 
-			if update, ok := req.(*entity.UpdateRequest); ok {
-				log.Println("PROCESSING UPDATE REQUEST:", update.Entity.Id)
-			}
-
 			t := req.GetTick()
 			if t < minTick {
 				req.Done(errors.New("Request is too old"))

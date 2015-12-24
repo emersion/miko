@@ -2,6 +2,7 @@ package entity
 
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"log"
 )
 
 type request struct {
@@ -23,6 +24,10 @@ func (r *request) Done(err error) {
 	select {
 	case r.wait <- err:
 	default:
+	}
+
+	if err != nil {
+		log.Println("ERROR WHILE PROCESSING REQUEST:", err)
 	}
 }
 
