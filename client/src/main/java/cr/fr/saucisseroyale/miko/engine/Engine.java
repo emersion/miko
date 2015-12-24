@@ -198,15 +198,15 @@ public class Engine {
           spriteManager.drawSpriteType(graphics, spriteType, spriteTime, terrainPoint.getX(), terrainPoint.getY());
         };
 
-    entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.PLAYER).forEach(draw);
-    entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.BALL).forEach(draw);
+        entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.PLAYER).forEach(draw);
+        entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.BALL).forEach(draw);
 
-    int chatLineHeight = graphics.getFontMetrics().getHeight();
-    int yChatPosition = screenHeight - chatLineHeight;
-    for (String line : chatManager.getMessages()) {
-      graphics.drawString(line, 10, yChatPosition);
-      yChatPosition -= chatLineHeight;
-    }
+        int chatLineHeight = graphics.getFontMetrics().getHeight();
+        int yChatPosition = screenHeight - chatLineHeight;
+        for (String line : chatManager.getMessages()) {
+          graphics.drawString(line, 10, yChatPosition);
+          yChatPosition -= chatLineHeight;
+        }
   }
 
   public void freeTime() {
@@ -269,97 +269,97 @@ public class Engine {
       MapPoint mapPoint = entityManager.getMapPoint(tick, entityId);
       MapPoint newMapPoint = mapPoint.getTranslated(deltaX, deltaY);
       // unused for now
-        EntityType entityType = entityManager.getEntityType(tick, entityId);
-        // check collisions
-        // check terrain collisions
-        Pair.DoubleFloat delta = newMapPoint.subtract(mapPoint);
-        int width = (int) delta.getFirst();
-        int height = (int) delta.getSecond();
-        Hitbox hitbox = entityManager.getSpriteType(tick, entityId).getHitbox();
-        for (Pair.DoubleFloat offset : hitbox.getKeyPoints(delta.getFirst(), delta.getSecond())) {
-          TerrainPoint start = mapPoint.getTranslated(offset.getFirst(), offset.getSecond()).toTerrainPoint();
-          // brensenham algorithm
-          // taken from http://tech-algorithm.com/articles/drawing-line-using-bresenham-algorithm/
-          int x = start.getX();
-          int y = start.getY();
-          int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
-          if (width < 0) {
-            dx1 = -1;
-          } else if (width > 0) {
-            dx1 = 1;
-          }
-          if (height < 0) {
-            dy1 = -1;
-          } else if (height > 0) {
-            dy1 = 1;
-          }
-          if (width < 0) {
-            dx2 = -1;
-          } else if (width > 0) {
-            dx2 = 1;
-          }
-          int longest = Math.abs(width);
-          int shortest = Math.abs(height);
-          if (longest <= shortest) {
-            int temp = longest;
-            longest = shortest;
-            shortest = temp;
-            if (height < 0) {
-              dy2 = -1;
-            } else if (height > 0) {
-              dy2 = 1;
-            }
-            dx2 = 0;
-          }
-          int numerator = longest >> 1;
-          for (int i = 0; i <= longest; i++) {
-            // collision checking with x and y
-            TerrainPoint point = new TerrainPoint(x, y);
-            TerrainType terrainType = terrainManager.getChunk(tick, point.getChunkPoint()).getBlock(point.getBlockPoint());
-            if (terrainType == TerrainType.BLACK_WALL) {
-              if (entityType == EntityType.BALL) {
-                entityManager.destroyEntity(tick, entityId);
-              }
-              return;
-            }
-            numerator += shortest;
-            if (!(numerator < longest)) {
-              numerator -= longest;
-              x += dx1;
-              y += dy1;
-            } else {
-              x += dx2;
-              y += dy2;
-            }
-          }
+      EntityType entityType = entityManager.getEntityType(tick, entityId);
+      // check collisions
+      // check terrain collisions
+      Pair.DoubleFloat delta = newMapPoint.subtract(mapPoint);
+      int width = (int) delta.getFirst();
+      int height = (int) delta.getSecond();
+      Hitbox hitbox = entityManager.getSpriteType(tick, entityId).getHitbox();
+      for (Pair.DoubleFloat offset : hitbox.getKeyPoints(delta.getFirst(), delta.getSecond())) {
+        TerrainPoint start = mapPoint.getTranslated(offset.getFirst(), offset.getSecond()).toTerrainPoint();
+        // brensenham algorithm
+        // taken from http://tech-algorithm.com/articles/drawing-line-using-bresenham-algorithm/
+        int x = start.getX();
+        int y = start.getY();
+        int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
+        if (width < 0) {
+          dx1 = -1;
+        } else if (width > 0) {
+          dx1 = 1;
         }
-        // check entity collisions
-        // only check balls collisions against other entities
-        // only check moving entities against other entities
-        if (entityType == EntityType.BALL) {
-          for (int otherId : entityManager.getEntities(tick)) {
-            int senderId = (int) entityManager.getObjectAttribute(tick, entityId, ObjectAttribute.SENDER);
-            if (senderId == otherId) {
-              continue;
+        if (height < 0) {
+          dy1 = -1;
+        } else if (height > 0) {
+          dy1 = 1;
+        }
+        if (width < 0) {
+          dx2 = -1;
+        } else if (width > 0) {
+          dx2 = 1;
+        }
+        int longest = Math.abs(width);
+        int shortest = Math.abs(height);
+        if (longest <= shortest) {
+          int temp = longest;
+          longest = shortest;
+          shortest = temp;
+          if (height < 0) {
+            dy2 = -1;
+          } else if (height > 0) {
+            dy2 = 1;
+          }
+          dx2 = 0;
+        }
+        int numerator = longest >> 1;
+        for (int i = 0; i <= longest; i++) {
+          // collision checking with x and y
+          TerrainPoint point = new TerrainPoint(x, y);
+          TerrainType terrainType = terrainManager.getChunk(tick, point.getChunkPoint()).getBlock(point.getBlockPoint());
+          if (terrainType == TerrainType.BLACK_WALL) {
+            if (entityType == EntityType.BALL) {
+              entityManager.destroyEntity(tick, entityId);
             }
-            if (entityManager.getEntityType(tick, otherId) != EntityType.PLAYER) {
-              continue;
-            }
-            // check hitbox after id checks because it may be more expensive
-            Hitbox otherHitbox = entityManager.getSpriteType(tick, otherId).getHitbox();
-            MapPoint otherPosition = entityManager.getMapPoint(tick, otherId);
-            if (!Hitbox.collide(hitbox, newMapPoint, otherHitbox, otherPosition)) {
-              continue;
-            }
-            // player-ball collision
-            entityManager.destroyEntity(tick, entityId);
-            int playerHp = (int) entityManager.getObjectAttribute(tick, otherId, ObjectAttribute.HEALTH);
-            entityManager.setObjectAttribute(tick, otherId, ObjectAttribute.HEALTH, playerHp - 1);
             return;
           }
+          numerator += shortest;
+          if (!(numerator < longest)) {
+            numerator -= longest;
+            x += dx1;
+            y += dy1;
+          } else {
+            x += dx2;
+            y += dy2;
+          }
         }
-        entityManager.setMapPoint(tick, entityId, newMapPoint);
-      });
+      }
+      // check entity collisions
+      // only check balls collisions against other entities
+      // only check moving entities against other entities
+      if (entityType == EntityType.BALL) {
+        for (int otherId : entityManager.getEntities(tick)) {
+          int senderId = (int) entityManager.getObjectAttribute(tick, entityId, ObjectAttribute.SENDER);
+          if (senderId == otherId) {
+            continue;
+          }
+          if (entityManager.getEntityType(tick, otherId) != EntityType.PLAYER) {
+            continue;
+          }
+          // check hitbox after id checks because it may be more expensive
+          Hitbox otherHitbox = entityManager.getSpriteType(tick, otherId).getHitbox();
+          MapPoint otherPosition = entityManager.getMapPoint(tick, otherId);
+          if (!Hitbox.collide(hitbox, newMapPoint, otherHitbox, otherPosition)) {
+            continue;
+          }
+          // player-ball collision
+          entityManager.destroyEntity(tick, entityId);
+          int playerHp = (int) entityManager.getObjectAttribute(tick, otherId, ObjectAttribute.HEALTH);
+          entityManager.setObjectAttribute(tick, otherId, ObjectAttribute.HEALTH, playerHp - 1);
+          return;
+        }
+      }
+      entityManager.setMapPoint(tick, entityId, newMapPoint);
+    });
 
     // process actions
     float ballSendAngle = tickInput.getBallSendRequest();
@@ -372,8 +372,8 @@ public class Engine {
         MapPoint position = entityManager.getMapPoint(tick, playerEntityId);
         EntityDataUpdate ball =
             new EntityDataUpdate.Builder(ballId).entityType(EntityType.BALL).position(position).speedAngle(ballSendAngle)
-                .speedNorm(config.getDefaultBallSpeed()).spriteType(SpriteType.BALL).objectAttribute(ObjectAttribute.SENDER, playerEntityId)
-                .objectAttribute(ObjectAttribute.TICKS_LEFT, config.getDefaultBallLifespan()).build();
+            .speedNorm(config.getDefaultBallSpeed()).spriteType(SpriteType.BALL).objectAttribute(ObjectAttribute.SENDER, playerEntityId)
+            .objectAttribute(ObjectAttribute.TICKS_LEFT, config.getDefaultBallLifespan()).build();
         entityManager.createEntity(tick, ball);
         // notify server of ball send
         messageOutput.accept(OutputMessageFactory.action(tick, new Action(ActionType.SEND_BALL, new Pair<>(ballSendAngle, ballId))));
