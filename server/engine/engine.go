@@ -72,13 +72,21 @@ func (e *Engine) processRequest(req message.Request) {
 			req.Done(errors.New("Request has been rejected"))
 			return
 		}
-		e.action.AcceptRequest(r)
+
+		err := e.action.AcceptRequest(r)
+		if err != nil {
+			log.Println("Warning: Error while accepting action request:", err)
+		}
 	case entity.Request:
 		if !e.processEntityRequest(r) {
 			req.Done(errors.New("Request has been rejected"))
 			return
 		}
-		e.entity.AcceptRequest(r)
+
+		err := e.entity.AcceptRequest(r)
+		if err != nil {
+			log.Println("Warning: Error while accepting entity request:", err)
+		}
 	}
 }
 
@@ -177,10 +185,12 @@ func (e *Engine) Start() {
 			t := req.GetTick()
 			if t < minTick {
 				req.Done(errors.New("Request is too old"))
+				log.Println("Warning: Dropped request, too old", e.clock.GetAbsoluteTick()-req.GetTick())
 				continue
 			}
 			if t > e.clock.GetAbsoluteTick() {
 				req.Done(errors.New("Request is in the future"))
+				log.Println("Warning: Dropped request, in the future", e.clock.GetAbsoluteTick()-req.GetTick())
 				continue
 			}
 			if t < acceptedMinTick {
