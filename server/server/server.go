@@ -80,16 +80,18 @@ func (s *Server) Listen() {
 	}
 
 	go (func() {
-		ready := 0
-		for _, io := range s.ios {
-			if io == nil || io.State != message.Ready {
-				continue
-			}
+		for {
+			ready := 0
+			for _, io := range s.ios {
+				if io == nil || io.State != message.Ready {
+					continue
+				}
 
-			ready++
+				ready++
+			}
+			log.Println("Users:", len(s.ios), "ready:", ready)
+			time.Sleep(time.Second)
 		}
-		log.Println("Users:", len(s.ios), "ready:", ready)
-		time.Sleep(time.Second)
 	})()
 
 	if err != nil {
