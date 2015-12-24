@@ -120,7 +120,7 @@ func (s *Service) acceptUpdate(req *UpdateRequest) error {
 	// Add delta to history
 	if req.requested {
 		s.deltas.Insert(d)
-		//log.Println("Accepted update request, deltas count:", s.deltas.Len())
+		log.Println("Accepted update request for entity", entity.Id)
 	}
 	// TODO: fix this
 	// && !current.ToMessage().EqualsWithDiff(entity.ToMessage(), diff)
