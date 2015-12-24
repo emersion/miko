@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 
 	"git.emersion.fr/saucisse-royale/miko.git/server/crypto"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
@@ -77,6 +78,19 @@ func (s *Server) Listen() {
 		listener, err = net.Listen("tcp", s.address)
 		log.Println("Warning: creating a non-TLS insecure server")
 	}
+
+	go (func() {
+		ready := 0
+		for _, io := range s.ios {
+			if io == nil || io.State != message.Ready {
+				continue
+			}
+
+			ready++
+		}
+		log.Println("Users:", len(s.ios), "ready:", ready)
+		time.Sleep(time.Second)
+	})()
 
 	if err != nil {
 		log.Fatal("Error starting TCP server.")
