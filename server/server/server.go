@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"sync"
-	"time"
 
 	"git.emersion.fr/saucisse-royale/miko.git/server/crypto"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
