@@ -13,7 +13,7 @@ type Config struct {
 	DefaultPlayerSpeed  float32
 	PlayerBallCooldown  Cooldown
 	DefaultBallSpeed    float32
-	DefaultBallLifespan Health
+	DefaultBallLifespan TicksLeft
 }
 
 func (c *Config) WriteTo(w io.Writer) (n int64, err error) {

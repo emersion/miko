@@ -288,14 +288,13 @@ func (e *Engine) Start() {
 
 		// Destroy entities that are not alive anymore
 		// TODO: history support
-		ttlKey := message.EntityAttrId(0) // Time To Live
 		for _, ent := range e.entity.List() {
-			if val, ok := ent.Attributes[ttlKey]; ok {
-				ttl := val.(uint16)
+			if val, ok := ent.Attributes[game.TicksLeftAttr]; ok {
+				ttl := val.(game.TicksLeft)
 				if ttl == 0 { // Destroy entity
 					e.entity.AcceptRequest(entity.NewDeleteRequest(e.clock.GetAbsoluteTick(), ent.Id))
 				} else {
-					ent.Attributes[ttlKey] = ttl - 1
+					ent.Attributes[game.TicksLeftAttr] = ttl - 1
 				}
 			}
 		}
