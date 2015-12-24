@@ -71,6 +71,7 @@ func (e *Entity) ApplyDiff(d *message.EntityDiff, src *Entity) {
 }
 
 // Get this entity's hitbox.
+// [GAME-SPECIFIC]
 func (e *Entity) Hitbox() hitbox.Hitbox {
 	switch e.Sprite {
 	case 0: // placeholder

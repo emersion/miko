@@ -80,6 +80,7 @@ func (a *Service) Login(id int, username string, password string) message.LoginR
 		entity := message.NewEntity()
 
 		// TODO: default values are hardcoded
+		// [GAME-SPECIFIC]
 		entity.Position.BX = 20
 		entity.Position.BY = 20
 		entity.Type = game.PlayerEntity
