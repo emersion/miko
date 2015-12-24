@@ -575,5 +575,4 @@ public class Miko implements MessageHandler {
     // called when any message is received
     lastMessageReceived = System.nanoTime();
   }
-
 }

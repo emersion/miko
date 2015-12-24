@@ -68,7 +68,7 @@ public class NetworkClient {
    * Le client peut se reconnecter ensuite à un serveur avec {@link #connect(String, int)}. Si des
    * messages sont encores reçus ou ajoutés à la liste d'envoi, ils seront ignorés.
    */
-  public void disconnect() {
+  public synchronized void disconnect() {
     if (receiverThread != null) {
       receiverThread.interrupt();
       receiverThread = null;

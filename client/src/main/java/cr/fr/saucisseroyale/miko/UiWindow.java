@@ -307,7 +307,7 @@ class UiWindow {
     // we must use a sun.* class in order to tell the surfacemanager we want vsync
     @SuppressWarnings("restriction")
     BufferCapabilities vsyncBuffer =
-        new sun.java2d.pipe.hw.ExtendedBufferCapabilities(bc, sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON);
+    new sun.java2d.pipe.hw.ExtendedBufferCapabilities(bc, sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON);
     try {
       frame.createBufferStrategy(2, vsyncBuffer);
     } catch (AWTException e) {
