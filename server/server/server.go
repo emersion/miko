@@ -120,7 +120,7 @@ func (s *Server) Unlock() {
 }
 
 // Broadcast a message to all clients
-func (s *Server) Write(data []byte) (n int, err error) {
+func (s *Server) Write(data []byte) (int, error) {
 	N := 0
 
 	for _, io := range s.ios {
