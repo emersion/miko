@@ -33,8 +33,10 @@ type Engine struct {
 
 	clients map[int]*message.IO
 
-	mover *Mover
-	stop  chan bool
+	mover     *Mover
+	ticker    *time.Ticker
+	brdTicker *time.Ticker
+	stop      chan bool
 }
 
 func (e *Engine) processEntityRequest(req entity.Request) bool {
@@ -128,11 +130,176 @@ func (e *Engine) broadcastChanges() {
 }
 
 func (e *Engine) startBroadcastingChanges() {
-	ticks := time.Tick(broadcastInterval)
+	e.brdTicker = time.NewTicker(broadcastInterval)
 	for {
-		<-ticks
+		<-e.brdTicker.C
 		e.broadcastChanges()
 	}
+}
+
+func (e *Engine) executeTick(currentTick message.AbsoluteTick) {
+	entityFrontend := e.entity.Frontend()
+	actionFrontend := e.action.Frontend()
+
+	// Process requests from clients
+	minTick := currentTick - message.MaxRewind
+	if message.MaxRewind > currentTick {
+		minTick = 0
+	}
+	acceptedMinTick := currentTick
+	accepted := list.New()
+	for {
+		var req message.Request
+
+		// Get last request
+		noMore := false
+		select {
+		case req = <-entityFrontend.Creates:
+		case req = <-entityFrontend.Updates:
+		case req = <-entityFrontend.Deletes:
+		case req = <-actionFrontend.Executes:
+		default:
+			noMore = true
+		}
+		if noMore {
+			break
+		}
+
+		t := req.GetTick()
+		if t == 0 {
+			req.Done(errors.New("Invalid tick"))
+			log.Println("Warning: Dropped request, invalid tick")
+			continue
+		}
+		if t < minTick {
+			req.Done(errors.New("Request is too old"))
+			log.Println("Warning: Dropped request, too old", currentTick-t)
+			continue
+		}
+		if t > currentTick {
+			req.Done(errors.New("Request is in the future"))
+			log.Println("Warning: Dropped request, in the future", currentTick-t)
+			continue
+		}
+		if t < acceptedMinTick {
+			acceptedMinTick = t
+		}
+
+		// Append request to the list, keeping it ordered
+		inserted := false
+		for e := accepted.Front(); e != nil; e = e.Next() {
+			r := e.Value.(message.Request)
+
+			if r.GetTick() > req.GetTick() {
+				accepted.InsertBefore(req, e)
+				inserted = true
+				break
+			}
+		}
+		if !inserted {
+			accepted.PushBack(req)
+		}
+	}
+
+	if accepted.Len() > 0 {
+		//log.Println("Accepted", accepted.Len(), "requests from clients")
+	}
+
+	// Initiate lag compensation if necessary
+	if acceptedMinTick < currentTick {
+		//log.Println("Back to the past!", currentTick, currentTick-acceptedMinTick)
+		e.terrain.Rewind(e.terrain.GetTick() - acceptedMinTick)
+		e.entity.Rewind(e.entity.GetTick() - acceptedMinTick)
+	}
+
+	// Redo all deltas until now
+	entDeltas := e.entity.Deltas()
+	trnDeltas := e.terrain.Deltas()
+	entEl := entDeltas.FirstAfter(acceptedMinTick)
+	trnEl := trnDeltas.FirstAfter(acceptedMinTick)
+	var ed *entity.Delta
+	var td *terrain.Delta
+	for entEl != nil || trnEl != nil {
+		if entEl != nil {
+			ed = entEl.Value.(*entity.Delta)
+		} else {
+			ed = nil
+		}
+		if trnEl != nil {
+			td = trnEl.Value.(*terrain.Delta)
+		} else {
+			td = nil
+		}
+
+		// TODO: replace terain history by actions history
+		if ed == nil || (td != nil && ed.GetTick() >= td.GetTick()) {
+			// Process terrain delta
+			trnEl = trnEl.Next()
+
+			// Compute new entities positions just before the terrain change
+			e.moveEntities(td.GetTick() - 1)
+
+			// Redo terrain change
+			e.terrain.Redo(td)
+		}
+		if td == nil || (ed != nil && ed.GetTick() <= td.GetTick()) {
+			// Process entity delta
+
+			// Do not redo deltas not triggered by the user
+			// These are the ones that will be computed again
+			if !ed.Requested() {
+				entDeltas.Remove(entEl)
+				entEl = entEl.Next()
+				continue
+			}
+
+			entEl = entEl.Next()
+
+			// Compute new entities positions
+			e.moveEntities(ed.GetTick())
+
+			// Accept new requests at the correct tick
+			for el := accepted.Front(); el != nil; el = el.Next() {
+				req := el.Value.(message.Request)
+
+				if req.GetTick() >= ed.GetTick() {
+					break
+				}
+
+				e.processRequest(req)
+				accepted.Remove(el)
+			}
+
+			e.processRequest(ed.Request())
+		}
+	}
+
+	// Accept requests whose tick is > last delta tick
+	for el := accepted.Front(); el != nil; el = el.Next() {
+		req := el.Value.(entity.Request)
+		e.moveEntities(req.GetTick())
+		e.processRequest(req)
+	}
+
+	// Compute new entities positions
+	e.moveEntities(currentTick)
+
+	// Destroy entities that are not alive anymore
+	// TODO: history support
+	for _, ent := range e.entity.List() {
+		if val, ok := ent.Attributes[game.TicksLeftAttr]; ok {
+			ttl := val.(game.TicksLeft)
+			if ttl == 0 { // Destroy entity
+				e.entity.AcceptRequest(entity.NewDeleteRequest(currentTick, ent.Id))
+			} else {
+				ent.Attributes[game.TicksLeftAttr] = ttl - 1
+			}
+		}
+	}
+
+	// Cleanup
+	e.entity.Cleanup(currentTick)
+	e.action.Cleanup(currentTick)
 }
 
 func (e *Engine) Start() {
@@ -141,179 +308,24 @@ func (e *Engine) Start() {
 		go e.startBroadcastingChanges()
 	}
 
-	entityFrontend := e.entity.Frontend()
-	actionFrontend := e.action.Frontend()
+	e.ticker = time.NewTicker(clock.TickDuration)
 
-	ticks := time.Tick(clock.TickDuration)
 	for {
-		<-ticks
-
-		start := time.Now().UnixNano()
-		e.clock.Tick()
-
 		// Stop the engine?
 		select {
 		case <-e.stop:
-			break
+			return
 		default:
 		}
 
-		// Process requests from clients
-		minTick := e.clock.GetAbsoluteTick() - message.MaxRewind
-		if message.MaxRewind > e.clock.GetAbsoluteTick() {
-			minTick = 0
-		}
-		acceptedMinTick := e.clock.GetAbsoluteTick()
-		accepted := list.New()
-		for {
-			var req message.Request
+		<-e.ticker.C
 
-			// Get last request
-			noMore := false
-			select {
-			case req = <-entityFrontend.Creates:
-			case req = <-entityFrontend.Updates:
-			case req = <-entityFrontend.Deletes:
-			case req = <-actionFrontend.Executes:
-			default:
-				noMore = true
-			}
-			if noMore {
-				break
-			}
+		e.clock.Tick()
 
-			t := req.GetTick()
-			if t < minTick {
-				req.Done(errors.New("Request is too old"))
-				log.Println("Warning: Dropped request, too old", e.clock.GetAbsoluteTick()-req.GetTick())
-				continue
-			}
-			if t > e.clock.GetAbsoluteTick() {
-				req.Done(errors.New("Request is in the future"))
-				log.Println("Warning: Dropped request, in the future", e.clock.GetAbsoluteTick()-req.GetTick())
-				continue
-			}
-			if t < acceptedMinTick {
-				acceptedMinTick = t
-			}
-
-			// Append request to the list, keeping it ordered
-			inserted := false
-			for e := accepted.Front(); e != nil; e = e.Next() {
-				r := e.Value.(message.Request)
-
-				if r.GetTick() > req.GetTick() {
-					accepted.InsertBefore(req, e)
-					inserted = true
-					break
-				}
-			}
-			if !inserted {
-				accepted.PushBack(req)
-			}
-		}
-
-		if accepted.Len() > 0 {
-			//log.Println("Accepted", accepted.Len(), "requests from clients")
-		}
-
-		// Initiate lag compensation if necessary
-		if acceptedMinTick < e.ctx.Clock.GetAbsoluteTick() {
-			//log.Println("Back to the past!", e.clock.GetAbsoluteTick(), e.clock.GetAbsoluteTick()-acceptedMinTick)
-			e.terrain.Rewind(e.terrain.GetTick() - acceptedMinTick)
-			e.entity.Rewind(e.entity.GetTick() - acceptedMinTick)
-		}
-
-		// Redo all deltas until now
-		entDeltas := e.entity.Deltas()
-		trnDeltas := e.terrain.Deltas()
-		entEl := entDeltas.FirstAfter(acceptedMinTick)
-		trnEl := trnDeltas.FirstAfter(acceptedMinTick)
-		var ed *entity.Delta
-		var td *terrain.Delta
-		for entEl != nil || trnEl != nil {
-			if entEl != nil {
-				ed = entEl.Value.(*entity.Delta)
-			} else {
-				ed = nil
-			}
-			if trnEl != nil {
-				td = trnEl.Value.(*terrain.Delta)
-			} else {
-				td = nil
-			}
-
-			// TODO: replace terain history by actions history
-			if ed == nil || (td != nil && ed.GetTick() >= td.GetTick()) {
-				// Process terrain delta
-				trnEl = trnEl.Next()
-
-				// Compute new entities positions just before the terrain change
-				e.moveEntities(td.GetTick() - 1)
-
-				// Redo terrain change
-				e.terrain.Redo(td)
-			}
-			if td == nil || (ed != nil && ed.GetTick() <= td.GetTick()) {
-				// Process entity delta
-
-				// Do not redo deltas not triggered by the user
-				// These are the ones that will be computed again
-				if !ed.Requested() {
-					entDeltas.Remove(entEl)
-					entEl = entEl.Next()
-					continue
-				}
-
-				entEl = entEl.Next()
-
-				// Compute new entities positions
-				e.moveEntities(ed.GetTick())
-
-				// Accept new requests at the correct tick
-				for el := accepted.Front(); el != nil; el = el.Next() {
-					req := el.Value.(message.Request)
-
-					if req.GetTick() >= ed.GetTick() {
-						break
-					}
-
-					e.processRequest(req)
-					accepted.Remove(el)
-				}
-
-				e.processRequest(ed.Request())
-			}
-		}
-
-		// Accept requests whose tick is > last delta tick
-		for el := accepted.Front(); el != nil; el = el.Next() {
-			req := el.Value.(entity.Request)
-			e.moveEntities(req.GetTick())
-			e.processRequest(req)
-		}
-
-		// Compute new entities positions
-		e.moveEntities(e.clock.GetAbsoluteTick())
-
-		// Destroy entities that are not alive anymore
-		// TODO: history support
-		for _, ent := range e.entity.List() {
-			if val, ok := ent.Attributes[game.TicksLeftAttr]; ok {
-				ttl := val.(game.TicksLeft)
-				if ttl == 0 { // Destroy entity
-					e.entity.AcceptRequest(entity.NewDeleteRequest(e.clock.GetAbsoluteTick(), ent.Id))
-				} else {
-					ent.Attributes[game.TicksLeftAttr] = ttl - 1
-				}
-			}
-		}
-
-		// Cleanup
-		e.entity.Cleanup(e.clock.GetAbsoluteTick())
-		e.action.Cleanup(e.clock.GetAbsoluteTick())
-
+		start := time.Now().UnixNano()
+		e.executeTick(e.clock.GetAbsoluteTick())
 		end := time.Now().UnixNano()
+
 		duration := time.Nanosecond * time.Duration(end-start)
 		if clock.TickDuration < duration {
 			log.Println("Warning: loop duration exceeds tick duration", duration)
@@ -322,6 +334,12 @@ func (e *Engine) Start() {
 }
 
 func (e *Engine) Stop() {
+	if e.ticker != nil {
+		e.ticker.Stop()
+	}
+	if e.brdTicker != nil {
+		e.brdTicker.Stop()
+	}
 	e.stop <- true
 }
 
