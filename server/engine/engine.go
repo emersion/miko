@@ -309,6 +309,7 @@ func (e *Engine) Start() {
 	}
 
 	e.ticker = time.NewTicker(clock.TickDuration)
+	engineStart := time.Now().UnixNano()
 
 	for {
 		// Stop the engine?
@@ -323,6 +324,7 @@ func (e *Engine) Start() {
 		e.clock.Tick()
 
 		start := time.Now().UnixNano()
+		log.Println("Time:", (start-engineStart)/int64(e.clock.GetAbsoluteTick()))
 		e.executeTick(e.clock.GetAbsoluteTick())
 		end := time.Now().UnixNano()
 

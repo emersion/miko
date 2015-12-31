@@ -3,7 +3,6 @@ package clock
 
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
-	"log"
 	"time"
 )
 
@@ -39,7 +38,7 @@ func (s *Service) ToRelativeTick(at message.AbsoluteTick) message.Tick {
 // Returns 0 if an error occured.
 func (s *Service) ToAbsoluteTick(rt message.Tick) message.AbsoluteTick {
 	current := s.GetRelativeTick()
-	log.Println(current, rt)
+
 	at := message.AbsoluteTick(rt) + message.AbsoluteTick(s.ticks-s.ticks%message.MaxTick)
 	if current < rt {
 		if at < message.MaxTick {
