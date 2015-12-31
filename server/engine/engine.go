@@ -333,6 +333,7 @@ func (e *Engine) Start() {
 			log.Println("Warning: loop duration exceeds tick duration", duration)
 		}
 
+		log.Println("Time:", (tickStart-engineStart)/time.Duration(tick))
 		time.Sleep(clock.TickDuration*time.Duration(tick+1) + engineStart - tickEnd)
 	}
 }
