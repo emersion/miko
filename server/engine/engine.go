@@ -33,9 +33,10 @@ type Engine struct {
 
 	clients map[int]*message.IO
 
-	mover     *Mover
-	brdTicker *time.Ticker
-	stop      chan bool
+	mover      *Mover
+	running    bool
+	brdStop    chan bool
+	listenStop chan bool
 }
 
 func (e *Engine) processEntityRequest(req entity.Request) bool {
@@ -101,16 +102,6 @@ func (e *Engine) moveEntities(t message.AbsoluteTick) {
 	}
 }
 
-func (e *Engine) listenNewClients() {
-	hdlr := handler.New(e.ctx)
-
-	for {
-		io := <-e.srv.Joins
-		e.clients[io.Id] = io
-		go hdlr.Listen(io)
-	}
-}
-
 func (e *Engine) broadcastChanges() {
 	if e.ctx.Entity.IsDirty() {
 		log.Println("Entity diff dirty, broadcasting to clients...")
@@ -125,14 +116,6 @@ func (e *Engine) broadcastChanges() {
 		if err != nil {
 			log.Println("Cannot broadcast actions:", err)
 		}
-	}
-}
-
-func (e *Engine) startBroadcastingChanges() {
-	e.brdTicker = time.NewTicker(broadcastInterval)
-	for {
-		<-e.brdTicker.C
-		e.broadcastChanges()
 	}
 }
 
@@ -301,22 +284,45 @@ func (e *Engine) executeTick(currentTick message.AbsoluteTick) {
 	e.action.Cleanup(currentTick)
 }
 
+func (e *Engine) listenNewClients() {
+	hdlr := handler.New(e.ctx)
+
+	for {
+		select {
+		case io := <-e.srv.Joins:
+			e.clients[io.Id] = io
+			go hdlr.Listen(io)
+		case <-e.listenStop:
+			return
+		}
+	}
+}
+
+// Periodically broadcast changes to clients.
+func (e *Engine) startBrd() {
+	ticker := time.NewTicker(broadcastInterval)
+	for {
+		select {
+		case <-e.brdStop:
+			ticker.Stop()
+			return
+		case <-ticker.C:
+			e.broadcastChanges()
+		}
+	}
+}
+
 func (e *Engine) Start() {
+	e.running = true
+
 	if e.srv != nil {
 		go e.listenNewClients()
-		go e.startBroadcastingChanges()
+		go e.startBrd()
 	}
 
 	engineStart := time.Duration(time.Now().UnixNano()) * time.Nanosecond
 
 	for {
-		// Stop the engine?
-		select {
-		case <-e.stop:
-			return
-		default:
-		}
-
 		e.clock.Tick()
 		tick := e.clock.GetAbsoluteTick()
 
@@ -329,15 +335,27 @@ func (e *Engine) Start() {
 			log.Println("Warning: loop duration exceeds tick duration", duration)
 		}
 
+		if !e.running {
+			return
+		}
+
 		time.Sleep(clock.TickDuration*time.Duration(tick+1) + engineStart - tickEnd)
 	}
 }
 
 func (e *Engine) Stop() {
-	if e.brdTicker != nil {
-		e.brdTicker.Stop()
+	log.Println("Stopping server...")
+	e.running = false
+
+	if e.srv != nil {
+		e.brdStop <- true
+		e.listenStop <- true
 	}
-	e.stop <- true
+
+	for _, client := range e.clients {
+		builder.SendExit(client, message.ExitCodes["server_closed"])
+		client.Close()
+	}
 }
 
 func (e *Engine) Context() *message.Context {
@@ -359,8 +377,9 @@ func New(srv *server.Server) *Engine {
 		terrain: terrain.New(),
 		config:  game.DefaultConfig(),
 
-		clients: make(map[int]*message.IO),
-		stop:    make(chan bool),
+		clients:    make(map[int]*message.IO),
+		brdStop:    make(chan bool),
+		listenStop: make(chan bool),
 	}
 
 	// Populate context
