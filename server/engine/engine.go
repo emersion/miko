@@ -309,6 +309,8 @@ func (e *Engine) Start() {
 
 	engineStart := time.Duration(time.Now().UnixNano()) * time.Nanosecond
 
+	lastTicks := list.New()
+
 	for {
 		// Stop the engine?
 		select {
@@ -322,6 +324,21 @@ func (e *Engine) Start() {
 
 		tickStart := time.Duration(time.Now().UnixNano()) * time.Nanosecond
 		e.executeTick(tick)
+
+		lastTicks.PushBack(tickStart)
+		if lastTicks.Len() > 10 {
+			lastTicks.Remove(lastTicks.Front())
+
+			var avgDuration time.Duration
+			for el := lastTicks.Front(); el != nil; el = el.Next() {
+				if el.Next() != nil {
+					avgDuration += el.Next().Value.(time.Duration) - el.Value.(time.Duration)
+				}
+			}
+			avgDuration /= time.Duration(lastTicks.Len() - 1)
+			log.Println("Last ticks duration:", avgDuration)
+		}
+
 		tickEnd := time.Duration(time.Now().UnixNano()) * time.Nanosecond
 
 		duration := tickEnd - tickStart
