@@ -308,8 +308,8 @@ func (e *Engine) Start() {
 		go e.startBroadcastingChanges()
 	}
 
-	e.ticker = time.NewTicker(clock.TickDuration)
-	engineStart := time.Now().UnixNano()
+	//e.ticker = time.NewTicker(clock.TickDuration)
+	engineStart := time.Duration(time.Now().UnixNano()) * time.Nanosecond
 
 	for {
 		// Stop the engine?
@@ -319,19 +319,21 @@ func (e *Engine) Start() {
 		default:
 		}
 
-		<-e.ticker.C
+		//<-e.ticker.C
 
 		e.clock.Tick()
+		tick := e.clock.GetAbsoluteTick()
 
-		start := time.Now().UnixNano()
-		log.Println("Time:", (start-engineStart)/int64(e.clock.GetAbsoluteTick()))
-		e.executeTick(e.clock.GetAbsoluteTick())
-		end := time.Now().UnixNano()
+		tickStart := time.Duration(time.Now().UnixNano()) * time.Nanosecond
+		e.executeTick(tick)
+		tickEnd := time.Duration(time.Now().UnixNano()) * time.Nanosecond
 
-		duration := time.Nanosecond * time.Duration(end-start)
+		duration := tickEnd - tickStart
 		if clock.TickDuration < duration {
 			log.Println("Warning: loop duration exceeds tick duration", duration)
 		}
+
+		time.Sleep(clock.TickDuration*time.Duration(tick+1) + engineStart - tickEnd)
 	}
 }
 
