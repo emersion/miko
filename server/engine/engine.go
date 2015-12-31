@@ -34,7 +34,6 @@ type Engine struct {
 	clients map[int]*message.IO
 
 	mover     *Mover
-	ticker    *time.Ticker
 	brdTicker *time.Ticker
 	stop      chan bool
 }
@@ -308,7 +307,6 @@ func (e *Engine) Start() {
 		go e.startBroadcastingChanges()
 	}
 
-	//e.ticker = time.NewTicker(clock.TickDuration)
 	engineStart := time.Duration(time.Now().UnixNano()) * time.Nanosecond
 
 	for {
@@ -318,8 +316,6 @@ func (e *Engine) Start() {
 			return
 		default:
 		}
-
-		//<-e.ticker.C
 
 		e.clock.Tick()
 		tick := e.clock.GetAbsoluteTick()
@@ -333,15 +329,11 @@ func (e *Engine) Start() {
 			log.Println("Warning: loop duration exceeds tick duration", duration)
 		}
 
-		log.Println("Time:", (tickStart-engineStart)/time.Duration(tick))
 		time.Sleep(clock.TickDuration*time.Duration(tick+1) + engineStart - tickEnd)
 	}
 }
 
 func (e *Engine) Stop() {
-	if e.ticker != nil {
-		e.ticker.Stop()
-	}
 	if e.brdTicker != nil {
 		e.brdTicker.Stop()
 	}
