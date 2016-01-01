@@ -305,11 +305,7 @@ func (e *Engine) listenNewTimeClients() {
 	for {
 		select {
 		case client := <-e.timeSrv.Joins:
-			// TODO
-			//if io.State != message.Accepted {
-			//	continue
-			//}
-
+			// TODO: Check that the client is connected
 			go e.timeSrv.Accept(client)
 		case <-e.listenTimeStop:
 			return
@@ -434,11 +430,6 @@ func New(srv *server.Server, timeSrv *timeserver.Server) *Engine {
 		entity.Sprite = game.PlayerSprite
 		entity.Attributes[game.HealthAttr] = game.Health(1000)
 		entity.Attributes[game.CooldownOneAttr] = game.Cooldown(0)
-
-		// TODO
-		//if e.timeSrv != nil {
-		//	e.timeSrv.Reject(io)
-		//}
 	}
 
 	return e
