@@ -251,7 +251,9 @@ size times:
 
 ## Serveur de temps
 
-Un serveur de temps permet au client de synchroniser son horloge avec celle du serveur. Il s'agit d'un serveur UDP qui écoute sur le port spécifié dans le message `config`. Lorsqu'il reçoit un paquet UDP vide, il doit envoyer régulièrement et pendant un certain temps des `uint64` qui représentent le timestamp Unix actuel en millisecondes.
+* Permet au client de synchroniser son horloge avec celle du serveur
+* UDP, écoute sur le port spécifié dans `config`
+* Lorsqu'il reçoit un paquet UDP vide, il  envoie régulièrement et pendant un certain temps des `uint64` qui représentent le timestamp Unix actuel en millisecondes
 
 ## Session exemple (OUTDATED, TODO)
 
