@@ -253,7 +253,7 @@ size times:
 
 * Permet au client de synchroniser son horloge avec celle du serveur
 * UDP, écoute sur le port spécifié dans `config`
-* Lorsqu'il reçoit un paquet UDP vide, il  envoie régulièrement et pendant un certain temps des `uint64` qui représentent le timestamp Unix actuel en millisecondes
+* Lorsqu'il reçoit un paquet UDP vide, il  envoie régulièrement et pendant un certain temps des `uint64` qui représentent le timestamp Unix actuel en microsecondes
 
 ## Session exemple (OUTDATED, TODO)
 
