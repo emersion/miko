@@ -1,4 +1,4 @@
-# Protocole version *8*
+# Protocole version *9*
 
 ## Généralités
 
@@ -41,7 +41,7 @@ S | 20 | Non | entity_id_change | uint16 oldentityid + uint16 newentityid
 S | 21 | Oui | chunks_update | bytes chunks
 
 * Si le message possède un tick, il l'envoit avant son contenu : headers puis tick puis contenu. Le tick est un uint16 et est la frame de logique actuelle sur le simulateur du jeu envoyant le message, elle revient à 0 après avoir atteint son maximum (2^16 - 1)
-* [1] : Un tick est envoyé après le `loginresponsecode` si c'est le code "ok".
+* [1] : Si c'est le code "ok", la réponse contient en plus : uint16 tick | uint64 timestamp
 
 ### exitcode
 
@@ -95,9 +95,11 @@ Identifiant unique de la version du protocole utilisé par le client.
 
 ```
 uint16 maxRollbackTicks
+uint16 timeServerPort
 ```
 
 * maxRollbackTicks : nombre maximum de ticks où l'on peut revenir dans le passé pour appliquer des actions
+* timeServerPort : le port du serveur de temps
 
 ## Terrain
 
@@ -246,6 +248,10 @@ size times:
 	uint16 entityid
 	action_do
 ```
+
+## Serveur de temps
+
+Un serveur de temps permet au client de synchroniser son horloge avec celle du serveur. Il s'agit d'un serveur UDP qui écoute sur le port spécifié dans le message `config`. Lorsqu'il reçoit un paquet UDP vide, il doit envoyer régulièrement et pendant un certain temps des `uint64` qui représentent le timestamp Unix actuel en millisecondes.
 
 ## Session exemple (OUTDATED, TODO)
 
