@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/game"
 	"git.emersion.fr/saucisse-royale/miko.git/server/hitbox"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
@@ -74,11 +75,11 @@ func (e *Entity) ApplyDiff(d *message.EntityDiff, src *Entity) {
 // [GAME-SPECIFIC]
 func (e *Entity) Hitbox() hitbox.Hitbox {
 	switch e.Sprite {
-	case 0: // placeholder
+	case game.PlaceholderSprite:
 		return hitbox.NewNull()
-	case 1: // player
+	case game.PlayerSprite:
 		return hitbox.NewCircle(e.Position, 10)
-	case 2: // ball
+	case game.BallSprite:
 		return hitbox.NewCircle(e.Position, 10)
 	}
 	return nil
