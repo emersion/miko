@@ -7,8 +7,8 @@ import (
 )
 
 func TestTimeToTimestamp(test *testing.T) {
-	t := time.Unix(789697858, 137000)
-	expected := message.Timestamp(789697858137)
+	t := time.Unix(789697858, 137569000)
+	expected := message.Timestamp(789697858137569)
 	timestamp := message.TimeToTimestamp(t)
 
 	if timestamp != expected {
@@ -17,8 +17,8 @@ func TestTimeToTimestamp(test *testing.T) {
 }
 
 func TestTimestampToTime(test *testing.T) {
-	timestamp := message.Timestamp(807656789876568)
-	expected := time.Unix(807656789876, 568000)
+	timestamp := message.Timestamp(807656789876568412)
+	expected := time.Unix(807656789876, 568412000)
 	t := message.TimestampToTime(timestamp)
 
 	if t != expected {
