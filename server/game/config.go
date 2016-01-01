@@ -9,7 +9,7 @@ import (
 )
 
 type Config struct {
-	MaxRollbackTicks    uint16
+	message.ConfigBase
 	DefaultPlayerSpeed  float32
 	PlayerBallCooldown  Cooldown
 	DefaultBallSpeed    float32
@@ -30,7 +30,9 @@ func (c *Config) ReadFrom(r io.Reader) (n int64, err error) {
 
 func DefaultConfig() *Config {
 	return &Config{
-		MaxRollbackTicks:    uint16(message.MaxRewind),
+		ConfigBase: message.ConfigBase{
+			MaxRollbackTicks: uint16(message.MaxRewind),
+		},
 		DefaultPlayerSpeed:  7,
 		PlayerBallCooldown:  20,
 		DefaultBallSpeed:    9,
