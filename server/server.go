@@ -5,6 +5,7 @@ package main
 import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/engine"
 	"git.emersion.fr/saucisse-royale/miko.git/server/server"
+	"git.emersion.fr/saucisse-royale/miko.git/server/timeserver"
 	"os"
 	"os/signal"
 )
@@ -13,7 +14,8 @@ import (
 func main() {
 	// Create server & engine
 	srv := server.New(":9999")
-	e := engine.New(srv)
+	timeSrv := timeserver.New(":9998")
+	e := engine.New(srv, timeSrv)
 	ctx := e.Context()
 
 	// Listen for SIGINT
@@ -32,5 +34,6 @@ func main() {
 
 	// Start server & engine
 	go srv.Listen()
+	go timeSrv.Listen()
 	e.Start()
 }

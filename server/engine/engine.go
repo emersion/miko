@@ -14,11 +14,12 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
 	"git.emersion.fr/saucisse-royale/miko.git/server/server"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
+	"git.emersion.fr/saucisse-royale/miko.git/server/timeserver"
 	"log"
 	"time"
 )
 
-const broadcastInterval time.Duration = time.Millisecond * 150
+const broadcastInterval = 150 * time.Millisecond
 
 type Engine struct {
 	auth    *auth.Service
@@ -28,15 +29,17 @@ type Engine struct {
 	terrain *terrain.Terrain
 	config  *game.Config
 
-	ctx *message.Context
-	srv *server.Server
+	ctx     *message.Context
+	srv     *server.Server
+	timeSrv *timeserver.Server
 
 	clients map[int]*message.IO
 
-	mover      *Mover
-	running    bool
-	brdStop    chan bool
-	listenStop chan bool
+	mover          *Mover
+	running        bool
+	brdStop        chan bool
+	listenStop     chan bool
+	listenTimeStop chan bool
 }
 
 func (e *Engine) processEntityRequest(req entity.Request) bool {
@@ -298,6 +301,17 @@ func (e *Engine) listenNewClients() {
 	}
 }
 
+func (e *Engine) listenNewTimeClients() {
+	for {
+		select {
+		case client := <-e.timeSrv.Joins:
+			go e.timeSrv.Accept(client)
+		case <-e.listenTimeStop:
+			return
+		}
+	}
+}
+
 // Periodically broadcast changes to clients.
 func (e *Engine) startBrd() {
 	ticker := time.NewTicker(broadcastInterval)
@@ -318,6 +332,9 @@ func (e *Engine) Start() {
 	if e.srv != nil {
 		go e.listenNewClients()
 		go e.startBrd()
+	}
+	if e.timeSrv != nil {
+		go e.listenNewTimeClients()
 	}
 
 	engineStart := time.Duration(time.Now().UnixNano()) * time.Nanosecond
@@ -362,7 +379,7 @@ func (e *Engine) Context() *message.Context {
 	return e.ctx
 }
 
-func New(srv *server.Server) *Engine {
+func New(srv *server.Server, timeSrv *timeserver.Server) *Engine {
 	// Create a new context
 	ctx := message.NewServerContext()
 
@@ -370,6 +387,7 @@ func New(srv *server.Server) *Engine {
 	e := &Engine{
 		ctx:     ctx,
 		srv:     srv,
+		timeSrv: timeSrv,
 		auth:    auth.NewService(),
 		clock:   clock.NewService(),
 		entity:  entity.NewService(),
@@ -377,10 +395,13 @@ func New(srv *server.Server) *Engine {
 		terrain: terrain.New(),
 		config:  game.DefaultConfig(),
 
-		clients:    make(map[int]*message.IO),
-		brdStop:    make(chan bool),
-		listenStop: make(chan bool),
+		clients:        make(map[int]*message.IO),
+		brdStop:        make(chan bool),
+		listenStop:     make(chan bool),
+		listenTimeStop: make(chan bool),
 	}
+
+	// TODO: set config time server port if it exists
 
 	// Populate context
 	ctx.Auth = e.auth
@@ -394,4 +415,8 @@ func New(srv *server.Server) *Engine {
 	e.mover = NewMover(e)
 
 	return e
+}
+
+func NewServerless() *Engine {
+	return New(nil, nil)
 }
