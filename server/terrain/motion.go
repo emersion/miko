@@ -29,6 +29,10 @@ func (p *Position) ToMessage() *message.Position {
 	}
 }
 
+func (p *Position) Equals(other *Position) bool {
+	return (p.X == other.X && p.Y == other.Y)
+}
+
 func NewPositionFromMessage(coords *message.Position) *Position {
 	return &Position{
 		X: float64(int(coords.BX)*message.BlockLen + int(coords.X)),
@@ -61,6 +65,10 @@ func (s *Speed) ToMessage() *message.Speed {
 		Angle: float32(s.Angle),
 		Norm:  float32(s.Norm),
 	}
+}
+
+func (s *Speed) Equals(other *Speed) bool {
+	return (s.Angle == other.Angle && s.Norm == other.Norm)
 }
 
 func NewSpeedFromMessage(speed *message.Speed) *Speed {

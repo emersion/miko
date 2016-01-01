@@ -2,8 +2,12 @@ package hitbox
 
 import (
 	"errors"
+	"math"
+
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 )
+
+const CircleContourLen = 4
 
 type Circle struct {
 	center *terrain.Position
@@ -11,8 +15,16 @@ type Circle struct {
 }
 
 func (hb *Circle) Contour() []*terrain.Position {
-	contour := []*terrain.Position{}
-	// TODO
+	// TODO: change base angle according to direction
+	contour := make([]*terrain.Position, CircleContourLen)
+
+	for i := 0; i < CircleContourLen; i++ {
+		angle := 2 * math.Pi * float64(i) / CircleContourLen
+		x := hb.center.X + hb.radius*math.Cos(angle)
+		y := hb.center.Y + hb.radius*math.Sin(angle)
+		contour[i] = &terrain.Position{x, y}
+	}
+
 	return contour
 }
 
