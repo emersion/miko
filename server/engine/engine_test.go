@@ -9,7 +9,7 @@ import (
 )
 
 func TestEngine(t *testing.T) {
-	e := engine.New(nil)
+	e := engine.NewServerless()
 	ctx := e.Context()
 
 	go e.Start()
