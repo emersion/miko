@@ -293,6 +293,7 @@ func (e *Engine) listenNewClients() {
 	for {
 		select {
 		case io := <-e.srv.Joins:
+			log.Println("Accepting client")
 			e.clients[io.Id] = io
 			go hdlr.Listen(io)
 		case <-e.listenStop:
@@ -306,6 +307,7 @@ func (e *Engine) listenNewTimeClients() {
 		select {
 		case client := <-e.timeSrv.Joins:
 			// TODO: Check that the client is connected
+			log.Println("Accepting time server client")
 			go e.timeSrv.Accept(client)
 		case <-e.listenTimeStop:
 			return
@@ -362,7 +364,6 @@ func (e *Engine) Start() {
 }
 
 func (e *Engine) Stop() {
-	log.Println("Stopping server...")
 	e.running = false
 
 	if e.srv != nil {
