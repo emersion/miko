@@ -5,7 +5,7 @@ package message
 type ProtocolVersion uint16
 
 // The current protocol version.
-const CurrentVersion ProtocolVersion = 8
+const CurrentVersion ProtocolVersion = 9
 
 type Type uint8 // A message type.
 type ExitCode uint8

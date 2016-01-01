@@ -305,6 +305,11 @@ func (e *Engine) listenNewTimeClients() {
 	for {
 		select {
 		case client := <-e.timeSrv.Joins:
+			// TODO
+			//if io.State != message.Accepted {
+			//	continue
+			//}
+
 			go e.timeSrv.Accept(client)
 		case <-e.listenTimeStop:
 			return
@@ -401,7 +406,10 @@ func New(srv *server.Server, timeSrv *timeserver.Server) *Engine {
 		listenTimeStop: make(chan bool),
 	}
 
-	// TODO: set config time server port if it exists
+	// Set config
+	if timeSrv != nil {
+		e.config.TimeServerPort = uint16(timeSrv.Port())
+	}
 
 	// Populate context
 	ctx.Auth = e.auth
@@ -413,6 +421,25 @@ func New(srv *server.Server, timeSrv *timeserver.Server) *Engine {
 
 	// Initialize engine submodules
 	e.mover = NewMover(e)
+
+	// Set callbacks
+	e.auth.LoginCallback = func(session *message.Session) {
+		entity := session.Entity
+
+		// Populate entity
+		// TODO: default values are hardcoded
+		entity.Position.BX = 20
+		entity.Position.BY = 20
+		entity.Type = game.PlayerEntity
+		entity.Sprite = game.PlayerSprite
+		entity.Attributes[game.HealthAttr] = game.Health(1000)
+		entity.Attributes[game.CooldownOneAttr] = game.Cooldown(0)
+
+		// TODO
+		//if e.timeSrv != nil {
+		//	e.timeSrv.Reject(io)
+		//}
+	}
 
 	return e
 }

@@ -4,16 +4,17 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"io"
 	"log"
+	"time"
 )
 
-func SendLoginResp(w io.Writer, code message.LoginResponseCode, t message.Tick) error {
+func SendLoginResp(w io.Writer, code message.LoginResponseCode, tick message.Tick, t time.Time) error {
 	data := []interface{}{
 		message.Types["login_response"],
 		code,
 	}
 
 	if code == message.LoginResponseCodes["ok"] {
-		data = append(data, t)
+		data = append(data, tick, message.TimeToTimestamp(t))
 	}
 
 	return send(w, data...)

@@ -6,6 +6,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"io"
 	"log"
+	"time"
 )
 
 func ReadVersion(r io.Reader) (version message.ProtocolVersion) {
@@ -69,7 +70,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		username, password := ReadLogin(io)
 
 		code := ctx.Auth.Login(io.Id, username, password)
-		if err := builder.SendLoginResp(io, code, ctx.Clock.GetRelativeTick()); err != nil {
+		if err := builder.SendLoginResp(io, code, ctx.Clock.GetRelativeTick(), time.Now()); err != nil {
 			return err
 		}
 

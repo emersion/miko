@@ -3,15 +3,15 @@ package timeserver
 import (
 	"bytes"
 	"encoding/binary"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"net"
 	"time"
 )
 
 const interval = time.Millisecond * 100
-const timeout = time.Second * 60
+const timeout = time.Second * 15
 
 type Server struct {
-	addrStr string
 	addr    *net.UDPAddr
 	conn    *net.UDPConn
 	clients map[string]*Client
@@ -20,10 +20,10 @@ type Server struct {
 }
 
 type Client struct {
-	addr        *net.UDPAddr
-	accepted    bool
-	lastRequest time.Time
-	stop        chan bool
+	addr     *net.UDPAddr
+	accepted bool
+	stop     chan bool
+	reset    chan bool
 }
 
 func (s *Server) Accept(c *Client) error {
@@ -47,7 +47,7 @@ func (s *Server) Accept(c *Client) error {
 		select {
 		case t := <-ticker.C:
 			b.Reset()
-			err := binary.Write(b, binary.BigEndian, t.Unix())
+			err := binary.Write(b, binary.BigEndian, message.TimeToTimestamp(t))
 			if err != nil {
 				return err
 			}
@@ -57,6 +57,8 @@ func (s *Server) Accept(c *Client) error {
 			}
 		case <-c.stop:
 			return nil
+		case <-c.reset:
+			delay.Reset(timeout)
 		case <-delay.C:
 			return nil
 		}
@@ -73,11 +75,6 @@ func (s *Server) Reject(c *Client) {
 
 func (s *Server) Listen() error {
 	var err error
-	s.addr, err = net.ResolveUDPAddr("udp", s.addrStr)
-	if err != nil {
-		return err
-	}
-
 	s.conn, err = net.ListenUDP("udp", s.addr)
 	if err != nil {
 		return err
@@ -98,12 +95,12 @@ func (s *Server) Listen() error {
 		}
 
 		if client, ok := s.clients[addr.String()]; ok {
-			client.lastRequest = time.Now()
+			client.reset <- true
 		} else {
 			client := &Client{
-				addr:        addr,
-				lastRequest: time.Now(),
-				stop:        make(chan bool, 1),
+				addr:  addr,
+				stop:  make(chan bool, 1),
+				reset: make(chan bool, 1),
 			}
 			s.clients[addr.String()] = client
 			s.Joins <- client
@@ -115,9 +112,14 @@ func (s *Server) Port() int {
 	return s.addr.Port
 }
 
-func New(address string) *Server {
+func New(addrStr string) *Server {
+	addr, err := net.ResolveUDPAddr("udp", addrStr)
+	if err != nil {
+		panic("Cannot resolve UDP address")
+	}
+
 	return &Server{
-		addrStr: address,
-		Joins:   make(chan *Client),
+		addr:  addr,
+		Joins: make(chan *Client),
 	}
 }
