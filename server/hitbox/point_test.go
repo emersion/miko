@@ -8,9 +8,8 @@ import (
 )
 
 func TestPoint(t *testing.T) {
-	hb := hitbox.NewPoint(&terrain.Position{7, 22})
-
-	contour := hb.Contour()
+	hb := hitbox.NewPoint()
+	contour := hb.Contour(&terrain.Position{7, 22})
 
 	if len(contour) != 1 {
 		t.Fatal("Point hitbox contour must contain 1 point")

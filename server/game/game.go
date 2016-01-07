@@ -2,6 +2,7 @@
 package game
 
 import (
+	"git.emersion.fr/saucisse-royale/miko.git/server/hitbox"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
@@ -30,3 +31,15 @@ type Cooldown uint16
 const (
 	ThrowBallAction message.ActionId = 0
 )
+
+func GetHitbox(sprite message.Sprite) hitbox.Hitbox {
+	switch sprite {
+	case PlaceholderSprite:
+		return hitbox.NewNull()
+	case PlayerSprite:
+		return hitbox.NewCircle(10)
+	case BallSprite:
+		return hitbox.NewCircle(10)
+	}
+	return nil
+}

@@ -1,8 +1,6 @@
 package entity
 
 import (
-	"git.emersion.fr/saucisse-royale/miko.git/server/game"
-	"git.emersion.fr/saucisse-royale/miko.git/server/hitbox"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 )
@@ -69,20 +67,6 @@ func (e *Entity) ApplyDiff(d *message.EntityDiff, src *Entity) {
 	if d.Attributes {
 		e.Attributes = src.Attributes
 	}
-}
-
-// Get this entity's hitbox.
-// [GAME-SPECIFIC]
-func (e *Entity) Hitbox() hitbox.Hitbox {
-	switch e.Sprite {
-	case game.PlaceholderSprite:
-		return hitbox.NewNull()
-	case game.PlayerSprite:
-		return hitbox.NewCircle(e.Position, 10)
-	case game.BallSprite:
-		return hitbox.NewCircle(e.Position, 10)
-	}
-	return nil
 }
 
 // Create a new empty entity.

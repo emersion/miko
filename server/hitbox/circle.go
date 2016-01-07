@@ -10,28 +10,27 @@ import (
 const CircleContourLen = 4
 
 type Circle struct {
-	center *terrain.Position
 	radius float64
 }
 
-func (hb *Circle) Contour() []*terrain.Position {
+func (hb *Circle) Contour(center *terrain.Position) []*terrain.Position {
 	// TODO: change base angle according to direction
 	contour := make([]*terrain.Position, CircleContourLen)
 
 	for i := 0; i < CircleContourLen; i++ {
 		angle := 2 * math.Pi * float64(i) / CircleContourLen
-		x := hb.center.X + hb.radius*math.Cos(angle)
-		y := hb.center.Y + hb.radius*math.Sin(angle)
+		x := center.X + hb.radius*math.Cos(angle)
+		y := center.Y + hb.radius*math.Sin(angle)
 		contour[i] = &terrain.Position{x, y}
 	}
 
 	return contour
 }
 
-func (hb *Circle) intersects(other Hitbox) (intersects bool, err error) {
+func (hb *Circle) intersects(center *terrain.Position, other Hitbox, otherCenter *terrain.Position) (intersects bool, err error) {
 	switch o := other.(type) {
 	case *Circle:
-		d := dist(hb.center, o.center)
+		d := dist(center, otherCenter)
 		intersects = (d <= hb.radius+o.radius)
 	default:
 		err = errors.New("Unsupported hitbox")
@@ -39,6 +38,6 @@ func (hb *Circle) intersects(other Hitbox) (intersects bool, err error) {
 	return
 }
 
-func NewCircle(center *terrain.Position, radius float64) *Circle {
-	return &Circle{center, radius}
+func NewCircle(radius float64) *Circle {
+	return &Circle{radius}
 }

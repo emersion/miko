@@ -6,11 +6,11 @@ import (
 
 type Null struct{}
 
-func (hb *Null) Contour() []*terrain.Position {
+func (hb *Null) Contour(center *terrain.Position) []*terrain.Position {
 	return []*terrain.Position{}
 }
 
-func (hb *Null) intersects(other Hitbox) (intersects bool, err error) {
+func (hb *Null) intersects(center *terrain.Position, other Hitbox, otherCenter *terrain.Position) (intersects bool, err error) {
 	intersects = false
 	return
 }

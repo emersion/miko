@@ -8,9 +8,8 @@ import (
 )
 
 func TestRectangle(t *testing.T) {
-	hb := hitbox.NewRectangle(&terrain.Position{10, 22}, 4, 6)
-
-	contour := hb.Contour()
+	hb := hitbox.NewRectangle(4, 6)
+	contour := hb.Contour(&terrain.Position{10, 22})
 
 	if len(contour) != 4 {
 		t.Fatal("Rectangle hitbox contour must contain 4 points")

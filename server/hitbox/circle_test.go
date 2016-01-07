@@ -8,9 +8,8 @@ import (
 )
 
 func TestCircle(t *testing.T) {
-	hb := hitbox.NewCircle(&terrain.Position{10, 22}, 10)
-
-	contour := hb.Contour()
+	hb := hitbox.NewCircle(10)
+	contour := hb.Contour(&terrain.Position{10, 22})
 
 	if len(contour) != 4 {
 		t.Fatal("Circle hitbox contour must contain 4 points")

@@ -8,14 +8,13 @@ import (
 )
 
 type Rectangle struct {
-	center *terrain.Position
 	width  float64
 	height float64
 }
 
-func (hb *Rectangle) bounds() [2]*terrain.Position {
-	x1 := hb.center.X - hb.width/2
-	y1 := hb.center.Y - hb.height/2
+func (hb *Rectangle) bounds(center *terrain.Position) [2]*terrain.Position {
+	x1 := center.X - hb.width/2
+	y1 := center.Y - hb.height/2
 	x2 := x1 + hb.width
 	y2 := y1 + hb.height
 
@@ -25,8 +24,8 @@ func (hb *Rectangle) bounds() [2]*terrain.Position {
 	}
 }
 
-func (hb *Rectangle) Contour() []*terrain.Position {
-	bounds := hb.bounds()
+func (hb *Rectangle) Contour(center *terrain.Position) []*terrain.Position {
+	bounds := hb.bounds(center)
 
 	return []*terrain.Position{
 		bounds[0],
@@ -36,19 +35,19 @@ func (hb *Rectangle) Contour() []*terrain.Position {
 	}
 }
 
-func (hb *Rectangle) intersects(other Hitbox) (intersects bool, err error) {
+func (hb *Rectangle) intersects(center *terrain.Position, other Hitbox, otherCenter *terrain.Position) (intersects bool, err error) {
 	switch o := other.(type) {
 	case *Rectangle:
-		b1 := hb.bounds()
-		b2 := o.bounds()
+		b1 := hb.bounds(center)
+		b2 := o.bounds(otherCenter)
 		intersects = (b1[0].X <= b2[1].X && b1[1].X >= b2[0].X &&
 			b1[0].Y <= b2[1].Y && b1[1].Y >= b2[0].Y)
 	case *Circle:
 		// See http://stackoverflow.com/a/402010
-		bounds := hb.bounds()
+		bounds := hb.bounds(center)
 
-		dx := math.Abs(o.center.X - bounds[0].X)
-		dy := math.Abs(o.center.Y - bounds[0].Y)
+		dx := math.Abs(otherCenter.X - bounds[0].X)
+		dy := math.Abs(otherCenter.Y - bounds[0].Y)
 
 		if dx > hb.width/2+o.radius || dy > hb.height/2+o.radius {
 			intersects = false
@@ -64,6 +63,6 @@ func (hb *Rectangle) intersects(other Hitbox) (intersects bool, err error) {
 	return
 }
 
-func NewRectangle(center *terrain.Position, width, height float64) *Rectangle {
-	return &Rectangle{center, width, height}
+func NewRectangle(width, height float64) *Rectangle {
+	return &Rectangle{width, height}
 }
