@@ -10,6 +10,10 @@ func (hb *Null) Contour(center *terrain.Position) []*terrain.Position {
 	return []*terrain.Position{}
 }
 
+func (hb *Null) Footprint(center *terrain.Position) []*terrain.Position {
+	return []*terrain.Position{}
+}
+
 func (hb *Null) intersects(center *terrain.Position, other Hitbox, otherCenter *terrain.Position) (intersects bool, err error) {
 	intersects = false
 	return

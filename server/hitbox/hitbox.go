@@ -16,6 +16,7 @@ func dist(a, b *terrain.Position) float64 {
 
 type Hitbox interface {
 	Contour(center *terrain.Position) []*terrain.Position
+	Footprint(center *terrain.Position) []*terrain.Position
 }
 
 type hitbox interface {

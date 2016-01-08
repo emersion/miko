@@ -35,6 +35,12 @@ func (hb *Rectangle) Contour(center *terrain.Position) []*terrain.Position {
 	}
 }
 
+func (hb *Rectangle) Footprint(center *terrain.Position) (fp []*terrain.Position) {
+	fp = hb.Contour(center)
+	fp = append(fp, center)
+	return
+}
+
 func (hb *Rectangle) intersects(center *terrain.Position, other Hitbox, otherCenter *terrain.Position) (intersects bool, err error) {
 	switch o := other.(type) {
 	case *Rectangle:

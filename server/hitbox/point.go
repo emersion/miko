@@ -11,6 +11,10 @@ func (hb *Point) Contour(center *terrain.Position) []*terrain.Position {
 	return []*terrain.Position{center}
 }
 
+func (hb *Point) Footprint(center *terrain.Position) []*terrain.Position {
+	return hb.Contour(center)
+}
+
 func (hb *Point) intersects(center *terrain.Position, other Hitbox, otherCenter *terrain.Position) (intersects bool, err error) {
 	switch o := other.(type) {
 	case *Point:
