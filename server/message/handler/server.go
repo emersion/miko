@@ -222,6 +222,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		Read(io, &action.Id)
 
 		// TODO: move action params somewhere else
+		// [GAME-SPECIFIC]
 		if action.Id == 0 { // throw_ball
 			var angle float32
 			var tmpId message.EntityId
