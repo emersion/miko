@@ -27,10 +27,12 @@ func (hb *Circle) Contour(center *terrain.Position) []*terrain.Position {
 	return contour
 }
 
-func (hb *Circle) Footprint(center *terrain.Position) (fp []*terrain.Position) {
-	fp = hb.Contour(center)
-	fp = append(fp, center)
-	return
+func (hb *Circle) Footprint(center *terrain.Position, angle float64) []*terrain.Position {
+	angle1 := angle + math.Pi/2
+	angle2 := angle - math.Pi/2
+	pt1 := &terrain.Position{center.X + math.Cos(angle1), center.Y + math.Sin(angle1)}
+	pt2 := &terrain.Position{center.X + math.Cos(angle2), center.Y + math.Sin(angle2)}
+	return []*terrain.Position{pt1, pt2}
 }
 
 func (hb *Circle) intersects(center *terrain.Position, other Hitbox, otherCenter *terrain.Position) (intersects bool, err error) {

@@ -10,7 +10,7 @@ func (hb *Null) Contour(center *terrain.Position) []*terrain.Position {
 	return []*terrain.Position{}
 }
 
-func (hb *Null) Footprint(center *terrain.Position) []*terrain.Position {
+func (hb *Null) Footprint(center *terrain.Position, angle float64) []*terrain.Position {
 	return []*terrain.Position{}
 }
 

@@ -35,10 +35,19 @@ func (hb *Rectangle) Contour(center *terrain.Position) []*terrain.Position {
 	}
 }
 
-func (hb *Rectangle) Footprint(center *terrain.Position) (fp []*terrain.Position) {
-	fp = hb.Contour(center)
-	fp = append(fp, center)
-	return
+func (hb *Rectangle) Footprint(center *terrain.Position, angle float64) []*terrain.Position {
+	contour := hb.Contour(center)
+
+	angle = math.Remainder(angle, math.Pi)
+	if angle == 0 {
+		return []*terrain.Position{contour[1], contour[2]}
+	} else if angle < math.Pi/2 { // Between 0 and pi/2
+		return []*terrain.Position{contour[0], contour[2]}
+	} else if angle == math.Pi/2 {
+		return []*terrain.Position{contour[0], contour[1]}
+	} else { // Between pi/2 and pi
+		return []*terrain.Position{contour[1], contour[3]}
+	}
 }
 
 func (hb *Rectangle) intersects(center *terrain.Position, other Hitbox, otherCenter *terrain.Position) (intersects bool, err error) {
