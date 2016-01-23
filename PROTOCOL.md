@@ -1,4 +1,4 @@
-# Protocole version *9*
+# Protocole version 10
 
 ## Généralités
 
@@ -251,9 +251,10 @@ size times:
 
 ## Serveur de temps
 
-* Permet au client de synchroniser son horloge avec celle du serveur
+* Permet la synchronisation des horloges du client et du serveur
 * UDP, écoute sur le port spécifié dans `config`
-* Lorsqu'il reçoit un paquet UDP vide, il  envoie régulièrement et pendant un certain temps des `uint64` qui représentent le timestamp Unix actuel en microsecondes
+* Les temps sont des timestamp Unix en microsecondes
+* Lorsqu'il reçoit un paquet UDP, il lit un `uint64` qui représente le temps auquel le paquet a été envoyé selon l'horloge du client et il renvoie deux `uint64` qui représentent le temps reçu puis le temps actuel selon l'horloge du serveur
 
 ## Session exemple (OUTDATED, TODO)
 
