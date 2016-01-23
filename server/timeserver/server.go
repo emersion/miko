@@ -4,12 +4,35 @@ import (
 	"bytes"
 	"encoding/binary"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+	"io"
 	"net"
 	"time"
 )
 
-const interval = time.Millisecond * 100
-const timeout = time.Second * 15
+type timestampReader struct {
+	conn   *net.UDPConn
+	buffer []byte
+	reader io.Reader
+}
+
+func (r *timestampReader) Read() (timestamp uint64, addr *net.UDPAddr, err error) {
+	_, addr, err = r.conn.ReadFromUDP(r.buffer)
+	if err != nil {
+		return
+	}
+
+	err = binary.Read(r.reader, binary.BigEndian, &timestamp)
+	return
+}
+
+func newTimestampReader(conn *net.UDPConn) *timestampReader {
+	buf := make([]byte, 64)
+	return &timestampReader{
+		conn:   conn,
+		buffer: buf,
+		reader: bytes.NewReader(buf),
+	}
+}
 
 type Server struct {
 	addr    *net.UDPAddr
@@ -22,8 +45,28 @@ type Server struct {
 type Client struct {
 	addr     *net.UDPAddr
 	accepted bool
-	stop     chan bool
-	reset    chan bool
+	received uint64
+}
+
+func (s *Server) replyTo(client *Client) error {
+	b := new(bytes.Buffer)
+	err := binary.Write(b, binary.BigEndian, client.received)
+	if err != nil {
+		return err
+	}
+
+	now := message.TimeToTimestamp(time.Now())
+	err = binary.Write(b, binary.BigEndian, now)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.conn.WriteToUDP(b.Bytes(), client.addr)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Server) Accept(c *Client) error {
@@ -33,36 +76,7 @@ func (s *Server) Accept(c *Client) error {
 
 	c.accepted = true
 
-	b := new(bytes.Buffer)
-	ticker := time.NewTicker(interval)
-	delay := time.NewTimer(timeout)
-
-	defer (func() {
-		c.accepted = false
-		ticker.Stop()
-		delay.Stop()
-	})()
-
-	for {
-		select {
-		case t := <-ticker.C:
-			b.Reset()
-			err := binary.Write(b, binary.BigEndian, message.TimeToTimestamp(t))
-			if err != nil {
-				return err
-			}
-			_, err = s.conn.WriteToUDP(b.Bytes(), c.addr)
-			if err != nil {
-				return err
-			}
-		case <-c.stop:
-			return nil
-		case <-c.reset:
-			delay.Reset(timeout)
-		case <-delay.C:
-			return nil
-		}
-	}
+	return s.replyTo(c)
 }
 
 func (s *Server) Reject(c *Client) {
@@ -70,7 +84,7 @@ func (s *Server) Reject(c *Client) {
 		return
 	}
 
-	c.stop <- true
+	// Do not do anything
 }
 
 func (s *Server) Listen() error {
@@ -82,25 +96,22 @@ func (s *Server) Listen() error {
 
 	defer s.conn.Close()
 
-	buf := make([]byte, 1) // We should receive only empty packets
+	r := newTimestampReader(s.conn)
 	for {
-		n, addr, err := s.conn.ReadFromUDP(buf)
+		timestamp, addr, err := r.Read()
 		if err != nil {
 			return err
 		}
 
-		// Only process empty packets
-		if n != 0 {
-			continue
-		}
-
 		if client, ok := s.clients[addr.String()]; ok {
-			client.reset <- true
+			client.received = timestamp
+			if client.accepted {
+				s.replyTo(client)
+			}
 		} else {
 			client := &Client{
-				addr:  addr,
-				stop:  make(chan bool, 1),
-				reset: make(chan bool, 1),
+				addr:     addr,
+				received: timestamp,
 			}
 			s.clients[addr.String()] = client
 			s.Joins <- client
