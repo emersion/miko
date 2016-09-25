@@ -82,7 +82,11 @@ func (s *Server) Listen() error {
 	defer listener.Close()
 
 	for {
-		conn, _ := listener.Accept()
+		conn, err := listener.Accept()
+		if err != nil {
+			return err
+		}
+
 		s.newClient(conn)
 	}
 
