@@ -18,7 +18,6 @@ import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.List;
 import java.util.prefs.Preferences;
 
@@ -35,7 +34,7 @@ public class Miko implements MessageHandler {
   public static final int TICK_TIME = 20 * 1000000; // milliseconds
   private static final long SERVER_TIMEOUT = 20 * 1000000000L; // seconds
 
-  private static final String DEFAULT_SERVER_ADDRESS = "miko.emersion.fr";
+  private static final String DEFAULT_SERVER_ADDRESS = "naota.emersion.fr";
   private static final int DEFAULT_SERVER_PORT = 9999;
 
   private static Logger logger = LogManager.getLogger("miko.main");
@@ -55,8 +54,13 @@ public class Miko implements MessageHandler {
   private boolean closeRequested = false;
   private NetworkClient networkClient;
   private KeyStateManager keyStateManager;
+
+  private long lastFrame;
   private long accumulator;
   private float alpha; // for #render(), updated each loop
+
+  private long debugStartTime;
+  private int debugStartTick;
 
   private void exit() {
     logger.info("Starts exiting");
@@ -78,15 +82,11 @@ public class Miko implements MessageHandler {
   private void initWindow() {
 
     // TODO utiliser un synth l&f une fois que le xml est écrit.
-    try {
-      UiWindow.initUI(Miko.class.getResourceAsStream("/style.xml"), Miko.class);
-    } catch (ParseException e) {
-      // should never happen in production
-      // dump stack trace for developers
-      logger.fatal("Couldn't parse Miko UI Style", e);
-      e.printStackTrace();
-      exit();
-    }
+    /*
+     * try { UiWindow.initUI(Miko.class.getResourceAsStream("/style.xml"), Miko.class); } catch
+     * (ParseException e) { // should never happen in production // dump stack trace for developers
+     * logger.fatal("Couldn't parse Miko UI Style", e); e.printStackTrace(); exit(); }
+     */
 
     // utiliser un par défaut en attendant
     UiWindow.initUI();
@@ -120,11 +120,18 @@ public class Miko implements MessageHandler {
     if (state != MikoState.EXIT) {
       return;
     }
-    engine.processNextTick(keyStateManager.getEventsAndFlush(), window.getMousePosition());
+    while (accumulator >= TICK_TIME) {
+      engine.processNextTick(keyStateManager.getEventsAndFlush(), window.getMousePosition());
+      long exp = engine.getTick();
+      long the = (System.nanoTime() - debugStartTime) / TICK_TIME + debugStartTick;
+      System.out.format("Tick : Expérimental -> %5d - %5d <- Théorique - Différence (exp-thé) : %5d%n", exp, the, exp - the);
+      accumulator -= TICK_TIME;
+    }
+    System.out.println("dille");
   }
 
   private void loop() {
-    long lastFrame = System.nanoTime();
+    lastFrame = System.nanoTime();
     accumulator = 0;
     while (!closeRequested) {
       long newTime = System.nanoTime();
@@ -132,10 +139,7 @@ public class Miko implements MessageHandler {
       lastFrame = newTime;
       accumulator += deltaTime;
       network();
-      while (accumulator >= TICK_TIME) {
-        logic();
-        accumulator -= TICK_TIME;
-      }
+      logic();
       alpha = (float) accumulator / TICK_TIME; // update alpha for #render()
       window.render(); // calls render(graphics)
       postLoop();
@@ -262,7 +266,6 @@ public class Miko implements MessageHandler {
     logger.trace("Changing state from {} to {}", state, newState);
     state = newState;
     window.hideAllUi();
-    accumulator = 0;
     switch (state) {
       case CONNECTION_REQUEST:
         window.showUi(uiConnect);
@@ -282,7 +285,6 @@ public class Miko implements MessageHandler {
       case REGISTER:
         break;
       case JOIN:
-        // TODO montrer chargement
         break;
       case EXIT:
         break;
@@ -463,9 +465,11 @@ public class Miko implements MessageHandler {
     logger.info("Login success, starting engine at tick {}", tickRemainder);
     changeStateTo(MikoState.JOIN);
     try {
-      engine =
-          new Engine(config, window.getDevice().getDefaultConfiguration(), networkClient::putMessage, window.getWidth(), window.getHeight(),
-              tickRemainder);
+      engine = new Engine(config, window.getConfiguration(), networkClient::putMessage, window.getWidth(), window.getHeight(), tickRemainder);
+      accumulator = 0;
+      lastFrame = System.nanoTime();
+      debugStartTick = tickRemainder;
+      debugStartTime = System.nanoTime();
     } catch (IOException e) {
       uiConnect.setStatusText("Erreur lors de la création du jeu : erreur de lecture de données.");
       disconnect();
@@ -496,6 +500,19 @@ public class Miko implements MessageHandler {
       logger.info("Received self player join, finished initializing engine, starting game");
       engine.setPlayerEntityId(entityId);
       engine.playerJoined(tickRemainder, entityId, pseudo);
+      System.out.println(accumulator);
+      System.out.println(TICK_TIME);
+      System.out.println(engine.getTick());
+      long ticksSinceStartup = accumulator / TICK_TIME;
+      System.out.println(ticksSinceStartup);
+      System.out.println(debugStartTick);
+      System.out.println("dilleaoreaoeoaeaoeaoe nadylle trap cc dille bjrjrbrbjr " + (ticksSinceStartup + engine.getTick()));
+      accumulator %= TICK_TIME;
+      engine.endStartup(ticksSinceStartup);
+      long exp = engine.getTick();
+      long the = (System.nanoTime() - debugStartTime) / TICK_TIME + debugStartTick;
+      System.out.format("LLIIILL Tick : Expérimental -> %5d - %5d <- Théorique - Différence (exp-thé) : %5d%n", exp, the, exp - the);
+      System.out.println(accumulator);
       changeStateTo(MikoState.EXIT);
     } else {
       engine.playerJoined(tickRemainder, entityId, pseudo);
@@ -528,7 +545,7 @@ public class Miko implements MessageHandler {
     if (registerResponseType == RegisterResponseType.OK) {
       logger.info("Register succeeded");
     } else {
-      logger.warn("Register failed, reason : {}", registerResponseType);
+      logger.warn("Register failed, reason: {}", registerResponseType);
     }
     String statusMessage;
     switch (registerResponseType) {

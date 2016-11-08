@@ -69,7 +69,7 @@ public class Engine {
   private TickInputManager tickInputManager = new TickInputManager();
   private SpriteManager spriteManager;
 
-  private List<EngineMessage> messagesBuffer;
+  private List<EngineMessage> messagesBuffer = new ArrayList<>();
   private final Consumer<FutureOutputMessage> messageOutput;
 
   private int playerEntityId = -1;
@@ -77,7 +77,8 @@ public class Engine {
   private long lastDisposedTick = -1;
   private long lastReceivedTick = -1;
   private long lastTick;
-  private boolean initialized = false;
+  private long createTick = -1;
+  private boolean startedup = false;
 
   public Engine(Config config, GraphicsConfiguration graphicsConfiguration, Consumer<FutureOutputMessage> messageOutput, int width, int height,
       int tickRemainder) throws IOException {
@@ -97,24 +98,37 @@ public class Engine {
     spriteManager.loadImages();
     long tick = tickRemainder;
     lastTick = tick;
-    messagesBuffer = new ArrayList<>();
+    createTick = tick;
+  }
+
+  public long getTick() {
+    return lastTick;
   }
 
   public void processNextTick(List<Triplet<Boolean, Integer, Point>> eventList, Point mousePosition) {
     tickInputManager.addInput(lastTick, eventList, mousePosition);
     // redo logic until current tick
     processBufferedMessages();
-    // everything has necessarily been initialized
-    if (!initialized) {
-      initialized = true;
-    }
+
     logger.trace("Creating tick after {}", lastTick);
     // create next tick
     updateTickAfter(lastTick);
   }
 
+  public void endStartup(long deltaTick) {
+    tickInputManager.addInput(lastTick, java.util.Collections.emptyList(), new Point());
+    processBufferedMessages();
+    long newTick = createTick + deltaTick;
+    logger.trace("Creating ticks until {} and finishing engine startup", newTick);
+    while (lastTick < newTick) {
+      updateTickAfter(lastTick);
+    }
+    // lastTick = newTick now
+    startedup = true;
+  }
+
   public void render(Graphics2D graphics, float alpha, Point mousePosition) {
-    if (!initialized) {
+    if (!startedup) {
       return;
     }
     TerrainPoint playerPoint = entityManager.getMapPoint(lastTick, playerEntityId).toTerrainPoint();
@@ -198,15 +212,15 @@ public class Engine {
           spriteManager.drawSpriteType(graphics, spriteType, spriteTime, terrainPoint.getX(), terrainPoint.getY());
         };
 
-        entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.PLAYER).forEach(draw);
-        entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.BALL).forEach(draw);
+    entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.PLAYER).forEach(draw);
+    entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.BALL).forEach(draw);
 
-        int chatLineHeight = graphics.getFontMetrics().getHeight();
-        int yChatPosition = screenHeight - chatLineHeight;
-        for (String line : chatManager.getMessages()) {
-          graphics.drawString(line, 10, yChatPosition);
-          yChatPosition -= chatLineHeight;
-        }
+    int chatLineHeight = graphics.getFontMetrics().getHeight();
+    int yChatPosition = screenHeight - chatLineHeight;
+    for (String line : chatManager.getMessages()) {
+      graphics.drawString(line, 10, yChatPosition);
+      yChatPosition -= chatLineHeight;
+    }
   }
 
   public void freeTime() {
@@ -248,13 +262,15 @@ public class Engine {
       }
     });
 
-    // set player speed
-    float playerMovementDirection = getPlayerMovementAngle(tickInput);
-    if (Float.isNaN(playerMovementDirection)) {
-      entityManager.setSpeedNorm(tick, playerEntityId, 0f);
-    } else {
-      entityManager.setSpeedNorm(tick, playerEntityId, config.getDefaultPlayerSpeed());
-      entityManager.setSpeedAngle(tick, playerEntityId, playerMovementDirection);
+    if (startedup) {
+      // set player speed
+      float playerMovementDirection = getPlayerMovementAngle(tickInput);
+      if (Float.isNaN(playerMovementDirection)) {
+        entityManager.setSpeedNorm(tick, playerEntityId, 0f);
+      } else {
+        entityManager.setSpeedNorm(tick, playerEntityId, config.getDefaultPlayerSpeed());
+        entityManager.setSpeedAngle(tick, playerEntityId, playerMovementDirection);
+      }
     }
 
     // integrate positions
@@ -269,97 +285,97 @@ public class Engine {
       MapPoint mapPoint = entityManager.getMapPoint(tick, entityId);
       MapPoint newMapPoint = mapPoint.getTranslated(deltaX, deltaY);
       // unused for now
-      EntityType entityType = entityManager.getEntityType(tick, entityId);
-      // check collisions
-      // check terrain collisions
-      Pair.DoubleFloat delta = newMapPoint.subtract(mapPoint);
-      int width = (int) delta.getFirst();
-      int height = (int) delta.getSecond();
-      Hitbox hitbox = entityManager.getSpriteType(tick, entityId).getHitbox();
-      for (Pair.DoubleFloat offset : hitbox.getKeyPoints(delta.getFirst(), delta.getSecond())) {
-        TerrainPoint start = mapPoint.getTranslated(offset.getFirst(), offset.getSecond()).toTerrainPoint();
-        // brensenham algorithm
-        // taken from http://tech-algorithm.com/articles/drawing-line-using-bresenham-algorithm/
-        int x = start.getX();
-        int y = start.getY();
-        int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
-        if (width < 0) {
-          dx1 = -1;
-        } else if (width > 0) {
-          dx1 = 1;
-        }
-        if (height < 0) {
-          dy1 = -1;
-        } else if (height > 0) {
-          dy1 = 1;
-        }
-        if (width < 0) {
-          dx2 = -1;
-        } else if (width > 0) {
-          dx2 = 1;
-        }
-        int longest = Math.abs(width);
-        int shortest = Math.abs(height);
-        if (longest <= shortest) {
-          int temp = longest;
-          longest = shortest;
-          shortest = temp;
-          if (height < 0) {
-            dy2 = -1;
-          } else if (height > 0) {
-            dy2 = 1;
+        EntityType entityType = entityManager.getEntityType(tick, entityId);
+        // check collisions
+        // check terrain collisions
+        Pair.DoubleFloat delta = newMapPoint.subtract(mapPoint);
+        int width = (int) delta.getFirst();
+        int height = (int) delta.getSecond();
+        Hitbox hitbox = entityManager.getSpriteType(tick, entityId).getHitbox();
+        for (Pair.DoubleFloat offset : hitbox.getKeyPoints(delta.getFirst(), delta.getSecond())) {
+          TerrainPoint start = mapPoint.getTranslated(offset.getFirst(), offset.getSecond()).toTerrainPoint();
+          // brensenham algorithm
+          // taken from http://tech-algorithm.com/articles/drawing-line-using-bresenham-algorithm/
+          int x = start.getX();
+          int y = start.getY();
+          int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
+          if (width < 0) {
+            dx1 = -1;
+          } else if (width > 0) {
+            dx1 = 1;
           }
-          dx2 = 0;
-        }
-        int numerator = longest >> 1;
-        for (int i = 0; i <= longest; i++) {
-          // collision checking with x and y
-          TerrainPoint point = new TerrainPoint(x, y);
-          TerrainType terrainType = terrainManager.getChunk(tick, point.getChunkPoint()).getBlock(point.getBlockPoint());
-          if (terrainType == TerrainType.BLACK_WALL) {
-            if (entityType == EntityType.BALL) {
-              entityManager.destroyEntity(tick, entityId);
+          if (height < 0) {
+            dy1 = -1;
+          } else if (height > 0) {
+            dy1 = 1;
+          }
+          if (width < 0) {
+            dx2 = -1;
+          } else if (width > 0) {
+            dx2 = 1;
+          }
+          int longest = Math.abs(width);
+          int shortest = Math.abs(height);
+          if (longest <= shortest) {
+            int temp = longest;
+            longest = shortest;
+            shortest = temp;
+            if (height < 0) {
+              dy2 = -1;
+            } else if (height > 0) {
+              dy2 = 1;
             }
+            dx2 = 0;
+          }
+          int numerator = longest >> 1;
+          for (int i = 0; i <= longest; i++) {
+            // collision checking with x and y
+            TerrainPoint point = new TerrainPoint(x, y);
+            TerrainType terrainType = terrainManager.getChunk(tick, point.getChunkPoint()).getBlock(point.getBlockPoint());
+            if (terrainType == TerrainType.BLACK_WALL) {
+              if (entityType == EntityType.BALL) {
+                entityManager.destroyEntity(tick, entityId);
+              }
+              return;
+            }
+            numerator += shortest;
+            if (!(numerator < longest)) {
+              numerator -= longest;
+              x += dx1;
+              y += dy1;
+            } else {
+              x += dx2;
+              y += dy2;
+            }
+          }
+        }
+        // check entity collisions
+        // only check balls collisions against other entities
+        // only check moving entities against other entities
+        if (entityType == EntityType.BALL) {
+          for (int otherId : entityManager.getEntities(tick)) {
+            int senderId = (int) entityManager.getObjectAttribute(tick, entityId, ObjectAttribute.SENDER);
+            if (senderId == otherId) {
+              continue;
+            }
+            if (entityManager.getEntityType(tick, otherId) != EntityType.PLAYER) {
+              continue;
+            }
+            // check hitbox after id checks because it may be more expensive
+            Hitbox otherHitbox = entityManager.getSpriteType(tick, otherId).getHitbox();
+            MapPoint otherPosition = entityManager.getMapPoint(tick, otherId);
+            if (!Hitbox.collide(hitbox, newMapPoint, otherHitbox, otherPosition)) {
+              continue;
+            }
+            // player-ball collision
+            entityManager.destroyEntity(tick, entityId);
+            int playerHp = (int) entityManager.getObjectAttribute(tick, otherId, ObjectAttribute.HEALTH);
+            entityManager.setObjectAttribute(tick, otherId, ObjectAttribute.HEALTH, playerHp - 1);
             return;
           }
-          numerator += shortest;
-          if (!(numerator < longest)) {
-            numerator -= longest;
-            x += dx1;
-            y += dy1;
-          } else {
-            x += dx2;
-            y += dy2;
-          }
         }
-      }
-      // check entity collisions
-      // only check balls collisions against other entities
-      // only check moving entities against other entities
-      if (entityType == EntityType.BALL) {
-        for (int otherId : entityManager.getEntities(tick)) {
-          int senderId = (int) entityManager.getObjectAttribute(tick, entityId, ObjectAttribute.SENDER);
-          if (senderId == otherId) {
-            continue;
-          }
-          if (entityManager.getEntityType(tick, otherId) != EntityType.PLAYER) {
-            continue;
-          }
-          // check hitbox after id checks because it may be more expensive
-          Hitbox otherHitbox = entityManager.getSpriteType(tick, otherId).getHitbox();
-          MapPoint otherPosition = entityManager.getMapPoint(tick, otherId);
-          if (!Hitbox.collide(hitbox, newMapPoint, otherHitbox, otherPosition)) {
-            continue;
-          }
-          // player-ball collision
-          entityManager.destroyEntity(tick, entityId);
-          int playerHp = (int) entityManager.getObjectAttribute(tick, otherId, ObjectAttribute.HEALTH);
-          entityManager.setObjectAttribute(tick, otherId, ObjectAttribute.HEALTH, playerHp - 1);
-          return;
-        }
-      }
-      entityManager.setMapPoint(tick, entityId, newMapPoint);
-    });
+        entityManager.setMapPoint(tick, entityId, newMapPoint);
+      });
 
     // process actions
     float ballSendAngle = tickInput.getBallSendRequest();
@@ -372,18 +388,20 @@ public class Engine {
         MapPoint position = entityManager.getMapPoint(tick, playerEntityId);
         EntityDataUpdate ball =
             new EntityDataUpdate.Builder(ballId).entityType(EntityType.BALL).position(position).speedAngle(ballSendAngle)
-            .speedNorm(config.getDefaultBallSpeed()).spriteType(SpriteType.BALL).objectAttribute(ObjectAttribute.SENDER, playerEntityId)
-            .objectAttribute(ObjectAttribute.TICKS_LEFT, config.getDefaultBallLifespan()).build();
+                .speedNorm(config.getDefaultBallSpeed()).spriteType(SpriteType.BALL).objectAttribute(ObjectAttribute.SENDER, playerEntityId)
+                .objectAttribute(ObjectAttribute.TICKS_LEFT, config.getDefaultBallLifespan()).build();
         entityManager.createEntity(tick, ball);
         // notify server of ball send
         messageOutput.accept(OutputMessageFactory.action(tick, new Action(ActionType.SEND_BALL, new Pair<>(ballSendAngle, ballId))));
       }
     }
 
-    // send client position
-    Set<EntityUpdateType> updateTypes = EnumSet.of(EntityUpdateType.POSITION, EntityUpdateType.SPEED_ANGLE, EntityUpdateType.SPEED_NORM);
-    EntityDataUpdate playerUpdate = entityManager.generateDataUpdate(tick, playerEntityId, updateTypes, null);
-    messageOutput.accept(OutputMessageFactory.entityUpdate(tick, playerUpdate));
+    if (startedup) {
+      // send client position
+      Set<EntityUpdateType> updateTypes = EnumSet.of(EntityUpdateType.POSITION, EntityUpdateType.SPEED_ANGLE, EntityUpdateType.SPEED_NORM);
+      EntityDataUpdate playerUpdate = entityManager.generateDataUpdate(tick, playerEntityId, updateTypes, null);
+      messageOutput.accept(OutputMessageFactory.entityUpdate(tick, playerUpdate));
+    }
   }
 
   private void processAction(long tick, int entityId, Action action) {
@@ -412,77 +430,87 @@ public class Engine {
 
   private void processBufferedMessages() {
     messagesBuffer.sort(Comparator.naturalOrder());
-    long previousUpdatedTick = -1L;
+    long previousUpdatedTick = -1;
     for (EngineMessage engineMessage : messagesBuffer) {
       long tick = engineMessage.getTick();
       if (tick <= lastDisposedTick) {
         throw new IllegalStateException("Tick " + tick + " has already been disposed");
       }
-      if (previousUpdatedTick != -1 && previousUpdatedTick != tick) {
+      if (tick > lastTick) {
+        if (startedup)
+          throw new IllegalStateException("Tick " + tick + " hasn't been created yet");
+        previousUpdatedTick = lastTick;
+      }
+      if (previousUpdatedTick != -1) {
         // redo logic until this tick
         for (long updateTick = previousUpdatedTick; updateTick < tick; updateTick++) {
           updateTickAfter(updateTick);
         }
-        previousUpdatedTick = tick;
       }
-      Object[] data = engineMessage.getData();
-      switch (engineMessage.getType()) {
-        case PLAYER_JOINED:
-          int entityIdJoined = (int) data[0];
-          String username = (String) data[1];
-          playerManager.addPlayer(engineMessage.getTick(), entityIdJoined, username);
-          logger.debug("Player joined with entityId {} as {} on tick {}", entityIdJoined, username, tick);
-          break;
-        case PLAYER_LEFT:
-          int entityIdLeft = (int) data[0];
-          playerManager.removePlayer(engineMessage.getTick(), (int) data[0]);
-          logger.debug("Player left with entityId {} on tick {}", entityIdLeft, tick);
-          break;
-        case CHUNKS_UPDATE:
-          @SuppressWarnings("unchecked")
-          List<Pair<ChunkPoint, Chunk>> chunks = (List<Pair<ChunkPoint, Chunk>>) data[0];
-          for (Pair<ChunkPoint, Chunk> chunk : chunks) {
-            terrainManager.setChunk(tick, chunk.getFirst(), chunk.getSecond());
-          }
-          logger.debug("Chunks update on tick {}, size: {}", tick, chunks.size());
-          break;
-        case ACTIONS_DONE:
-          @SuppressWarnings("unchecked")
-          List<Pair.Int<Action>> actionList = (List<Pair.Int<Action>>) data[0];
-          for (Pair.Int<Action> actionPair : actionList) {
-            processAction(tick, actionPair.getFirst(), actionPair.getSecond());
-          }
-          logger.debug("Actions received on tick {}", tick);
-          break;
-        case ENTITY_DESTROY:
-          int entityId = (int) data[0];
-          entityManager.destroyEntity(tick, entityId);
-          logger.debug("Entity destroyed with entityId {} on tick {}", entityId, tick);
-          break;
-        case ENTITY_CREATE:
-          EntityDataUpdate entityDataCreate = (EntityDataUpdate) data[0];
-          entityManager.createEntity(tick, entityDataCreate);
-          logger.debug("Entity created with entityId {} on tick {}", entityDataCreate.getEntityId(), tick);
-          break;
-        case ENTITIES_UPDATE:
-          @SuppressWarnings("unchecked")
-          List<EntityDataUpdate> entityDataUpdateList = (List<EntityDataUpdate>) data[0];
-          for (EntityDataUpdate entityDataUpdate : entityDataUpdateList) {
-            entityManager.applyUpdate(tick, entityDataUpdate);
-          }
-          logger.debug("Entities updated on tick {}", tick);
-          break;
-        default:
-          throw new IllegalArgumentException("Unsupported engine message type : " + engineMessage.getType());
-      }
+      previousUpdatedTick = tick;
+      processMessage(engineMessage);
     }
-    messagesBuffer = new ArrayList<>();
+    messagesBuffer.clear();
     if (previousUpdatedTick != -1) {
       lastReceivedTick = previousUpdatedTick > lastReceivedTick ? previousUpdatedTick : lastReceivedTick;
       // update to current tick
       for (long updateTick = previousUpdatedTick; updateTick < lastTick; updateTick++) {
         updateTickAfter(updateTick);
       }
+    }
+  }
+
+  private void processMessage(EngineMessage engineMessage) {
+    long tick = engineMessage.getTick();
+    Object[] data = engineMessage.getData();
+    switch (engineMessage.getType()) {
+      case PLAYER_JOINED:
+        int entityIdJoined = (int) data[0];
+        String username = (String) data[1];
+        playerManager.addPlayer(tick, entityIdJoined, username);
+        logger.debug("Player joined with entityId {} as {} on tick {}", entityIdJoined, username, tick);
+        break;
+      case PLAYER_LEFT:
+        int entityIdLeft = (int) data[0];
+        playerManager.removePlayer(tick, (int) data[0]);
+        logger.debug("Player left with entityId {} on tick {}", entityIdLeft, tick);
+        break;
+      case CHUNKS_UPDATE:
+        @SuppressWarnings("unchecked")
+        List<Pair<ChunkPoint, Chunk>> chunks = (List<Pair<ChunkPoint, Chunk>>) data[0];
+        for (Pair<ChunkPoint, Chunk> chunk : chunks) {
+          terrainManager.setChunk(tick, chunk.getFirst(), chunk.getSecond());
+        }
+        logger.debug("Chunks update on tick {}, size: {}", tick, chunks.size());
+        break;
+      case ACTIONS_DONE:
+        @SuppressWarnings("unchecked")
+        List<Pair.Int<Action>> actionList = (List<Pair.Int<Action>>) data[0];
+        for (Pair.Int<Action> actionPair : actionList) {
+          processAction(tick, actionPair.getFirst(), actionPair.getSecond());
+        }
+        logger.debug("Actions received on tick {}", tick);
+        break;
+      case ENTITY_DESTROY:
+        int entityId = (int) data[0];
+        entityManager.destroyEntity(tick, entityId);
+        logger.debug("Entity destroyed with entityId {} on tick {}", entityId, tick);
+        break;
+      case ENTITY_CREATE:
+        EntityDataUpdate entityDataCreate = (EntityDataUpdate) data[0];
+        entityManager.createEntity(tick, entityDataCreate);
+        logger.debug("Entity created with entityId {} on tick {}", entityDataCreate.getEntityId(), tick);
+        break;
+      case ENTITIES_UPDATE:
+        @SuppressWarnings("unchecked")
+        List<EntityDataUpdate> entityDataUpdateList = (List<EntityDataUpdate>) data[0];
+        for (EntityDataUpdate entityDataUpdate : entityDataUpdateList) {
+          entityManager.applyUpdate(tick, entityDataUpdate);
+        }
+        logger.debug("Entities updated on tick {}", tick);
+        break;
+      default:
+        throw new IllegalArgumentException("Unsupported engine message type : " + engineMessage.getType());
     }
   }
 
@@ -566,9 +594,6 @@ public class Engine {
       }
     } else {
       newTick = quotient * TICK_DIVIDER + tickRemainder;
-    }
-    if (newTick > lastTick) {
-      lastTick = newTick;
     }
     return newTick;
   }

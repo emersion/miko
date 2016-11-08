@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * Un message adressé à l'engine du jeu, stocké sous forme d'objet pour délayer son exécution.
  * <p>
- * Note: L'ordre de naturel donné par {@link #compareTo(EngineMessage)} est incohérent avec
+ * Note: L'ordre de naturel donné par {@link #compareTo(EngineMessage)} n'est pas cohérent avec
  * {@link #equals(Object)} et ne sert que pour comparer l'ordre dans lequel traiter les messages.
  *
  */

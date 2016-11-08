@@ -144,6 +144,7 @@ class UiWindow {
   private IntConsumer globalKeyDownListener;
   private JFrame frame; // will be null when we're disposed
   private GraphicsDevice device;
+  private GraphicsConfiguration configuration;
   private BufferStrategy strategy;
   private Consumer<Graphics2D> renderable;
   private EventCatcherComponent mainComponent;
@@ -246,7 +247,6 @@ class UiWindow {
     // make sure we have control over repainting before trying anything
     Toolkit.getDefaultToolkit().getSystemEventQueue().push(new SynchronizedEventQueue(uiLock));
     RepaintManager.setCurrentManager(new RepaintDisabler());
-    GraphicsConfiguration configuration;
     if (openglGraphicsConfigClass == null) {
       // using the d3d pipeline
       // using the default configuration will work fine
@@ -307,7 +307,7 @@ class UiWindow {
     // we must use a sun.* class in order to tell the surfacemanager we want vsync
     @SuppressWarnings("restriction")
     BufferCapabilities vsyncBuffer =
-    new sun.java2d.pipe.hw.ExtendedBufferCapabilities(bc, sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON);
+        new sun.java2d.pipe.hw.ExtendedBufferCapabilities(bc, sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON);
     try {
       frame.createBufferStrategy(2, vsyncBuffer);
     } catch (AWTException e) {
@@ -475,6 +475,14 @@ class UiWindow {
   public GraphicsDevice getDevice() {
     checkFrameNotDisposed();
     return device;
+  }
+
+  /**
+   * @return La configuration graphique actuelle de la fenêtre, à utiliser de préférence pour les
+   *         opérations graphiques dans le composant principal.
+   */
+  public GraphicsConfiguration getConfiguration() {
+    return configuration;
   }
 
   /**
