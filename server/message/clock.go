@@ -1,5 +1,9 @@
 package message
 
+import (
+	"time"
+)
+
 // An absolute tick. It starts at 1 when the server is ready, and is incremented
 // each time a tick is performed. The special value 0 indicates that the field
 // is not set.
@@ -53,4 +57,19 @@ type Rewindable interface {
 
 	// Get back in the future (relative to the past!).
 	FastForward(dt AbsoluteTick) error
+}
+
+// A Unix timestamp in milliseconds.
+type Timestamp uint64
+
+// Convert a Time into a Timestamp.
+func TimeToTimestamp(t time.Time) Timestamp {
+	return Timestamp(t.Unix())*1000000 + Timestamp(t.Nanosecond()/1000)
+}
+
+// Convert a Timestamp into a Time.
+func TimestampToTime(t Timestamp) time.Time {
+	sec := int64(t / 1000000)
+	nsec := int64((t - Timestamp(sec)*1000000) * 1000)
+	return time.Unix(sec, nsec)
 }

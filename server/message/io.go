@@ -5,8 +5,7 @@ import (
 	"sync"
 )
 
-type bufferedWriter interface {
-	io.Writer
+type flusher interface {
 	Flush() error
 }
 
@@ -57,7 +56,7 @@ func (io *IO) Lock() {
 }
 
 func (io *IO) Unlock() {
-	if w, ok := io.writer.(bufferedWriter); ok {
+	if w, ok := io.writer.(flusher); ok {
 		w.Flush()
 	}
 	io.locker.Unlock()

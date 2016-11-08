@@ -2,31 +2,31 @@
 package auth
 
 import (
-	"git.emersion.fr/saucisse-royale/miko.git/server/game"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 // The authentication service
 // It aims to manage users: login, register, sessions
 type Service struct {
-	sessions map[int]*message.Session
-	users    []*User
+	sessions      map[int]*message.Session
+	users         []*User
+	LoginCallback func(*message.Session)
 }
 
-func (a *Service) HasSession(id int) bool {
-	_, ok := a.sessions[id]
+func (s *Service) HasSession(id int) bool {
+	_, ok := s.sessions[id]
 	return ok
 }
 
-func (a *Service) GetSession(id int) *message.Session {
-	if session, ok := a.sessions[id]; ok {
+func (s *Service) GetSession(id int) *message.Session {
+	if session, ok := s.sessions[id]; ok {
 		return session
 	}
 	return nil
 }
 
-func (a *Service) getSessionByUsername(username string) *message.Session {
-	for _, session := range a.sessions {
+func (s *Service) getSessionByUsername(username string) *message.Session {
+	for _, session := range s.sessions {
 		if session != nil && session.Username == username {
 			return session
 		}
@@ -34,8 +34,8 @@ func (a *Service) getSessionByUsername(username string) *message.Session {
 	return nil
 }
 
-func (a *Service) GetSessionByEntity(id message.EntityId) *message.Session {
-	for _, session := range a.sessions {
+func (s *Service) GetSessionByEntity(id message.EntityId) *message.Session {
+	for _, session := range s.sessions {
 		if session != nil && session.Entity != nil && session.Entity.Id == id {
 			return session
 		}
@@ -43,10 +43,10 @@ func (a *Service) GetSessionByEntity(id message.EntityId) *message.Session {
 	return nil
 }
 
-func (a *Service) List() []*message.Session {
+func (s *Service) List() []*message.Session {
 	l := []*message.Session{}
 
-	for _, session := range a.sessions {
+	for _, session := range s.sessions {
 		if session != nil {
 			l = append(l, session)
 		}
@@ -55,14 +55,14 @@ func (a *Service) List() []*message.Session {
 	return l
 }
 
-func (a *Service) Login(id int, username string, password string) message.LoginResponseCode {
+func (s *Service) Login(id int, username string, password string) message.LoginResponseCode {
 	code := "unknown_pseudo"
-	for _, user := range a.users {
+	for _, user := range s.users {
 		if username != user.Username {
 			continue
 		}
 
-		session := a.getSessionByUsername(username)
+		session := s.getSessionByUsername(username)
 		if session != nil {
 			code = "already_connected"
 			break
@@ -77,44 +77,39 @@ func (a *Service) Login(id int, username string, password string) message.LoginR
 	}
 
 	if code == "ok" {
-		entity := message.NewEntity()
-
-		// TODO: default values are hardcoded
-		// [GAME-SPECIFIC]
-		entity.Position.BX = 20
-		entity.Position.BY = 20
-		entity.Type = game.PlayerEntity
-		entity.Sprite = game.PlayerSprite
-		entity.Attributes[game.HealthAttr] = game.Health(1000)
-		entity.Attributes[game.CooldownOneAttr] = game.Cooldown(0)
-
-		a.sessions[id] = &message.Session{
+		session := &message.Session{
 			Id:       id,
 			Username: username,
-			Entity:   entity,
+			Entity:   message.NewEntity(),
 		}
+
+		if s.LoginCallback != nil {
+			s.LoginCallback(session)
+		}
+
+		s.sessions[id] = session
 	}
 
 	return message.LoginResponseCodes[code]
 }
 
-func (a *Service) Logout(id int) {
-	if !a.HasSession(id) {
+func (s *Service) Logout(id int) {
+	if !s.HasSession(id) {
 		return
 	}
 
-	delete(a.sessions, id)
+	delete(s.sessions, id)
 }
 
-func (a *Service) Register(id int, username string, password string) message.RegisterResponseCode {
-	for _, user := range a.users {
+func (s *Service) Register(id int, username string, password string) message.RegisterResponseCode {
+	for _, user := range s.users {
 		if username == user.Username {
 			return message.RegisterResponseCodes["used_pseudo"]
 		}
 	}
 
 	hash, _ := hashPassword(password)
-	a.users = append(a.users, &User{username, hash})
+	s.users = append(s.users, &User{username, hash})
 
 	return message.RegisterResponseCodes["ok"]
 }

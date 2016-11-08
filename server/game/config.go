@@ -9,7 +9,7 @@ import (
 )
 
 type Config struct {
-	MaxRollbackTicks    uint16
+	message.ConfigBase
 	DefaultPlayerSpeed  float32
 	PlayerBallCooldown  Cooldown
 	DefaultBallSpeed    float32
@@ -17,23 +17,23 @@ type Config struct {
 }
 
 func (c *Config) WriteTo(w io.Writer) (n int64, err error) {
-	err = builder.Write(w, c.MaxRollbackTicks, c.DefaultPlayerSpeed,
+	err = builder.Write(w, c.MaxRollbackTicks, c.TimeServerPort, c.DefaultPlayerSpeed,
 		c.PlayerBallCooldown, c.DefaultBallSpeed, c.DefaultBallLifespan)
 	return
 }
 
 func (c *Config) ReadFrom(r io.Reader) (n int64, err error) {
-	err = handler.Read(r, &c.MaxRollbackTicks, &c.DefaultPlayerSpeed,
+	err = handler.Read(r, &c.MaxRollbackTicks, &c.TimeServerPort, &c.DefaultPlayerSpeed,
 		&c.PlayerBallCooldown, &c.DefaultBallSpeed, &c.DefaultBallLifespan)
 	return
 }
 
 func DefaultConfig() *Config {
-	return &Config{
-		MaxRollbackTicks:    uint16(message.MaxRewind),
-		DefaultPlayerSpeed:  7,
-		PlayerBallCooldown:  20,
-		DefaultBallSpeed:    9,
-		DefaultBallLifespan: 100,
-	}
+	config := &Config{}
+	config.MaxRollbackTicks = uint16(message.MaxRewind)
+	config.DefaultPlayerSpeed = 7
+	config.PlayerBallCooldown = 20
+	config.DefaultBallSpeed = 9
+	config.DefaultBallLifespan = 100
+	return config
 }

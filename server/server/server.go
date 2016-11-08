@@ -53,8 +53,6 @@ func (s *Server) newClient(conn net.Conn) {
 	}
 	s.clients = append(s.clients, c)
 
-	log.Println("New client:", c.id)
-
 	r := bufio.NewReader(c.conn)
 	w := bufio.NewWriter(c)
 	io := message.NewIO(c.id, r, w, c, s)
@@ -64,10 +62,10 @@ func (s *Server) newClient(conn net.Conn) {
 }
 
 // Start network server
-func (s *Server) Listen() {
+func (s *Server) Listen() error {
 	tlsConfig, err := crypto.GetServerTlsConfig()
 	if err != nil {
-		log.Println("Warning: could not get TLS config")
+		return err
 	}
 
 	var listener net.Listener
@@ -77,16 +75,22 @@ func (s *Server) Listen() {
 		listener, err = net.Listen("tcp", s.address)
 		log.Println("Warning: creating a non-TLS insecure server")
 	}
-
 	if err != nil {
-		log.Fatal("Error starting TCP server.")
+		return err
 	}
+
 	defer listener.Close()
 
 	for {
-		conn, _ := listener.Accept()
+		conn, err := listener.Accept()
+		if err != nil {
+			return err
+		}
+
 		s.newClient(conn)
 	}
+
+	return nil
 }
 
 func (s *Server) Lock() {
@@ -141,11 +145,8 @@ func (s *Server) Write(data []byte) (int, error) {
 
 // Creates new tcp server instance
 func New(address string) *Server {
-	log.Println("Creating server with address", address)
-	server := &Server{
+	return &Server{
 		address: address,
 		Joins:   make(chan *message.IO),
 	}
-
-	return server
 }

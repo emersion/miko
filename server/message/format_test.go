@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"testing"
+	"time"
 
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
@@ -77,16 +78,20 @@ func TestExit(t *testing.T) {
 func TestLoginResponse_Ok(t *testing.T) {
 	code := message.LoginResponseCodes["ok"]
 	tick := message.Tick(42)
+	time := time.Unix(70817303, 868000)
 
 	testMessage(t, message.Types["login_response"], func(io *message.IO) error {
-		return builder.SendLoginResp(io, code, tick)
+		return builder.SendLoginResp(io, code, tick, time)
 	}, func(io *message.IO, t *testing.T) {
-		receivedTick, receivedCode := handler.ReadLoginResponse(io)
+		receivedCode, receivedTick, receivedTime := handler.ReadLoginResponse(io)
 		if receivedCode != code {
 			t.Fatal("Sent code", code, "but received", receivedCode)
 		}
 		if receivedTick != tick {
 			t.Fatal("Sent tick", tick, "but received", receivedTick)
+		}
+		if !receivedTime.Equal(time) {
+			t.Fatal("Sent time", time, "but received", receivedTime)
 		}
 	})
 }
@@ -95,9 +100,9 @@ func TestLoginResponse_WrongPassword(t *testing.T) {
 	code := message.LoginResponseCodes["wrong_password"]
 
 	testMessage(t, message.Types["login_response"], func(io *message.IO) error {
-		return builder.SendLoginResp(io, code, 0)
+		return builder.SendLoginResp(io, code, 0, time.Now())
 	}, func(io *message.IO, t *testing.T) {
-		_, c := handler.ReadLoginResponse(io)
+		c, _, _ := handler.ReadLoginResponse(io)
 		if c != code {
 			t.Fatal("Sent code", code, "but received", c)
 		}

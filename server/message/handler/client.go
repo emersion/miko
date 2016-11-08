@@ -4,6 +4,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"io"
 	"log"
+	"time"
 )
 
 func ReadBlock(r io.Reader) *message.Block {
@@ -38,11 +39,15 @@ func ReadActionDone(r io.Reader) (action *message.Action) {
 	return
 }
 
-func ReadLoginResponse(r io.Reader) (t message.Tick, code message.LoginResponseCode) {
+func ReadLoginResponse(r io.Reader) (code message.LoginResponseCode, tick message.Tick, t time.Time) {
 	Read(r, &code)
 
 	if code == message.LoginResponseCodes["ok"] {
-		Read(r, &t)
+		Read(r, &tick)
+
+		var timestamp message.Timestamp
+		Read(r, &timestamp)
+		t = message.TimestampToTime(timestamp)
 	}
 
 	return
@@ -149,7 +154,7 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		return io.Close()
 	},
 	message.Types["login_response"]: func(ctx *message.Context, io *message.IO) error {
-		t, code := ReadLoginResponse(io)
+		code, t, _ := ReadLoginResponse(io)
 
 		if code == message.LoginResponseCodes["ok"] {
 			ctx.Clock.Sync(t)

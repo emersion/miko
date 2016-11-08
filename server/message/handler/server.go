@@ -6,6 +6,7 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"io"
 	"log"
+	"time"
 )
 
 func ReadVersion(r io.Reader) (version message.ProtocolVersion) {
@@ -69,7 +70,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		username, password := ReadLogin(io)
 
 		code := ctx.Auth.Login(io.Id, username, password)
-		if err := builder.SendLoginResp(io, code, ctx.Clock.GetRelativeTick()); err != nil {
+		if err := builder.SendLoginResp(io, code, ctx.Clock.GetRelativeTick(), time.Now()); err != nil {
 			return err
 		}
 
@@ -221,6 +222,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		Read(io, &action.Id)
 
 		// TODO: move action params somewhere else
+		// [GAME-SPECIFIC]
 		if action.Id == 0 { // throw_ball
 			var angle float32
 			var tmpId message.EntityId
