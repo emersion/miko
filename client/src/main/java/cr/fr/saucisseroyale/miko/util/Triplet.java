@@ -6,18 +6,16 @@ package cr.fr.saucisseroyale.miko.util;
  * @param <T> Le type du premier élément.
  * @param <U> Le type du deuxième élément.
  * @param <V> Le type du troisième élément.
- *
  */
 public class Triplet<T, U, V> {
-
   private final T first;
   private final U second;
   private final V third;
 
   /**
-   * @param first Le premier élément du triplet.
+   * @param first  Le premier élément du triplet.
    * @param second Le deuxième élément du triplet.
-   * @param third Le troisième élément du triplet.
+   * @param third  Le troisième élément du triplet.
    */
   public Triplet(T first, U second, V third) {
     this.first = first;
@@ -45,7 +43,4 @@ public class Triplet<T, U, V> {
   public V getThird() {
     return third;
   }
-
-
-
 }

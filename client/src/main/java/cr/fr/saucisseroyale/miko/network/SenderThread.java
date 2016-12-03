@@ -7,16 +7,13 @@ import java.io.OutputStream;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 
-
 /**
  * Thread pour émettre des données sur un flux en boucle, de manière parallèle.
  * <p>
  * Cette classe supporte {@link #interrupt()}, pour terminer une instance de cette classe, appeler
  * cette méthode.
- *
  */
 class SenderThread extends Thread {
-
   private DataOutputStream dos;
   private BlockingQueue<FutureOutputMessage> outputMessages;
   private Consumer<Exception> errorCallback;
@@ -46,5 +43,4 @@ class SenderThread extends Thread {
       }
     }
   }
-
 }

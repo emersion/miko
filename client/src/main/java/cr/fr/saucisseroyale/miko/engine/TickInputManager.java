@@ -2,19 +2,15 @@ package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.util.Triplet;
 
-import java.awt.Point;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.awt.*;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.Map.Entry;
 
 /**
  * Un gestionnaire des inputs à chaque tick de jeu.
- *
  */
 class TickInputManager {
-
   private Map<Long, TickInput> map = new HashMap<>();
   private long firstTick = Long.MAX_VALUE;
 
@@ -43,10 +39,10 @@ class TickInputManager {
   }
 
   public void disposeUntilTick(long tick) {
-    Set<Map.Entry<Long, TickInput>> entrySet = map.entrySet();
-    Iterator<Map.Entry<Long, TickInput>> iterator = entrySet.iterator();
+    Set<Entry<Long, TickInput>> entrySet = map.entrySet();
+    Iterator<Entry<Long, TickInput>> iterator = entrySet.iterator();
     while (iterator.hasNext()) {
-      Map.Entry<Long, TickInput> entry = iterator.next();
+      Entry<Long, TickInput> entry = iterator.next();
       if (entry.getKey() > tick) {
         firstTick = entry.getKey();
         break;
@@ -54,5 +50,4 @@ class TickInputManager {
       iterator.remove();
     }
   }
-
 }

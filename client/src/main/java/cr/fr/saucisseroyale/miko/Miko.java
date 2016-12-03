@@ -1,66 +1,63 @@
 package cr.fr.saucisseroyale.miko;
 
+import cr.fr.saucisseroyale.miko.UiComponents.Connect;
+import cr.fr.saucisseroyale.miko.UiComponents.Login;
+import cr.fr.saucisseroyale.miko.UiComponents.Options;
 import cr.fr.saucisseroyale.miko.engine.Chunk;
 import cr.fr.saucisseroyale.miko.engine.Engine;
 import cr.fr.saucisseroyale.miko.network.FutureInputMessage;
 import cr.fr.saucisseroyale.miko.network.NetworkClient;
 import cr.fr.saucisseroyale.miko.network.OutputMessageFactory;
-import cr.fr.saucisseroyale.miko.protocol.Action;
-import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
-import cr.fr.saucisseroyale.miko.protocol.Config;
-import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
-import cr.fr.saucisseroyale.miko.protocol.ExitType;
-import cr.fr.saucisseroyale.miko.protocol.LoginResponseType;
-import cr.fr.saucisseroyale.miko.protocol.RegisterResponseType;
+import cr.fr.saucisseroyale.miko.protocol.*;
 import cr.fr.saucisseroyale.miko.util.Pair;
+import cr.fr.saucisseroyale.miko.util.Pair.Int;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import java.awt.Graphics2D;
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.List;
 import java.util.prefs.Preferences;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class Miko implements MessageHandler {
-
-  private enum MikoState {
-    NETWORK, CONNECTION_REQUEST, OPTIONS, CONNECTION, CONFIG, LOGIN_REQUEST, REGISTER, LOGIN, JOIN, EXIT;
-  }
-
-  public static final int PROTOCOL_VERSION = 8;
+  public static final int PROTOCOL_VERSION = 10;
   public static final int TICK_TIME = 20 * 1000000; // milliseconds
   private static final long SERVER_TIMEOUT = 20 * 1000000000L; // seconds
-
   private static final String DEFAULT_SERVER_ADDRESS = "naota.emersion.fr";
   private static final int DEFAULT_SERVER_PORT = 9999;
-
-  private static Logger logger = LogManager.getLogger("miko.main");
-
   private static final Preferences uiPrefsNode = Preferences.userRoot().node("miko.ui");
-
+  private static Logger logger = LogManager.getLogger("miko.main");
   private long lastMessageReceived = Long.MAX_VALUE;
   private boolean pingSent;
   private String username;
   private Config config;
   private Engine engine;
-  private UiComponents.Connect uiConnect;
-  private UiComponents.Login uiLogin;
-  private UiComponents.Options uiOptions;
+  private Connect uiConnect;
+  private Login uiLogin;
+  private Options uiOptions;
   private MikoState state = MikoState.NETWORK;
   private UiWindow window;
   private boolean closeRequested = false;
   private NetworkClient networkClient;
   private KeyStateManager keyStateManager;
-
-  private long lastFrame;
   private long accumulator;
   private float alpha; // for #render(), updated each loop
-
   private long debugStartTime;
   private int debugStartTick;
+
+  public static void main(String... args) throws Exception {
+    if (args.length == 1) {
+      if (args[0].equalsIgnoreCase("fs")) {
+        uiPrefsNode.putBoolean("fullscreen", true);
+      } else if (args[0].equalsIgnoreCase("nfs")) {
+        uiPrefsNode.putBoolean("fullscreen", false);
+      }
+    }
+    logger.info("Starting Miko version {}", PROTOCOL_VERSION);
+    Miko miko = new Miko();
+    miko.run();
+  }
 
   private void exit() {
     logger.info("Starts exiting");
@@ -95,9 +92,9 @@ public class Miko implements MessageHandler {
 
     window = new UiWindow(fullscreen);
     window.setRenderable(this::render);
-    uiConnect = new UiComponents.Connect(DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT, this::connectRequested, this::optionsRequested);
-    uiLogin = new UiComponents.Login(this::registerRequested, this::loginRequested);
-    uiOptions = new UiComponents.Options(fullscreen);
+    uiConnect = new Connect(DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT, this::connectRequested, this::optionsRequested);
+    uiLogin = new Login(this::registerRequested, this::loginRequested);
+    uiOptions = new Options(fullscreen);
     window.addUi(uiConnect);
     window.addUi(uiLogin);
     window.addUi(uiOptions);
@@ -131,7 +128,7 @@ public class Miko implements MessageHandler {
   }
 
   private void loop() {
-    lastFrame = System.nanoTime();
+    long lastFrame = System.nanoTime();
     accumulator = 0;
     while (!closeRequested) {
       long newTime = System.nanoTime();
@@ -302,21 +299,8 @@ public class Miko implements MessageHandler {
     loop();
   }
 
-  public static void main(String... args) throws Exception {
-    if (args.length == 1) {
-      if (args[0].equalsIgnoreCase("fs")) {
-        uiPrefsNode.putBoolean("fullscreen", true);
-      } else if (args[0].equalsIgnoreCase("nfs")) {
-        uiPrefsNode.putBoolean("fullscreen", false);
-      }
-    }
-    logger.info("Starting Miko version {}", PROTOCOL_VERSION);
-    Miko miko = new Miko();
-    miko.run();
-  }
-
   @Override
-  public void actions(int tickRemainder, List<Pair.Int<Action>> actions) {
+  public void actions(int tickRemainder, List<Int<Action>> actions) {
     messageReceived();
     if (state != MikoState.EXIT) {
       logger.warn("Ignored actions message received in state {}", state);
@@ -456,18 +440,18 @@ public class Miko implements MessageHandler {
   }
 
   @Override
-  public void loginSuccess(int tickRemainder) {
+  public void loginSuccess(int tickRemainder, long timestamp) {
     messageReceived();
     if (state != MikoState.LOGIN) {
       logger.warn("Ignored loginsuccess message received in state {}", state);
       return;
     }
-    logger.info("Login success, starting engine at tick {}", tickRemainder);
+    logger.info("Login success, starting engine at tick {}, timestamp {}", tickRemainder, timestamp);
     changeStateTo(MikoState.JOIN);
     try {
       engine = new Engine(config, window.getConfiguration(), networkClient::putMessage, window.getWidth(), window.getHeight(), tickRemainder);
       accumulator = 0;
-      lastFrame = System.nanoTime();
+      long lastFrame = System.nanoTime();
       debugStartTick = tickRemainder;
       debugStartTime = System.nanoTime();
     } catch (IOException e) {
@@ -478,6 +462,10 @@ public class Miko implements MessageHandler {
 
   @Override
   public void networkError(Exception e) {
+    if (state == MikoState.NETWORK || state == MikoState.CONNECTION_REQUEST || state == MikoState.OPTIONS) {
+      logger.warn("Ignored network error received in state {}", state);
+      return;
+    }
     logger.error("Network error, disconnecting", e);
     uiConnect.setStatusText("Déconnexion forcée : erreur de réseau : " + e.getClass().getCanonicalName() + ": " + e.getLocalizedMessage());
     disconnect();
@@ -591,5 +579,9 @@ public class Miko implements MessageHandler {
   private void messageReceived() {
     // called when any message is received
     lastMessageReceived = System.nanoTime();
+  }
+
+  private enum MikoState {
+    NETWORK, CONNECTION_REQUEST, OPTIONS, CONNECTION, CONFIG, LOGIN_REQUEST, REGISTER, LOGIN, JOIN, EXIT
   }
 }

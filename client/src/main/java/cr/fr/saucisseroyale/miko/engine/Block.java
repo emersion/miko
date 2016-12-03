@@ -4,17 +4,15 @@ import cr.fr.saucisseroyale.miko.protocol.TerrainType;
 
 /**
  * Une case immutable de terrain qui a une position et un type.
- *
  */
 public final class Block {
-
   private final int x;
   private final int y;
   private final TerrainType type;
 
   /**
-   * @param x La coordonnée X de la case à créer.
-   * @param y La coordonnée Y de la case à créer.
+   * @param x    La coordonnée X de la case à créer.
+   * @param y    La coordonnée Y de la case à créer.
    * @param type Le type de terrain de la case à créer.
    */
   public Block(int x, int y, TerrainType type) {
@@ -78,10 +76,6 @@ public final class Block {
     if (x != other.x) {
       return false;
     }
-    if (y != other.y) {
-      return false;
-    }
-    return true;
+    return y == other.y;
   }
-
 }

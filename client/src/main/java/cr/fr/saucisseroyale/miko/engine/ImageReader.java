@@ -1,17 +1,12 @@
 package cr.fr.saucisseroyale.miko.engine;
 
-import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.Transparency;
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.imageio.ImageIO;
-
 public class ImageReader {
-
   private final GraphicsConfiguration graphicsConfiguration;
 
   public ImageReader(GraphicsDevice device) {
@@ -25,7 +20,7 @@ public class ImageReader {
   public BufferedImage read(BufferedImage image) {
     BufferedImage compatibleImage;
     if (image.getColorModel().equals(graphicsConfiguration.getColorModel())
-        && (image.getTransparency() == Transparency.BITMASK || image.getTransparency() == Transparency.OPAQUE)) {
+            && (image.getTransparency() == Transparency.BITMASK || image.getTransparency() == Transparency.OPAQUE)) {
       compatibleImage = image;
     } else {
       compatibleImage = graphicsConfiguration.createCompatibleImage(image.getWidth(), image.getHeight(), Transparency.BITMASK);

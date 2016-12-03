@@ -7,12 +7,20 @@ import java.util.NoSuchElementException;
  * Un iterable pour simplifier l'itération sur un tableau.
  *
  * @param <T> Le type de données sur lequel itérer.
- *
  */
 public class ArrayIterable<T> implements Iterable<T> {
+  private Iterator<T> iterator;
+
+  public ArrayIterable(T[] data) {
+    iterator = new ArrayIterator<>(data);
+  }
+
+  @Override
+  public Iterator<T> iterator() {
+    return iterator;
+  }
 
   private static class ArrayIterator<T> implements Iterator<T> {
-
     private final T[] data;
     private int position = 0;
 
@@ -32,18 +40,5 @@ public class ArrayIterable<T> implements Iterable<T> {
       }
       return data[position++];
     }
-
   }
-
-  private Iterator<T> iterator;
-
-  public ArrayIterable(T[] data) {
-    iterator = new ArrayIterator<>(data);
-  }
-
-  @Override
-  public Iterator<T> iterator() {
-    return iterator;
-  }
-
 }

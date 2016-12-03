@@ -32,7 +32,13 @@ local.properties
 .classpath
 .target
 
-# miko-specific files
+
+# intellij files
+
+*.iml
+
+
+# miko specific files
 
 src/main/resources/keystore
 *.log

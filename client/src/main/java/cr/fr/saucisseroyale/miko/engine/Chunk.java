@@ -12,14 +12,12 @@ import java.util.List;
  * @see Block
  */
 public final class Chunk {
-
-
   private final TerrainType defaultType;
   private final Block[] blocks;
 
   /**
    * @param defaultType Le type de case à utiliser par défaut lorsque la case n'a pas été ajoutée.
-   * @param data Les cases à mettre dans le bloc.
+   * @param data        Les cases à mettre dans le bloc.
    */
   public Chunk(TerrainType defaultType, List<Block> data) {
     this.defaultType = defaultType;
@@ -101,10 +99,6 @@ public final class Chunk {
     if (!Arrays.equals(blocks, other.blocks)) {
       return false;
     }
-    if (defaultType != other.defaultType) {
-      return false;
-    }
-    return true;
+    return defaultType == other.defaultType;
   }
-
 }

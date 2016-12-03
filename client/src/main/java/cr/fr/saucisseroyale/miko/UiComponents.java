@@ -1,28 +1,20 @@
 package cr.fr.saucisseroyale.miko;
 
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
+import javax.swing.*;
+import javax.swing.text.NumberFormatter;
+import java.awt.*;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.function.BiConsumer;
 import java.util.prefs.Preferences;
 
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JFormattedTextField;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JPasswordField;
-import javax.swing.JTextField;
-import javax.swing.text.NumberFormatter;
-
 @SuppressWarnings("serial")
-class UiComponents {
-
+final class UiComponents {
   private static final Preferences uiPrefsNode = Preferences.userRoot().node("miko.ui");
 
-  public static class Connect extends JPanel {
+  private UiComponents() {}
 
+  public static class Connect extends JPanel {
     private JLabel statusField;
 
     public Connect(String defaultAddress, int defaultPort, BiConsumer<String, Integer> connectCallback, Runnable optionsCallback) {
@@ -52,9 +44,7 @@ class UiComponents {
       });
       add(connectButton);
       JButton optionsButton = new JButton("Options");
-      optionsButton.addActionListener(event -> {
-        optionsCallback.run();
-      });
+      optionsButton.addActionListener(event -> optionsCallback.run());
       add(optionsButton);
       statusField = new JLabel();
       add(statusField);
@@ -66,7 +56,6 @@ class UiComponents {
   }
 
   public static class Login extends JPanel {
-
     private JLabel statusField;
 
     public Login(BiConsumer<String, String> registerCallback, BiConsumer<String, String> loginCallback) {
@@ -93,7 +82,6 @@ class UiComponents {
   }
 
   public static class Options extends JPanel {
-
     public Options(boolean fullscreen) {
       setLayout(new BorderLayout());
       add(new JLabel("Les changements prendront effet au prochain lancement de l'application."), BorderLayout.SOUTH);
@@ -108,5 +96,4 @@ class UiComponents {
       panel.add(fullscreenCheckBox);
     }
   }
-
 }

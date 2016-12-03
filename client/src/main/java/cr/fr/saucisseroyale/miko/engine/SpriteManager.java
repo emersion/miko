@@ -1,37 +1,24 @@
 package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.protocol.SpriteType;
-import cr.fr.saucisseroyale.miko.util.Pair;
+import cr.fr.saucisseroyale.miko.util.Pair.Int;
 
-import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.Transparency;
+import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.nio.file.*;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-
-import javax.imageio.ImageIO;
 
 /**
  * Un gestionnaire de sprite gérant des sprites en mémoire et pouvant les afficher sur des
  * graphiques.
- *
  */
 public class SpriteManager {
-
   private final GraphicsConfiguration graphicsConfiguration;
   private final int screenHeight;
   private Map<SpriteType, Sprite> sprites = new HashMap<>();
@@ -41,17 +28,17 @@ public class SpriteManager {
     screenHeight = height;
     @SuppressWarnings("unused")
     // could be useful in the future
-    int screenWidth = width;
+            int screenWidth = width;
   }
 
   /**
    * Affiche le sprite spécifié sur les graphiques, à l'endroit spécifié.
    *
-   * @param graphics Les graphiques sur lesquels peindre l'image.
+   * @param graphics   Les graphiques sur lesquels peindre l'image.
    * @param spriteType Le sprite identifiant l'animation de laquelle peindre.
    * @param spriteTime Le temps en ticks depuis que le sprite a été sélectionné.
-   * @param x La position en x du centre de l'image à afficher.
-   * @param y La position en y du centre de l'image à afficher.
+   * @param x          La position en x du centre de l'image à afficher.
+   * @param y          La position en y du centre de l'image à afficher.
    */
   public void drawSpriteType(Graphics2D graphics, SpriteType spriteType, long spriteTime, int x, int y) {
     Sprite sprite = sprites.get(spriteType);
@@ -100,7 +87,7 @@ public class SpriteManager {
             continue;
           }
           try (DirectoryStream<Path> imagePathStream = Files.newDirectoryStream(spritePath)) {
-            List<Pair.Int<BufferedImage>> images = new LinkedList<>();
+            List<Int<BufferedImage>> images = new LinkedList<>();
             for (Path imagePath : imagePathStream) {
               String imageName = imagePath.getFileName().toString();
               if (!imageName.endsWith(".png")) {
@@ -116,7 +103,7 @@ public class SpriteManager {
               }
               try (InputStream is = Files.newInputStream(imagePath)) {
                 BufferedImage image = readImage(is);
-                images.add(new Pair.Int<>(timecode, image));
+                images.add(new Int<>(timecode, image));
               }
             }
             sprites.put(spriteType, new Sprite(images));
@@ -157,7 +144,7 @@ public class SpriteManager {
   private BufferedImage readImage(BufferedImage image) {
     BufferedImage compatibleImage;
     if (image.getColorModel().equals(graphicsConfiguration.getColorModel())
-        && (image.getTransparency() == Transparency.BITMASK || image.getTransparency() == Transparency.OPAQUE)) {
+            && (image.getTransparency() == Transparency.BITMASK || image.getTransparency() == Transparency.OPAQUE)) {
       compatibleImage = image;
     } else {
       compatibleImage = graphicsConfiguration.createCompatibleImage(image.getWidth(), image.getHeight(), Transparency.BITMASK);
@@ -168,5 +155,4 @@ public class SpriteManager {
     }
     return compatibleImage;
   }
-
 }

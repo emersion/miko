@@ -1,16 +1,13 @@
 package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
-import cr.fr.saucisseroyale.miko.util.Pair;
-
+import cr.fr.saucisseroyale.miko.util.Pair.DoubleFloat;
 
 /**
  * Un point immutable de la carte de jeu, en coordonnées à virgule flottante. Utilisé pour indiquer
  * un emplacement sans répéter (x,y).
- *
  */
 public final class MapPoint {
-
   private float x;
   private float y;
 
@@ -57,10 +54,10 @@ public final class MapPoint {
     return new TerrainPoint((int) x, (int) y);
   }
 
-  public Pair.DoubleFloat subtract(MapPoint other) {
+  public DoubleFloat subtract(MapPoint other) {
     float deltaX = x - other.x;
     float deltaY = y - other.y;
-    return new Pair.DoubleFloat(deltaX, deltaY);
+    return new DoubleFloat(deltaX, deltaY);
   }
 
   @Override
@@ -87,10 +84,6 @@ public final class MapPoint {
     if (Float.floatToIntBits(x) != Float.floatToIntBits(other.x)) {
       return false;
     }
-    if (Float.floatToIntBits(y) != Float.floatToIntBits(other.y)) {
-      return false;
-    }
-    return true;
+    return Float.floatToIntBits(y) == Float.floatToIntBits(other.y);
   }
-
 }

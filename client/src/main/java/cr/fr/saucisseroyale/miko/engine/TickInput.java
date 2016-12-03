@@ -3,7 +3,7 @@ package cr.fr.saucisseroyale.miko.engine;
 import cr.fr.saucisseroyale.miko.util.MikoMath;
 import cr.fr.saucisseroyale.miko.util.Triplet;
 
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.util.Collections;
 import java.util.List;
@@ -11,23 +11,18 @@ import java.util.prefs.Preferences;
 
 /**
  * Un input pour un tick d'engine de Miko.
- *
  */
 class TickInput {
-
   private static final Preferences prefsNode = Preferences.userRoot().node("miko.input");
-
   private static final int ballSendKeycode = prefsNode.getInt("ballSend", KeyEvent.VK_SPACE);
   private static final int moveLeftKeycode = prefsNode.getInt("left", KeyEvent.VK_Q);
   private static final int moveRightKeycode = prefsNode.getInt("right", KeyEvent.VK_D);
   private static final int moveUpKeycode = prefsNode.getInt("up", KeyEvent.VK_Z);
   private static final int moveDownKeycode = prefsNode.getInt("down", KeyEvent.VK_S);
-
   private boolean moveLeft;
   private boolean moveRight;
   private boolean moveUp;
   private boolean moveDown;
-
   private float ballSendAngle = Float.NaN;
 
   public TickInput(TickInput previous, List<Triplet<Boolean, Integer, Point>> eventList, Point mousePosition) {
@@ -105,7 +100,26 @@ class TickInput {
       moveUp = lastUpDownPressed < 0;
       moveDown = lastUpDownPressed > 0;
     }
+  }
 
+  private static float getAngleFromMousePosition(Point mousePosition) {
+    if (mousePosition == null) {
+      return Float.NaN;
+    }
+    // angle can be calculated from screen middle because the render translation (offset based
+    // on mouse position) has the same direction
+    float angle = MikoMath.atan2(mousePosition);
+    return angle;
+  }
+
+  /**
+   * Retourne l'input par défaut suivant un input donné.
+   *
+   * @param previous L'input sur lequel se baser pour construire l'input.
+   * @return Un input par défaut basé sur l'input passé en paramètre.
+   */
+  public static TickInput getNextFrom(TickInput previous) {
+    return new TickInput(previous, Collections.emptyList(), null);
   }
 
   /**
@@ -145,25 +159,4 @@ class TickInput {
   public float getBallSendRequest() {
     return ballSendAngle;
   }
-
-  private static final float getAngleFromMousePosition(Point mousePosition) {
-    if (mousePosition == null) {
-      return Float.NaN;
-    }
-    // angle can be calculated from screen middle because the render translation (offset based
-    // on mouse position) has the same direction
-    float angle = MikoMath.atan2(mousePosition);
-    return angle;
-  }
-
-  /**
-   * Retourne l'input par défaut suivant un input donné.
-   *
-   * @param previous L'input sur lequel se baser pour construire l'input.
-   * @return Un input par défaut basé sur l'input passé en paramètre.
-   */
-  public static TickInput getNextFrom(TickInput previous) {
-    return new TickInput(previous, Collections.emptyList(), null);
-  }
-
 }

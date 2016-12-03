@@ -2,42 +2,27 @@ package cr.fr.saucisseroyale.miko.network;
 
 import cr.fr.saucisseroyale.miko.engine.Block;
 import cr.fr.saucisseroyale.miko.engine.Chunk;
-import cr.fr.saucisseroyale.miko.protocol.Action;
-import cr.fr.saucisseroyale.miko.protocol.ActionType;
-import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
-import cr.fr.saucisseroyale.miko.protocol.Config;
-import cr.fr.saucisseroyale.miko.protocol.DataType;
-import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
-import cr.fr.saucisseroyale.miko.protocol.EntityType;
-import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
-import cr.fr.saucisseroyale.miko.protocol.ExitType;
-import cr.fr.saucisseroyale.miko.protocol.LoginResponseType;
-import cr.fr.saucisseroyale.miko.protocol.MessageType;
-import cr.fr.saucisseroyale.miko.protocol.MetaActionType;
-import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
-import cr.fr.saucisseroyale.miko.protocol.RegisterResponseType;
-import cr.fr.saucisseroyale.miko.protocol.SpriteType;
-import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
-import cr.fr.saucisseroyale.miko.protocol.TerrainType;
+import cr.fr.saucisseroyale.miko.protocol.*;
+import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate.Builder;
 import cr.fr.saucisseroyale.miko.util.Pair;
+import cr.fr.saucisseroyale.miko.util.Pair.Int;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Factory permettant de parse des {@link FutureInputMessage} à partir de flux.
  *
  * @see #parseMessage(DataInputStream)
  */
-class InputMessageFactory {
-
+final class InputMessageFactory {
   private static Logger logger = LogManager.getLogger("miko.input");
 
   // Classe statique
@@ -45,22 +30,23 @@ class InputMessageFactory {
     throw new IllegalArgumentException("This class cannot be instantiated");
   }
 
-
   /**
    * Parse un message entrant d'un flux dans un {@link FutureInputMessage}
    *
    * @param dis Le flux de données entrant pour parse un message.
    * @return Un {@link FutureInputMessage} correspondant à ce qui a été parse.
    * @throws MessageParseException S'il y a une erreur lors de la lecture (le flux est alors dans un
-   *         état <b>corrompu et irrécupérable</b>).
-   * @throws IOException S'il y a une erreur quelconque lors de la récupération des données.
+   *                               état <b>corrompu et irrécupérable</b>).
+   * @throws IOException           S'il y a une erreur quelconque lors de la récupération des données.
    */
-  public static FutureInputMessage parseMessage(DataInputStream dis) throws MessageParseException, IOException {
+  public static FutureInputMessage parseMessage(DataInputStream dis) throws IOException {
     int messageCode = dis.readUnsignedByte();
     MessageType messageType = MessageType.getType(messageCode);
     if (messageType == null) {
+      System.out.println("erreur : " + messageCode);
       throw newParseException();
     }
+    System.out.println("reçu " + messageType);
     int tickRemainder;
     switch (messageType) {
       case PING:
@@ -85,8 +71,9 @@ class InputMessageFactory {
         }
         if (loginResponseType == LoginResponseType.OK) {
           tickRemainder = dis.readUnsignedShort();
+          long timestamp = dis.readLong();
           logger.trace("Received login success");
-          return handler -> handler.loginSuccess(tickRemainder);
+          return handler -> handler.loginSuccess(tickRemainder, timestamp);
         } else {
           logger.trace("Received login fail");
           return handler -> handler.loginFail(loginResponseType);
@@ -122,7 +109,7 @@ class InputMessageFactory {
         tickRemainder = dis.readUnsignedShort();
         Pair<ChunkPoint, Chunk> chunkPair = readChunk(dis);
         logger.trace("Received chunk update, tickRemainder {}", tickRemainder);
-        return handler -> handler.chunksUpdate(tickRemainder, Arrays.asList(chunkPair));
+        return handler -> handler.chunksUpdate(tickRemainder, Collections.singletonList(chunkPair));
       case CHUNKS_UPDATE:
         tickRemainder = dis.readUnsignedShort();
         int chunksUpdateSize = dis.readUnsignedShort();
@@ -145,11 +132,11 @@ class InputMessageFactory {
       case ACTIONS:
         tickRemainder = dis.readUnsignedShort();
         int actionsSize = dis.readUnsignedShort();
-        List<Pair.Int<Action>> actions = new ArrayList<>(actionsSize);
+        List<Int<Action>> actions = new ArrayList<>(actionsSize);
         for (int i = 0; i < actionsSize; i++) {
           int id = dis.readUnsignedShort();
           Action action = readAction(dis);
-          actions.add(new Pair.Int<>(id, action));
+          actions.add(new Int<>(id, action));
         }
         logger.trace("Received actions, tickRemainder {}", tickRemainder);
         return handler -> handler.actions(tickRemainder, actions);
@@ -183,11 +170,11 @@ class InputMessageFactory {
     }
   }
 
-  static final FutureInputMessage networkError(Exception e) {
+  static FutureInputMessage networkError(Exception e) {
     return handler -> handler.networkError(e);
   }
 
-  private static final Action readAction(DataInputStream dis) throws IOException {
+  private static Action readAction(DataInputStream dis) throws IOException {
     int actionCode = dis.readUnsignedShort();
     ActionType actionType = ActionType.getType(actionCode);
     if (actionType == null) {
@@ -197,7 +184,7 @@ class InputMessageFactory {
     return new Action(actionType, value);
   }
 
-  private static final Block readBlock(DataInputStream dis) throws IOException {
+  private static Block readBlock(DataInputStream dis) throws IOException {
     int x = dis.readUnsignedByte();
     int y = dis.readUnsignedByte();
     int code = dis.readUnsignedByte();
@@ -209,14 +196,14 @@ class InputMessageFactory {
     return block;
   }
 
-  private static final ChunkPoint readChunkPoint(DataInputStream dis) throws IOException {
+  private static ChunkPoint readChunkPoint(DataInputStream dis) throws IOException {
     int chunkX = dis.readShort();
     int chunkY = dis.readShort();
     ChunkPoint chunkPoint = new ChunkPoint(chunkX, chunkY);
     return chunkPoint;
   }
 
-  private static final Pair<ChunkPoint, Chunk> readChunk(DataInputStream dis) throws IOException {
+  private static Pair<ChunkPoint, Chunk> readChunk(DataInputStream dis) throws IOException {
     ChunkPoint chunkPoint = readChunkPoint(dis);
     int defaultCode = dis.readUnsignedByte();
     TerrainType defaultType = TerrainType.getType(defaultCode);
@@ -233,9 +220,9 @@ class InputMessageFactory {
     return new Pair<>(chunkPoint, chunk);
   }
 
-  private static final EntityDataUpdate readEntityDataUpdate(DataInputStream dis) throws IOException {
+  private static EntityDataUpdate readEntityDataUpdate(DataInputStream dis) throws IOException {
     int entityId = dis.readUnsignedShort();
-    EntityDataUpdate.Builder builder = new EntityDataUpdate.Builder(entityId);
+    Builder builder = new Builder(entityId);
     byte bitfield = dis.readByte();
     for (int b = 0; b < 8; b++) {
       if ((bitfield & 1 << 7 - b) == 0) {
@@ -293,7 +280,7 @@ class InputMessageFactory {
     return builder.build();
   }
 
-  private static final Object readObject(DataInputStream dis, DataType type) throws IOException {
+  private static Object readObject(DataInputStream dis, DataType type) throws IOException {
     switch (type) {
       case VOID:
         return null;
@@ -313,7 +300,7 @@ class InputMessageFactory {
     }
   }
 
-  private static final TerrainPoint readTerrainPoint(DataInputStream dis) throws IOException {
+  private static TerrainPoint readTerrainPoint(DataInputStream dis) throws IOException {
     int chunkX = dis.readShort();
     int chunkY = dis.readShort();
     int blockX = dis.readUnsignedByte();
@@ -322,18 +309,19 @@ class InputMessageFactory {
     return terrainPoint;
   }
 
-  private static final Config readConfig(DataInputStream dis) throws IOException {
+  private static Config readConfig(DataInputStream dis) throws IOException {
     int maxRollbackTicks = dis.readUnsignedShort();
+    int timeServerPort = dis.readUnsignedShort();
     float defaultPlayerSpeed = dis.readFloat();
     int playerBallCooldown = dis.readUnsignedShort();
     float defaultBallSpeed = dis.readFloat();
     int defaultBallLifespan = dis.readUnsignedShort();
-    return new Config(maxRollbackTicks, defaultPlayerSpeed, playerBallCooldown, defaultBallSpeed, defaultBallLifespan);
+    return new Config(maxRollbackTicks, timeServerPort, defaultPlayerSpeed, playerBallCooldown, defaultBallSpeed, defaultBallLifespan);
   }
 
   // On utilise notre propre méthode de lecture de String au cas où le protocole change (au lieu
   // d'utiliser dis.readUTF() qui par coïncidence utilise la même méthode que nous)
-  private static final String readString(DataInputStream dis) throws IOException {
+  private static String readString(DataInputStream dis) throws IOException {
     int length = dis.readUnsignedShort();
     byte[] data = new byte[length];
     dis.readFully(data);
@@ -344,5 +332,4 @@ class InputMessageFactory {
   private static MessageParseException newParseException() {
     return new MessageParseException("Unknown message type, aborted parsing");
   }
-
 }

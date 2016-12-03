@@ -1,5 +1,11 @@
 package cr.fr.saucisseroyale.miko.network;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Socket;
@@ -10,13 +16,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManagerFactory;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 /**
  * Client de connexion à un serveur Miko fonctionnant sur la couche des messages.
  *
@@ -24,7 +23,6 @@ import org.apache.logging.log4j.Logger;
  * @see FutureOutputMessage
  */
 public class NetworkClient {
-
   private static Logger logger = LogManager.getLogger("miko.network");
   private SSLSocketFactory socketFactory;
   private Socket socket;
@@ -43,11 +41,23 @@ public class NetworkClient {
     }
   }
 
+  private static SSLSocketFactory createSocketFactory() throws GeneralSecurityException, IOException {
+    KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+    try (InputStream keyStoreStream = NetworkClient.class.getResourceAsStream("/keystore")) {
+      keyStore.load(keyStoreStream, "keypass".toCharArray());
+    }
+    TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    tmf.init(keyStore);
+    SSLContext context = SSLContext.getInstance("TLS");
+    context.init(null, tmf.getTrustManagers(), null);
+    return context.getSocketFactory();
+  }
+
   /**
    * Se connecte au serveur spécifié et démarre les threads d'envoi et de réception des messages.
    *
    * @param address L'adresse du serveur auquel se connecter (IP ou nom d'hôte).
-   * @param port Le port auquel se connecter.
+   * @param port    Le port auquel se connecter.
    * @throws IOException S'il y a des erreurs quelconques d'IO lors de la connexion.
    */
   public void connect(String address, int port) throws IOException {
@@ -110,17 +120,4 @@ public class NetworkClient {
     inputMessages.add(InputMessageFactory.networkError(e));
     disconnect();
   }
-
-  private static SSLSocketFactory createSocketFactory() throws GeneralSecurityException, IOException {
-    KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-    try (InputStream keyStoreStream = NetworkClient.class.getResourceAsStream("/keystore")) {
-      keyStore.load(keyStoreStream, "keypass".toCharArray());
-    }
-    TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    tmf.init(keyStore);
-    SSLContext context = SSLContext.getInstance("TLS");
-    context.init(null, tmf.getTrustManagers(), null);
-    return context.getSocketFactory();
-  }
-
 }

@@ -5,7 +5,6 @@ import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 
 /**
  * Un type d'entité.
- *
  */
 public enum EntityType implements UniquelyIdentifiable {
 
@@ -20,17 +19,9 @@ public enum EntityType implements UniquelyIdentifiable {
 
   private final int id;
 
-  private EntityType(int id) {
+  EntityType(int id) {
     assert id < 1 << 16 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
     this.id = id;
-  }
-
-  /**
-   * @return L'identifiant correspondant au type d'entité.
-   */
-  @Override
-  public int getId() {
-    return id;
   }
 
   /**
@@ -41,5 +32,13 @@ public enum EntityType implements UniquelyIdentifiable {
    */
   public static EntityType getType(int id) {
     return IdSaver.getValue(EntityType.class, id);
+  }
+
+  /**
+   * @return L'identifiant correspondant au type d'entité.
+   */
+  @Override
+  public int getId() {
+    return id;
   }
 }

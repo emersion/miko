@@ -3,10 +3,8 @@ package cr.fr.saucisseroyale.miko.engine;
 /**
  * Un point immutable dans un chunk, <b>exprimé en float</b>. Utilisé pour indiquer un emplacement
  * sans répéter (x,y).
- *
  */
 public final class BlockPoint {
-
   private final float blockX;
   private final float blockY;
 
@@ -63,10 +61,6 @@ public final class BlockPoint {
     if (Float.floatToIntBits(blockX) != Float.floatToIntBits(other.blockX)) {
       return false;
     }
-    if (Float.floatToIntBits(blockY) != Float.floatToIntBits(other.blockY)) {
-      return false;
-    }
-    return true;
+    return Float.floatToIntBits(blockY) == Float.floatToIntBits(other.blockY);
   }
-
 }

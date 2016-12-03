@@ -5,7 +5,6 @@ import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 
 /**
  * Un type d'action.
- *
  */
 public enum ActionType implements UniquelyIdentifiable {
 
@@ -20,11 +19,21 @@ public enum ActionType implements UniquelyIdentifiable {
   private final int id;
   private final DataType dataType;
 
-  private ActionType(int id, DataType dataType) {
+  ActionType(int id, DataType dataType) {
     assert id < 1 << 16 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
     assert dataType != null : "le type de données doivent être définis";
     this.id = id;
     this.dataType = dataType;
+  }
+
+  /**
+   * Renvoit la valeur d'un code de type d'action.
+   *
+   * @param id L'identifiant correspondant au type de action.
+   * @return Le type d'action, ou null s'il n'y a pas de type d'action correspondante.
+   */
+  public static ActionType getType(int id) {
+    return IdSaver.getValue(ActionType.class, id);
   }
 
   /**
@@ -40,15 +49,5 @@ public enum ActionType implements UniquelyIdentifiable {
    */
   public DataType getDataType() {
     return dataType;
-  }
-
-  /**
-   * Renvoit la valeur d'un code de type d'action.
-   *
-   * @param id L'identifiant correspondant au type de action.
-   * @return Le type d'action, ou null s'il n'y a pas de type d'action correspondante.
-   */
-  public static ActionType getType(int id) {
-    return IdSaver.getValue(ActionType.class, id);
   }
 }

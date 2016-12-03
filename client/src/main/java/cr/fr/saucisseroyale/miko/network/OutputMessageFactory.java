@@ -1,17 +1,10 @@
 package cr.fr.saucisseroyale.miko.network;
 
 import cr.fr.saucisseroyale.miko.Miko;
-import cr.fr.saucisseroyale.miko.protocol.Action;
-import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
-import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
-import cr.fr.saucisseroyale.miko.protocol.EntityType;
-import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
-import cr.fr.saucisseroyale.miko.protocol.ExitType;
-import cr.fr.saucisseroyale.miko.protocol.MessageType;
-import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
-import cr.fr.saucisseroyale.miko.protocol.SpriteType;
-import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
+import cr.fr.saucisseroyale.miko.protocol.*;
 import cr.fr.saucisseroyale.miko.util.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -20,17 +13,12 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+import java.util.Map.Entry;
 
 /**
  * Factory permettant de créer des {@link FutureOutputMessage} à partir de méthodes haut niveau.
- *
  */
-public class OutputMessageFactory {
-
+public final class OutputMessageFactory {
   private static Logger logger = LogManager.getLogger("miko.output");
 
   // Classe statique
@@ -167,7 +155,7 @@ public class OutputMessageFactory {
               throw new IllegalArgumentException("The attributes list is too long, max size : 65535 attributes");
             }
             buffer.writeShort(size);
-            for (Map.Entry<ObjectAttribute, Object> attribute : attributes.entrySet()) {
+            for (Entry<ObjectAttribute, Object> attribute : attributes.entrySet()) {
               ObjectAttribute type = attribute.getKey();
               Object value = attribute.getValue();
               buffer.writeShort(type.getId());

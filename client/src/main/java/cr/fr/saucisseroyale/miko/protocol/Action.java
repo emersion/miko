@@ -6,10 +6,8 @@ import java.util.NoSuchElementException;
 
 /**
  * Une action immutable, ayant un type et des paramètres.
- *
  */
 public final class Action {
-
   private final ActionType type;
   private final Object parameter;
 
@@ -59,6 +57,14 @@ public final class Action {
       default:
         throw new IllegalArgumentException("unknown data type: " + type);
     }
+  }
+
+  private static RuntimeException newConstructorValueException() {
+    return new IllegalArgumentException("wrong parameter type");
+  }
+
+  private static RuntimeException newGetFieldException() {
+    return new NoSuchElementException("this object has no such field");
   }
 
   /**
@@ -123,13 +129,4 @@ public final class Action {
     }
     return (TerrainPoint) parameter;
   }
-
-  private static final RuntimeException newConstructorValueException() {
-    return new IllegalArgumentException("wrong parameter type");
-  }
-
-  private static final RuntimeException newGetFieldException() {
-    return new NoSuchElementException("this object has no such field");
-  }
-
 }

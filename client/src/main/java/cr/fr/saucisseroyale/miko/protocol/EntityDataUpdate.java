@@ -11,123 +11,8 @@ import java.util.NoSuchElementException;
  * Un objet immutable stockant des valeurs pour mettre à jour une entité. Suit la pattern Builder.
  *
  * @see Builder
- *
  */
 public final class EntityDataUpdate {
-
-  /**
-   * Un builder pour la classe {@link EntityDataUpdate}. Ne peut être construit qu'une seule fois.
-   *
-   */
-  public static class Builder {
-    private final int entityId;
-    private final Map<EntityUpdateType, Object> data = new EnumMap<>(EntityUpdateType.class);
-    private final Map<ObjectAttribute, Object> objectAttributes = new EnumMap<>(ObjectAttribute.class);
-    private boolean built = false;
-
-    /**
-     * @param entityId L'id de l'entité à mettre à jour.
-     */
-    public Builder(int entityId) {
-      if (entityId < 0 || entityId >= 1 << 16) {
-        throw new IllegalArgumentException("entityId must be between 0 and 65535 inclusive");
-      }
-      this.entityId = entityId;
-    }
-
-    /**
-     *
-     * @param position La nouvelle position de l'entité.
-     * @return self
-     */
-    public Builder position(TerrainPoint position) {
-      return position(new MapPoint(position));
-    }
-
-    /**
-     *
-     * @param position La nouvelle position de l'entité.
-     * @return self
-     */
-    public Builder position(MapPoint position) {
-      ensureNotBuilt();
-      data.put(EntityUpdateType.POSITION, position);
-      return this;
-    }
-
-    /**
-     *
-     * @param speedAngle Le nouvel angle du vecteur vitesse.
-     * @return self
-     */
-    public Builder speedAngle(float speedAngle) {
-      ensureNotBuilt();
-      data.put(EntityUpdateType.SPEED_ANGLE, speedAngle);
-      return this;
-    }
-
-    /**
-     *
-     * @param speedNorm La nouvelle norme du vecteur vitesse.
-     * @return self
-     */
-    public Builder speedNorm(float speedNorm) {
-      ensureNotBuilt();
-      data.put(EntityUpdateType.SPEED_NORM, speedNorm);
-      return this;
-    }
-
-    /**
-     *
-     * @param entityType Le nouveau type d'entité.
-     * @return self
-     */
-
-    public Builder entityType(EntityType entityType) {
-      ensureNotBuilt();
-      data.put(EntityUpdateType.ENTITY_TYPE, entityType);
-      return this;
-    }
-
-    /**
-     *
-     * @param spriteType Le nouveau type de sprite de l'entité.
-     * @return self
-     */
-    public Builder spriteType(SpriteType spriteType) {
-      ensureNotBuilt();
-      data.put(EntityUpdateType.SPRITE_TYPE, spriteType);
-      return this;
-    }
-
-    /**
-     *
-     * @param type Le type de l'attribut à ajouter.
-     * @param value Le valeur de l'attribut à ajouter.
-     * @return self
-     */
-    public Builder objectAttribute(ObjectAttribute type, Object value) {
-      ensureNotBuilt();
-      objectAttributes.put(type, value);
-      return this;
-    }
-
-    /**
-     * @return L'objet de mise à jour construit avec ce constructeur.
-     */
-    public EntityDataUpdate build() {
-      built = true;
-      return new EntityDataUpdate(this);
-    }
-
-    private void ensureNotBuilt() {
-      if (built) {
-        throw new IllegalStateException("object has already been built");
-      }
-    }
-
-  }
-
   private final int entityId;
   private final Map<EntityUpdateType, Object> data;
   private final Map<ObjectAttribute, Object> objectAttributes;
@@ -213,4 +98,106 @@ public final class EntityDataUpdate {
     return data.containsKey(EntityUpdateType.SPRITE_TYPE);
   }
 
+  /**
+   * Un builder pour la classe {@link EntityDataUpdate}. Ne peut être construit qu'une seule fois.
+   */
+  public static class Builder {
+    private final int entityId;
+    private final Map<EntityUpdateType, Object> data = new EnumMap<>(EntityUpdateType.class);
+    private final Map<ObjectAttribute, Object> objectAttributes = new EnumMap<>(ObjectAttribute.class);
+    private boolean built = false;
+
+    /**
+     * @param entityId L'id de l'entité à mettre à jour.
+     */
+    public Builder(int entityId) {
+      if (entityId < 0 || entityId >= 1 << 16) {
+        throw new IllegalArgumentException("entityId must be between 0 and 65535 inclusive");
+      }
+      this.entityId = entityId;
+    }
+
+    /**
+     * @param position La nouvelle position de l'entité.
+     * @return self
+     */
+    public Builder position(TerrainPoint position) {
+      return position(new MapPoint(position));
+    }
+
+    /**
+     * @param position La nouvelle position de l'entité.
+     * @return self
+     */
+    public Builder position(MapPoint position) {
+      ensureNotBuilt();
+      data.put(EntityUpdateType.POSITION, position);
+      return this;
+    }
+
+    /**
+     * @param speedAngle Le nouvel angle du vecteur vitesse.
+     * @return self
+     */
+    public Builder speedAngle(float speedAngle) {
+      ensureNotBuilt();
+      data.put(EntityUpdateType.SPEED_ANGLE, speedAngle);
+      return this;
+    }
+
+    /**
+     * @param speedNorm La nouvelle norme du vecteur vitesse.
+     * @return self
+     */
+    public Builder speedNorm(float speedNorm) {
+      ensureNotBuilt();
+      data.put(EntityUpdateType.SPEED_NORM, speedNorm);
+      return this;
+    }
+
+    /**
+     * @param entityType Le nouveau type d'entité.
+     * @return self
+     */
+    public Builder entityType(EntityType entityType) {
+      ensureNotBuilt();
+      data.put(EntityUpdateType.ENTITY_TYPE, entityType);
+      return this;
+    }
+
+    /**
+     * @param spriteType Le nouveau type de sprite de l'entité.
+     * @return self
+     */
+    public Builder spriteType(SpriteType spriteType) {
+      ensureNotBuilt();
+      data.put(EntityUpdateType.SPRITE_TYPE, spriteType);
+      return this;
+    }
+
+    /**
+     * @param type  Le type de l'attribut à ajouter.
+     * @param value Le valeur de l'attribut à ajouter.
+     * @return self
+     */
+    public Builder objectAttribute(ObjectAttribute type, Object value) {
+      ensureNotBuilt();
+      objectAttributes.put(type, value);
+      return this;
+    }
+
+    /**
+     * @return L'objet de mise à jour construit avec ce constructeur.
+     */
+    public EntityDataUpdate build() {
+      built = true;
+      return new EntityDataUpdate(this);
+    }
+
+    private void ensureNotBuilt() {
+      if (built) {
+        throw new IllegalStateException("object has already been built");
+      }
+    }
+  }
 }

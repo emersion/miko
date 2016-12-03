@@ -13,16 +13,15 @@ import java.util.Collections;
  * @see Snapshots
  */
 class TerrainManager {
-
   private static final Chunk defaultChunk = new Chunk(TerrainType.UNKNOWN, Collections.emptyList());
   private SnapshotsMap<ChunkPoint, Chunk> map = new SnapshotsMap<>(5);
 
   /**
    * Ajoute un chunk à la carte de jeu, aux coordonnées spécifiées, au tick spécifié.
    *
-   * @param tick Le tick auquel ajouter le chunk.
+   * @param tick     Le tick auquel ajouter le chunk.
    * @param position La position à laquelle ajouter le chunk.
-   * @param chunk Le chunk à ajouter.
+   * @param chunk    Le chunk à ajouter.
    */
   public void setChunk(long tick, ChunkPoint position, Chunk chunk) {
     map.setSnapshot(tick, position, chunk);
@@ -35,7 +34,7 @@ class TerrainManager {
    * Lorsque le chunk n'a pas été défini, renvoit un chunk par défaut ne comportant que des
    * {@link TerrainType#UNKNOWN}.
    *
-   * @param tick Le tick du chunk à renvoyer.
+   * @param tick     Le tick du chunk à renvoyer.
    * @param position La position du chunk à renvoyer.
    * @return Le chunk spécifié par les coordonnées et le tick, ou null s'il n'existe pas.
    */

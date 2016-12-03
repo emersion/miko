@@ -1,7 +1,5 @@
 package cr.fr.saucisseroyale.miko.engine;
 
-
-
 /**
  * Un gestionnaire de joueurs, stockant tous les joueurs à tous les ticks, avec le principe de
  * {@link Snapshots}.
@@ -9,15 +7,14 @@ package cr.fr.saucisseroyale.miko.engine;
  * @see Snapshots
  */
 class PlayerManager {
-
   private SnapshotsMap<Integer, String> map = new SnapshotsMap<>();
 
   /**
    * Ajoute un joueur à la liste de joueurs, au tick spécifié.
    *
-   * @param tick Le tick auquel ajouter le joueur.
+   * @param tick     Le tick auquel ajouter le joueur.
    * @param entityId L'entityId du joueur à ajouter.
-   * @param name Le nom du joueur à ajouter.
+   * @param name     Le nom du joueur à ajouter.
    */
   public void addPlayer(long tick, int entityId, String name) {
     map.setSnapshot(tick, entityId, name);
@@ -26,7 +23,7 @@ class PlayerManager {
   /**
    * Retourne le joueur au tick spécifié, ou null s'il n'existe pas de joueur à ce tick.
    *
-   * @param tick Le tick du joueur à renvoyer.
+   * @param tick     Le tick du joueur à renvoyer.
    * @param entityId L'entityId du joueur à renvoyer.
    * @return Le joueur spécifié par le tick, ou null s'il n'existe pas.
    */
@@ -37,7 +34,7 @@ class PlayerManager {
   /**
    * Renvoit true si l'entité spécifiée par l'entityId est un joueur au tick spécifié.
    *
-   * @param tick Le tick de l'entité.
+   * @param tick     Le tick de l'entité.
    * @param entityId L'entityId de l'entité.
    * @return true si l'entité à ce tick est un joueur.
    */
@@ -48,7 +45,7 @@ class PlayerManager {
   /**
    * Enlève un joueur de la liste de joueurs, au tick spécifié.
    *
-   * @param tick Le tick auquel enlever le joueur.
+   * @param tick     Le tick auquel enlever le joueur.
    * @param entityId L'entityId du joueur à enlever.
    */
   public void removePlayer(long tick, int entityId) {
@@ -64,5 +61,4 @@ class PlayerManager {
   public void disposeUntilTick(long tick) {
     map.disposeUntilTick(tick);
   }
-
 }

@@ -6,10 +6,8 @@ import cr.fr.saucisseroyale.miko.util.MikoMath;
 /**
  * Un point immutable de la carte de jeu, indépendante de son type. Utilisé pour indiquer un
  * emplacement sans répéter (bx,by,x,y).
- *
  */
 public final class TerrainPoint {
-
   private final int x;
   private final int y;
 
@@ -137,10 +135,6 @@ public final class TerrainPoint {
     if (x != other.x) {
       return false;
     }
-    if (y != other.y) {
-      return false;
-    }
-    return true;
+    return y == other.y;
   }
-
 }

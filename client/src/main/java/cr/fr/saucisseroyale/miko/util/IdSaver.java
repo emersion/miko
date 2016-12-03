@@ -10,8 +10,7 @@ import java.util.Map;
  * Utilisation : enregistrer la classe avec {@link #register(Class)} puis récupérer des éléments
  * avec {@link #getValue(Class, int)}.
  */
-public class IdSaver {
-
+public final class IdSaver {
   // Map (T) : Class<T extends Enum<T>> -> T[]
   private static Map<Class<?>, Object[]> map = new HashMap<>();
 
@@ -25,7 +24,7 @@ public class IdSaver {
    * pas d'élément correspondant.
    *
    * @param enumeration L'énumération identifiable dont on souhaite retrouver un élément.
-   * @param id La valeur de l'élément à retrouver.
+   * @param id          La valeur de l'élément à retrouver.
    * @return L'élément correspondant à id pour cette classe.
    * @throws IllegalArgumentException Si la classe n'a pas été sauvegardée avant utilisation.
    */

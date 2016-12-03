@@ -1,25 +1,13 @@
 package cr.fr.saucisseroyale.miko;
 
-import java.awt.AWTEvent;
-import java.awt.AWTException;
-import java.awt.BufferCapabilities;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType;
+
+import javax.swing.*;
+import javax.swing.plaf.synth.SynthLookAndFeel;
+import java.awt.*;
 import java.awt.BufferCapabilities.FlipContents;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.EventQueue;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.ImageCapabilities;
-import java.awt.KeyboardFocusManager;
-import java.awt.MouseInfo;
-import java.awt.Point;
-import java.awt.PointerInfo;
-import java.awt.Rectangle;
-import java.awt.Toolkit;
-import java.awt.Window;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
@@ -29,19 +17,6 @@ import java.io.InputStream;
 import java.text.ParseException;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
-
-import javax.swing.JComponent;
-import javax.swing.JFrame;
-import javax.swing.LookAndFeel;
-import javax.swing.RepaintManager;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.WindowConstants;
-import javax.swing.plaf.synth.SynthLookAndFeel;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Fenêtre en mode plein écran ou fenêtré sans bordures avec des composants d'UI et un composant
@@ -63,95 +38,11 @@ import org.apache.logging.log4j.Logger;
  * </ul>
  */
 class UiWindow {
-
-  // we won't serialize it
-  @SuppressWarnings("serial")
-  private static class EventCatcherComponent extends Component {
-    private KeyListener keyListener;
-
-    public EventCatcherComponent(int width, int height) {
-      setSize(width, height);
-      setFocusable(true);
-    }
-
-    public void setKeyListener(KeyListener keyListener) {
-      if (this.keyListener != null) {
-        removeKeyListener(this.keyListener);
-      }
-      this.keyListener = keyListener;
-      addKeyListener(keyListener);
-    }
-  }
-
-  /**
-   * Une EventQueue qui se synchronise avec un lock pour éviter des problèmes de concurrence.
-   */
-  private static class SynchronizedEventQueue extends EventQueue {
-
-    private Object lock;
-
-    public SynchronizedEventQueue(Object lock) {
-      this.lock = lock;
-    }
-
-    @Override
-    protected void dispatchEvent(AWTEvent event) {
-      synchronized (lock) {
-        super.dispatchEvent(event);
-      }
-    }
-  }
-
-  private static class RepaintDisabler extends RepaintManager {
-    // @noformatting
-    public RepaintDisabler() {
-      setDoubleBufferingEnabled(false);
-    }
-    @Override
-    public void addDirtyRegion(JComponent c, int x, int y, int w, int h) {}
-    @Override
-    public void addDirtyRegion(Window window, int x, int y, int w, int h) {}
-    @Override
-    public synchronized void addInvalidComponent(JComponent invalidComponent) {}
-    @Override
-    public void markCompletelyClean(JComponent aComponent) {}
-    @Override
-    public void markCompletelyDirty(JComponent aComponent) {}
-    @Override
-    public void paintDirtyRegions() {}
-    @Override
-    public Rectangle getDirtyRegion(JComponent aComponent) {
-      // pretend the component is completely dirty
-      return new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
-    }
-    @Override
-    public boolean isCompletelyDirty(JComponent aComponent) {
-      return true;
-    }
-    @Override
-    public synchronized void removeInvalidComponent(JComponent component) {}
-    @Override
-    public void validateInvalidComponents() {}
-    // @formatting
-  }
-
   private static final Integer UI_VISIBLE_LAYER = Integer.valueOf(1);
   private static final Integer UI_HIDDEN_LAYER = Integer.valueOf(-1);
   private static final Integer MAIN_LAYER = Integer.valueOf(0);
   private static final Class<?> openglGraphicsConfigClass;
   private static Logger logger;
-  private Runnable closeListener;
-  private IntConsumer globalKeyDownListener;
-  private JFrame frame; // will be null when we're disposed
-  private GraphicsDevice device;
-  private GraphicsConfiguration configuration;
-  private BufferStrategy strategy;
-  private Consumer<Graphics2D> renderable;
-  private EventCatcherComponent mainComponent;
-  private Object uiLock = new Object();
-  private boolean fullscreen;
-  private int width;
-  private int height;
 
   static {
     // initialize logger before we use it
@@ -177,45 +68,18 @@ class UiWindow {
     }
   }
 
-  /**
-   * Initialise le système d'Ui avec un {@link SynthLookAndFeel}. Le {@link LookAndFeel} de la
-   * fenêtre sera choisi comme par appel de {@link SynthLookAndFeel#load(InputStream, Class)} avec
-   * les arguments spécifiés en paramètre.
-   * <p>
-   * <b>Doit être appelé avant appel à toute classe liée aux graphismes.</b>
-   *
-   * @param input Le stream depuis lequel charger la configuration de SynthL&F.
-   * @param resourceBase Utilisé pour resolve les chemins de certains fichiers utilisés dans le L&F.
-   *
-   * @throws ParseException S'il y a une erreur lors du parsing de la configuration de Synth L&F.
-   */
-  public static void initUI(InputStream input, Class<?> resourceBase) throws ParseException {
-    SynthLookAndFeel lookAndFeel = new SynthLookAndFeel();
-    lookAndFeel.load(input, resourceBase);
-    try {
-      UIManager.setLookAndFeel(lookAndFeel);
-    } catch (UnsupportedLookAndFeelException e) {
-      // will never be thrown, SynthLookAndFeel#isSupportedLookAndFeel() never returns false
-      throw new RuntimeException(e);
-    }
-  }
-
-  /**
-   * Initialise le système d'Ui avec un {@link LookAndFeel} par défaut.
-   * <p>
-   * <b>Doit être appelé avant appel à toute classe liée aux graphismes.</b>
-   *
-   */
-  public static void initUI() {
-    try {
-      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
-      // will never be thrown according to UIManager documentation
-      // throw RE if it does
-      throw new RuntimeException(e);
-    }
-  }
-
+  private final Object uiLock = new Object();
+  private Runnable closeListener;
+  private IntConsumer globalKeyDownListener;
+  private JFrame frame; // will be null when we're disposed
+  private GraphicsDevice device;
+  private GraphicsConfiguration configuration;
+  private BufferStrategy strategy;
+  private Consumer<Graphics2D> renderable;
+  private EventCatcherComponent mainComponent;
+  private boolean fullscreen;
+  private int width;
+  private int height;
   /**
    * Tente de créer et afficher la fenêtre sur un écran. L'écran choisi peut dépendre de la position
    * de la souris au moment de l'appel à cette méthode.
@@ -224,23 +88,20 @@ class UiWindow {
    * {@link #isFullscreen()}.
    *
    * @param fullscreen Si la fenêtre doit être en plein écran exclusif ou en fenêtré sans bordures.
-   *
    * @throws IllegalStateException Si {@code show} ou {@link #dispose()} a déjà été appelé.
    */
   public UiWindow(boolean fullscreen) {
     this(MouseInfo.getPointerInfo().getDevice(), fullscreen);
   }
-
   /**
    * Tente de créer et afficher la fenêtre sur l'écran spécifié.
    * <p>
    * La fenêtre ne sera pas forcément affichée en plein écran ou sur l'écran spécifié ; récupérer
    * l'état final avec {@link #isFullscreen()} et {@link #getDevice()}.
    *
-   * @param requestedDevice L'écran sur lequel tenter d'afficher la fenêtre.
+   * @param requestedDevice     L'écran sur lequel tenter d'afficher la fenêtre.
    * @param requestedFullscreen Si la fenêtre doit être en plein écran exclusif ou en fenêtré sans
-   *        bordures.
-   *
+   *                            bordures.
    * @throws IllegalStateException Si {@code show} ou {@link #dispose()} a déjà été appelé.
    */
   public UiWindow(GraphicsDevice requestedDevice, boolean requestedFullscreen) {
@@ -305,9 +166,9 @@ class UiWindow {
     // it will work on d3d as well, no need to choose a different BufferCapabilities if using d3d
     BufferCapabilities bc = new BufferCapabilities(new ImageCapabilities(true), new ImageCapabilities(true), FlipContents.COPIED);
     // we must use a sun.* class in order to tell the surfacemanager we want vsync
-    @SuppressWarnings("restriction")
+    @SuppressWarnings({"restriction", "UnnecessaryFullyQualifiedName"})
     BufferCapabilities vsyncBuffer =
-        new sun.java2d.pipe.hw.ExtendedBufferCapabilities(bc, sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON);
+            new sun.java2d.pipe.hw.ExtendedBufferCapabilities(bc, VSyncType.VSYNC_ON);
     try {
       frame.createBufferStrategy(2, vsyncBuffer);
     } catch (AWTException e) {
@@ -319,10 +180,112 @@ class UiWindow {
   }
 
   /**
+   * Initialise le système d'Ui avec un {@link SynthLookAndFeel}. Le {@link LookAndFeel} de la
+   * fenêtre sera choisi comme par appel de {@link SynthLookAndFeel#load(InputStream, Class)} avec
+   * les arguments spécifiés en paramètre.
+   * <p>
+   * <b>Doit être appelé avant appel à toute classe liée aux graphismes.</b>
+   *
+   * @param input        Le stream depuis lequel charger la configuration de SynthL&F.
+   * @param resourceBase Utilisé pour resolve les chemins de certains fichiers utilisés dans le L&F.
+   * @throws ParseException S'il y a une erreur lors du parsing de la configuration de Synth L&F.
+   */
+  public static void initUI(InputStream input, Class<?> resourceBase) throws ParseException {
+    SynthLookAndFeel lookAndFeel = new SynthLookAndFeel();
+    lookAndFeel.load(input, resourceBase);
+    try {
+      UIManager.setLookAndFeel(lookAndFeel);
+    } catch (UnsupportedLookAndFeelException e) {
+      // will never be thrown, SynthLookAndFeel#isSupportedLookAndFeel() never returns false
+      throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Initialise le système d'Ui avec un {@link LookAndFeel} par défaut.
+   * <p>
+   * <b>Doit être appelé avant appel à toute classe liée aux graphismes.</b>
+   */
+  public static void initUI() {
+    try {
+      UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e) {
+      // will never be thrown according to UIManager documentation
+      // throw RE if it does
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static GraphicsConfiguration getBestOGLGraphicsConfiguration(GraphicsDevice device, boolean fullscreen) {
+    // try using the provided device
+    GraphicsConfiguration bestConfiguration = getBestOGLGraphicsConfigurationOnDevice(device, fullscreen);
+    if (bestConfiguration != null) {
+      return bestConfiguration;
+    }
+    GraphicsDevice defaultDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+    // try using the default device if it fails
+    if (!defaultDevice.equals(device)) {
+      bestConfiguration = getBestOGLGraphicsConfigurationOnDevice(device, fullscreen);
+      if (bestConfiguration != null) {
+        return bestConfiguration;
+      }
+    }
+    // try using any possible device if it fails
+    for (GraphicsDevice otherDevice : GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()) {
+      if (otherDevice.equals(defaultDevice) || otherDevice.equals(device)) {
+        continue;
+      }
+      bestConfiguration = getBestOGLGraphicsConfigurationOnDevice(otherDevice, fullscreen);
+      if (bestConfiguration != null) {
+        return bestConfiguration;
+      }
+    }
+    // try again with fullscreen exclusive mode
+    if (!fullscreen) {
+      return getBestOGLGraphicsConfiguration(device, true);
+    }
+    // no configuration found
+    return null;
+  }
+
+  private static GraphicsConfiguration getBestOGLGraphicsConfigurationOnDevice(GraphicsDevice device, boolean fullscreen) {
+    for (GraphicsConfiguration gc : device.getConfigurations()) {
+      // drop non opengl configurations
+      if (!openglGraphicsConfigClass.isAssignableFrom(gc.getClass())) {
+        continue;
+      }
+      // drop non page-flipping configurations
+      if (!gc.getBufferCapabilities().isPageFlipping()) {
+        continue;
+      }
+      // additionally drop fullscreen-only page-flipping configurations if we're requesting windowed
+      // mode
+      if (!fullscreen && gc.getBufferCapabilities().isFullScreenRequired()) {
+        continue;
+      }
+      // drop non accelerated configurations
+      if (!gc.getImageCapabilities().isAccelerated()) {
+        continue;
+      }
+      // drop non double accelereated configurations
+      if (!gc.getBufferCapabilities().getFrontBufferCapabilities().isAccelerated()
+              || !gc.getBufferCapabilities().getBackBufferCapabilities().isAccelerated()) {
+        continue;
+      }
+      // drop null flip contents to make sure we do support vsync
+      if (gc.getBufferCapabilities().getFlipContents() == null) {
+        continue;
+      }
+      return gc;
+    }
+    return null;
+  }
+
+  /**
    * Affiche les composants sur la fenêtre.
    *
    * @throws IllegalStateException Si {@code show} n'a pas été appelé, ou {@link #dispose()} a déjà
-   *         été appelé.
+   *                               été appelé.
    */
   public void render() {
     checkFrameNotDisposed();
@@ -362,7 +325,7 @@ class UiWindow {
    * Ajoute un composant d'UI à la fenêtre, caché.
    *
    * @param component Le composant à ajouter à la fenêtre.
-   * @param resize Si le composant doit être redimensionné à la taille de la fenêtre.
+   * @param resize    Si le composant doit être redimensionné à la taille de la fenêtre.
    */
   public void addUi(JComponent component, boolean resize) {
     checkFrameNotDisposed();
@@ -479,7 +442,7 @@ class UiWindow {
 
   /**
    * @return La configuration graphique actuelle de la fenêtre, à utiliser de préférence pour les
-   *         opérations graphiques dans le composant principal.
+   * opérations graphiques dans le composant principal.
    */
   public GraphicsConfiguration getConfiguration() {
     return configuration;
@@ -501,7 +464,7 @@ class UiWindow {
    * <b>centre</b> du composant principal.
    *
    * @return La position de la souris par rapport au composant principal, ou null si la souris n'est
-   *         pas au-dessus.
+   * pas au-dessus.
    */
   public Point getMousePosition() {
     checkFrameNotDisposed();
@@ -561,69 +524,83 @@ class UiWindow {
     }
   }
 
-  private static GraphicsConfiguration getBestOGLGraphicsConfiguration(GraphicsDevice device, boolean fullscreen) {
-    // try using the provided device
-    GraphicsConfiguration bestConfiguration = getBestOGLGraphicsConfigurationOnDevice(device, fullscreen);
-    if (bestConfiguration != null) {
-      return bestConfiguration;
+  // we won't serialize it
+  @SuppressWarnings("serial")
+  private static class EventCatcherComponent extends Component {
+    private KeyListener keyListener;
+
+    public EventCatcherComponent(int width, int height) {
+      setSize(width, height);
+      setFocusable(true);
     }
-    GraphicsDevice defaultDevice = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-    // try using the default device if it fails
-    if (!defaultDevice.equals(device)) {
-      bestConfiguration = getBestOGLGraphicsConfigurationOnDevice(device, fullscreen);
-      if (bestConfiguration != null) {
-        return bestConfiguration;
+
+    public void setKeyListener(KeyListener keyListener) {
+      if (this.keyListener != null) {
+        removeKeyListener(this.keyListener);
       }
+      this.keyListener = keyListener;
+      addKeyListener(keyListener);
     }
-    // try using any possible device if it fails
-    for (GraphicsDevice otherDevice : GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()) {
-      if (otherDevice.equals(defaultDevice) || otherDevice.equals(device)) {
-        continue;
-      }
-      bestConfiguration = getBestOGLGraphicsConfigurationOnDevice(otherDevice, fullscreen);
-      if (bestConfiguration != null) {
-        return bestConfiguration;
-      }
-    }
-    // try again with fullscreen exclusive mode
-    if (!fullscreen) {
-      return getBestOGLGraphicsConfiguration(device, true);
-    }
-    // no configuration found
-    return null;
   }
 
-  private static GraphicsConfiguration getBestOGLGraphicsConfigurationOnDevice(GraphicsDevice device, boolean fullscreen) {
-    for (GraphicsConfiguration gc : device.getConfigurations()) {
-      // drop non opengl configurations
-      if (!openglGraphicsConfigClass.isAssignableFrom(gc.getClass())) {
-        continue;
-      }
-      // drop non page-flipping configurations
-      if (!gc.getBufferCapabilities().isPageFlipping()) {
-        continue;
-      }
-      // additionally drop fullscreen-only page-flipping configurations if we're requesting windowed
-      // mode
-      if (!fullscreen && gc.getBufferCapabilities().isFullScreenRequired()) {
-        continue;
-      }
-      // drop non accelerated configurations
-      if (!gc.getImageCapabilities().isAccelerated()) {
-        continue;
-      }
-      // drop non double accelereated configurations
-      if (!gc.getBufferCapabilities().getFrontBufferCapabilities().isAccelerated()
-          || !gc.getBufferCapabilities().getBackBufferCapabilities().isAccelerated()) {
-        continue;
-      }
-      // drop null flip contents to make sure we do support vsync
-      if (gc.getBufferCapabilities().getFlipContents() == null) {
-        continue;
-      }
-      return gc;
+  /**
+   * Une EventQueue qui se synchronise avec un lock pour éviter des problèmes de concurrence.
+   */
+  private static class SynchronizedEventQueue extends EventQueue {
+    private final Object lock;
+
+    public SynchronizedEventQueue(Object lock) {
+      this.lock = lock;
     }
-    return null;
+
+    @Override
+    protected void dispatchEvent(AWTEvent event) {
+      synchronized (lock) {
+        super.dispatchEvent(event);
+      }
+    }
   }
 
+  private static class RepaintDisabler extends RepaintManager {
+    // @noformatting
+    public RepaintDisabler() {
+      setDoubleBufferingEnabled(false);
+    }
+
+    @Override
+    public void addDirtyRegion(JComponent c, int x, int y, int w, int h) {}
+
+    @Override
+    public void addDirtyRegion(Window window, int x, int y, int w, int h) {}
+
+    @Override
+    public synchronized void addInvalidComponent(JComponent invalidComponent) {}
+
+    @Override
+    public void markCompletelyClean(JComponent aComponent) {}
+
+    @Override
+    public void markCompletelyDirty(JComponent aComponent) {}
+
+    @Override
+    public void paintDirtyRegions() {}
+
+    @Override
+    public Rectangle getDirtyRegion(JComponent aComponent) {
+      // pretend the component is completely dirty
+      return new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    }
+
+    @Override
+    public boolean isCompletelyDirty(JComponent aComponent) {
+      return true;
+    }
+
+    @Override
+    public synchronized void removeInvalidComponent(JComponent component) {}
+
+    @Override
+    public void validateInvalidComponents() {}
+    // @formatting
+  }
 }

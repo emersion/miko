@@ -5,7 +5,6 @@ import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 
 /**
  * Un type de réponse à un envoi de version.
- *
  */
 public enum VersionResponseType implements UniquelyIdentifiable {
 
@@ -21,17 +20,9 @@ public enum VersionResponseType implements UniquelyIdentifiable {
 
   private final int id;
 
-  private VersionResponseType(int id) {
+  VersionResponseType(int id) {
     assert id < 1 << 8 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
     this.id = id;
-  }
-
-  /**
-   * @return L'identifiant correspondant à la réponse de version.
-   */
-  @Override
-  public int getId() {
-    return id;
   }
 
   /**
@@ -42,5 +33,13 @@ public enum VersionResponseType implements UniquelyIdentifiable {
    */
   public static VersionResponseType getType(int id) {
     return IdSaver.getValue(VersionResponseType.class, id);
+  }
+
+  /**
+   * @return L'identifiant correspondant à la réponse de version.
+   */
+  @Override
+  public int getId() {
+    return id;
   }
 }

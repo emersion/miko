@@ -18,10 +18,8 @@ import java.util.ListIterator;
  * suffisament anciennes grâce à {@link #disposeUntilTick(long)}.
  *
  * @param <T> Le type de données à stocker dans chaque couple (tick ; donnée).
- *
  */
 class Snapshots<T> {
-
   private List<MutablePair.Long<T>> snapshots;
   private long first, last;
 
@@ -94,7 +92,7 @@ class Snapshots<T> {
    * snapshot soit ajouté. Autrement dit, les ticks ne possédant pas de snapshots sont remplis avec
    * les snapshots les plus récents avant ce tick.
    *
-   * @param tick Le tick auquel ajouter le snapshot.
+   * @param tick     Le tick auquel ajouter le snapshot.
    * @param snapshot Le snapshot à ajouter.
    */
   public void setSnapshot(long tick, T snapshot) {

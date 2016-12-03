@@ -2,7 +2,7 @@ package cr.fr.saucisseroyale.miko;
 
 import cr.fr.saucisseroyale.miko.util.Triplet;
 
-import java.awt.Point;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
@@ -12,15 +12,12 @@ import java.util.function.Supplier;
 /**
  * Un gestionnaire de l'état des touches du clavier, disposant des touches pressées (avec la
  * position de la souris) depuis le dernier flush.
- *
  */
 class KeyStateManager implements KeyListener {
-
-  // additional synchronization to ensure no event gets lost
-  private Object eventListLock = new Object();
-  private List<Triplet<Boolean, Integer, Point>> eventList = new ArrayList<>();
-
   private final Supplier<Point> mousePositionSupplier;
+  // additional synchronization to ensure no event gets lost
+  private final Object eventListLock = new Object();
+  private List<Triplet<Boolean, Integer, Point>> eventList = new ArrayList<>();
 
   public KeyStateManager(Supplier<Point> mousePositionSupplier) {
     this.mousePositionSupplier = mousePositionSupplier;
@@ -52,5 +49,4 @@ class KeyStateManager implements KeyListener {
       eventList.add(new Triplet<>(Boolean.FALSE, e.getKeyCode(), mousePositionSupplier.get()));
     }
   }
-
 }

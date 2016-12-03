@@ -1,21 +1,16 @@
 package cr.fr.saucisseroyale.miko.engine;
 
-import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
-import cr.fr.saucisseroyale.miko.protocol.EntityType;
-import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
-import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
-import cr.fr.saucisseroyale.miko.protocol.SpriteType;
-import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
+import cr.fr.saucisseroyale.miko.protocol.*;
+import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate.Builder;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
  * Une entité existant sur plusieurs ticks, supportant des mises à jour partielles.
- *
  */
 class Entity {
-
   private final Snapshots<MapPoint> mapPoints;
   private final Snapshots<Float> speedAngles;
   private final Snapshots<Float> speedNorms;
@@ -23,7 +18,6 @@ class Entity {
   private final SnapshotsMap<ObjectAttribute, Object> objectAttributes;
   private final Snapshots<Boolean> enableStatus;
   private final Snapshots<SpriteType> spriteTypes;
-
   private long tickSwitchedSprite;
 
   public Entity() {
@@ -102,14 +96,11 @@ class Entity {
     if (enableStatus.isEmpty()) {
       return true;
     }
-    if (enableStatus.size() == 1 && !isEnabled(Long.MAX_VALUE)) {
-      return true;
-    }
-    return false;
+    return enableStatus.size() == 1 && !isEnabled(Long.MAX_VALUE);
   }
 
   public EntityDataUpdate generateUpdate(int entityId, long tick, Set<EntityUpdateType> types, Set<ObjectAttribute> attributeTypes) {
-    EntityDataUpdate.Builder builder = new EntityDataUpdate.Builder(entityId);
+    Builder builder = new Builder(entityId);
     for (EntityUpdateType type : types) {
       switch (type) {
         case POSITION:
@@ -196,7 +187,7 @@ class Entity {
   }
 
   private void setObjectAttributes(long tick, Map<ObjectAttribute, Object> newObjectAttributes) {
-    for (Map.Entry<ObjectAttribute, Object> newObjetAttribute : newObjectAttributes.entrySet()) {
+    for (Entry<ObjectAttribute, Object> newObjetAttribute : newObjectAttributes.entrySet()) {
       setObjectAttribute(tick, newObjetAttribute.getKey(), newObjetAttribute.getValue());
     }
   }

@@ -5,9 +5,33 @@ package cr.fr.saucisseroyale.miko.util;
  *
  * @param <T> Le type du premier élément.
  * @param <U> Le type du deuxième élément.
- *
  */
 public class Pair<T, U> {
+  private final T first;
+  private final U second;
+
+  /**
+   * @param first  Le premier élément de la paire.
+   * @param second Le deuxième élément de la paire.
+   */
+  public Pair(T first, U second) {
+    this.first = first;
+    this.second = second;
+  }
+
+  /**
+   * @return Le premier élément de la paire.
+   */
+  public T getFirst() {
+    return first;
+  }
+
+  /**
+   * @return Le deuxième élément de la paire.
+   */
+  public U getSecond() {
+    return second;
+  }
 
   /**
    * Une Pair avec int comme type de premier élément.
@@ -15,7 +39,6 @@ public class Pair<T, U> {
    * Sert à éviter l'autoboxing de la primitive int.
    *
    * @param <U> Le type du second élément.
-   *
    * @see Pair
    */
   public static class Int<U> {
@@ -23,7 +46,7 @@ public class Pair<T, U> {
     private final U second;
 
     /**
-     * @param first Le premier élément de la paire.
+     * @param first  Le premier élément de la paire.
      * @param second Le deuxième élément de la paire.
      */
     public Int(int first, U second) {
@@ -52,7 +75,6 @@ public class Pair<T, U> {
    * Sert à éviter l'autoboxing de la primitive long.
    *
    * @param <U> Le type du second élément.
-   *
    * @see Pair
    */
   public static class Long<U> {
@@ -60,7 +82,7 @@ public class Pair<T, U> {
     private final U second;
 
     /**
-     * @param first Le premier élément de la paire.
+     * @param first  Le premier élément de la paire.
      * @param second Le deuxième élément de la paire.
      */
     public Long(long first, U second) {
@@ -95,7 +117,7 @@ public class Pair<T, U> {
     private final float second;
 
     /**
-     * @param first Le premier élément de la paire.
+     * @param first  Le premier élément de la paire.
      * @param second Le deuxième élément de la paire.
      */
     public DoubleFloat(float first, float second) {
@@ -117,31 +139,4 @@ public class Pair<T, U> {
       return second;
     }
   }
-
-  private final T first;
-  private final U second;
-
-  /**
-   * @param first Le premier élément de la paire.
-   * @param second Le deuxième élément de la paire.
-   */
-  public Pair(T first, U second) {
-    this.first = first;
-    this.second = second;
-  }
-
-  /**
-   * @return Le premier élément de la paire.
-   */
-  public T getFirst() {
-    return first;
-  }
-
-  /**
-   * @return Le deuxième élément de la paire.
-   */
-  public U getSecond() {
-    return second;
-  }
-
 }

@@ -1,13 +1,11 @@
 package cr.fr.saucisseroyale.miko.util;
 
-import java.awt.Point;
+import java.awt.*;
 
 /**
  * Classe d'utilité avec des implémentations personnalisées de fonctions mathématiques.
- *
  */
-public class MikoMath {
-
+public final class MikoMath {
   // classe statique
   private MikoMath() {
     throw new IllegalStateException("This class can't be instantiated");
@@ -49,5 +47,4 @@ public class MikoMath {
   public static float atan2(float y, float x) {
     return (float) Math.atan2(y, x);
   }
-
 }

@@ -5,7 +5,6 @@ import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 
 /**
  * Un attribut d'un objet lors d'une mise à jour d'attributs.
- *
  */
 public enum ObjectAttribute implements UniquelyIdentifiable {
 
@@ -23,11 +22,21 @@ public enum ObjectAttribute implements UniquelyIdentifiable {
   private final int id;
   private final DataType dataType;
 
-  private ObjectAttribute(int id, DataType dataType) {
+  ObjectAttribute(int id, DataType dataType) {
     assert id < 1 << 8 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
     assert dataType != null : "le type de données doivent être définis";
     this.id = id;
     this.dataType = dataType;
+  }
+
+  /**
+   * Renvoit la valeur d'un identifiant d'attribut.
+   *
+   * @param id L'identifiant correspondant à l'attribut.
+   * @return L'attribut, ou null s'il n'y a pas d'attribut correspondante.
+   */
+  public static ObjectAttribute getType(int id) {
+    return IdSaver.getValue(ObjectAttribute.class, id);
   }
 
   /**
@@ -43,15 +52,5 @@ public enum ObjectAttribute implements UniquelyIdentifiable {
    */
   public DataType getDataType() {
     return dataType;
-  }
-
-  /**
-   * Renvoit la valeur d'un identifiant d'attribut.
-   *
-   * @param id L'identifiant correspondant à l'attribut.
-   * @return L'attribut, ou null s'il n'y a pas d'attribut correspondante.
-   */
-  public static ObjectAttribute getType(int id) {
-    return IdSaver.getValue(ObjectAttribute.class, id);
   }
 }

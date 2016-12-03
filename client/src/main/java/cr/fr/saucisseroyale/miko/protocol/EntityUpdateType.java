@@ -5,7 +5,6 @@ import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 
 /**
  * Un type de données dans la mise à jour d'une entité
- *
  */
 public enum EntityUpdateType implements UniquelyIdentifiable {
 
@@ -25,17 +24,9 @@ public enum EntityUpdateType implements UniquelyIdentifiable {
 
   private final int id;
 
-  private EntityUpdateType(int id) {
+  EntityUpdateType(int id) {
     assert id < 8 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
     this.id = id;
-  }
-
-  /**
-   * @return L'identifiant correspondant au type de mise à jour.
-   */
-  @Override
-  public int getId() {
-    return id;
   }
 
   /**
@@ -46,5 +37,13 @@ public enum EntityUpdateType implements UniquelyIdentifiable {
    */
   public static EntityUpdateType getType(int id) {
     return IdSaver.getValue(EntityUpdateType.class, id);
+  }
+
+  /**
+   * @return L'identifiant correspondant au type de mise à jour.
+   */
+  @Override
+  public int getId() {
+    return id;
   }
 }

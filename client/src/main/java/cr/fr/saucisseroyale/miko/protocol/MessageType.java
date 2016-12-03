@@ -3,10 +3,8 @@ package cr.fr.saucisseroyale.miko.protocol;
 import cr.fr.saucisseroyale.miko.util.IdSaver;
 import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 
-
 /**
  * Un type de message (entrant ou sortant).
- *
  */
 public enum MessageType implements UniquelyIdentifiable {
 
@@ -32,17 +30,9 @@ public enum MessageType implements UniquelyIdentifiable {
 
   private final int id;
 
-  private MessageType(int id) {
+  MessageType(int id) {
     assert id < 1 << 8 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
     this.id = id;
-  }
-
-  /**
-   * @return L'identifiant correspondant au type du message.
-   */
-  @Override
-  public int getId() {
-    return id;
   }
 
   /**
@@ -53,5 +43,13 @@ public enum MessageType implements UniquelyIdentifiable {
    */
   public static MessageType getType(int id) {
     return IdSaver.getValue(MessageType.class, id);
+  }
+
+  /**
+   * @return L'identifiant correspondant au type du message.
+   */
+  @Override
+  public int getId() {
+    return id;
   }
 }

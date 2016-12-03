@@ -10,12 +10,10 @@ public enum DataType {
 
   // update InputMessageFactory#readObject, OutputMessageFactory#entityUpdate,
   // OutputMessageFactory#writeAction, et Action en cas de changement
-  // @noformatting
   VOID,
   ONE_FLOAT,
   ONE_ENTITY,
   ONE_SHORT,
   ONE_TERRAIN,
-  PAIR_FLOAT_ENTITY;
-  // @formatting
+  PAIR_FLOAT_ENTITY
 }

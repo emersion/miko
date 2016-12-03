@@ -2,78 +2,50 @@ package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.network.FutureOutputMessage;
 import cr.fr.saucisseroyale.miko.network.OutputMessageFactory;
-import cr.fr.saucisseroyale.miko.protocol.Action;
-import cr.fr.saucisseroyale.miko.protocol.ActionType;
-import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
-import cr.fr.saucisseroyale.miko.protocol.Config;
-import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
-import cr.fr.saucisseroyale.miko.protocol.EntityType;
-import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
-import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
-import cr.fr.saucisseroyale.miko.protocol.SpriteType;
-import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
-import cr.fr.saucisseroyale.miko.protocol.TerrainType;
+import cr.fr.saucisseroyale.miko.protocol.*;
+import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate.Builder;
 import cr.fr.saucisseroyale.miko.util.MikoMath;
 import cr.fr.saucisseroyale.miko.util.Pair;
+import cr.fr.saucisseroyale.miko.util.Pair.DoubleFloat;
+import cr.fr.saucisseroyale.miko.util.Pair.Int;
 import cr.fr.saucisseroyale.miko.util.Triplet;
-
-import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.Point;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
-import java.awt.image.DataBufferInt;
-import java.awt.image.DirectColorModel;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.IntConsumer;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.*;
+import java.io.IOException;
+import java.util.*;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+
 /**
  * L'engine du jeu Miko, écoutant les inputs du serveur et du client, et pouvant être affiché.
- *
  */
 public class Engine {
-
   private static final int TICK_DIVIDER = 1 << 16;
   // sets how much the screen moves in response to mouse moves
   // MUST be positive
   private static final float MOUSE_SCREEN_MOVING = 0.3f;
-
   private static final int MAX_INTERPOLATION_DISTANCE = 100;
-
   private static Logger logger = LogManager.getLogger("miko.engine");
-
+  private final Consumer<FutureOutputMessage> messageOutput;
+  AffineTransform graphicsTransform;
   private Config config;
   private int screenWidth;
   private int screenHeight;
-
   private BufferedImage terrainImage;
   private int[] terrainImageData;
-  AffineTransform graphicsTransform;
-
   private TerrainManager terrainManager = new TerrainManager();
   private EntityManager entityManager = new EntityManager();
   private PlayerManager playerManager = new PlayerManager();
   private ChatManager chatManager = new ChatManager();
   private TickInputManager tickInputManager = new TickInputManager();
   private SpriteManager spriteManager;
-
   private List<EngineMessage> messagesBuffer = new ArrayList<>();
-  private final Consumer<FutureOutputMessage> messageOutput;
-
   private int playerEntityId = -1;
-
   private long lastDisposedTick = -1;
   private long lastReceivedTick = -1;
   private long lastTick;
@@ -81,7 +53,7 @@ public class Engine {
   private boolean startedup = false;
 
   public Engine(Config config, GraphicsConfiguration graphicsConfiguration, Consumer<FutureOutputMessage> messageOutput, int width, int height,
-      int tickRemainder) throws IOException {
+                int tickRemainder) throws IOException {
     logger.debug("Created engine");
     this.config = config;
     this.messageOutput = messageOutput;
@@ -89,7 +61,7 @@ public class Engine {
     screenHeight = height;
     terrainImageData = new int[screenWidth * screenHeight];
     DataBuffer buffer = new DataBufferInt(terrainImageData, terrainImageData.length);
-    WritableRaster raster = Raster.createPackedRaster(buffer, screenWidth, screenHeight, screenWidth, new int[] {0xFF0000, 0xFF00, 0xFF}, null);
+    WritableRaster raster = Raster.createPackedRaster(buffer, screenWidth, screenHeight, screenWidth, new int[]{0xFF0000, 0xFF00, 0xFF}, null);
     terrainImage = new BufferedImage(new DirectColorModel(24, 0xFF0000, 0xFF00, 0xFF), raster, false, null);
     graphicsTransform = new AffineTransform();
     graphicsTransform.translate(0, screenHeight - 1);
@@ -99,6 +71,37 @@ public class Engine {
     long tick = tickRemainder;
     lastTick = tick;
     createTick = tick;
+  }
+
+  private static float getPlayerMovementAngle(TickInput tickInput) {
+    float angle = (float) (Math.PI / 4);
+    if (tickInput.isMoveRight()) {
+      if (tickInput.isMoveUp()) {
+        return angle * 1;
+      }
+      if (tickInput.isMoveDown()) {
+        return angle * 7;
+      }
+      return angle * 0;
+    }
+    if (tickInput.isMoveLeft()) {
+      if (tickInput.isMoveUp()) {
+        return angle * 3;
+      }
+      if (tickInput.isMoveDown()) {
+        return angle * 5;
+      }
+      return angle * 4;
+    }
+    {
+      if (tickInput.isMoveUp()) {
+        return angle * 2;
+      }
+      if (tickInput.isMoveDown()) {
+        return angle * 6;
+      }
+      return Float.NaN;
+    }
   }
 
   public long getTick() {
@@ -116,7 +119,7 @@ public class Engine {
   }
 
   public void endStartup(long deltaTick) {
-    tickInputManager.addInput(lastTick, java.util.Collections.emptyList(), new Point());
+    tickInputManager.addInput(lastTick, Collections.emptyList(), new Point());
     processBufferedMessages();
     long newTick = createTick + deltaTick;
     logger.trace("Creating ticks until {} and finishing engine startup", newTick);
@@ -188,29 +191,29 @@ public class Engine {
     int yOffsetTotal = drawCenterPoint.getY() - screenHeight / 2;
 
     IntConsumer draw =
-        entityId -> {
-          TerrainPoint terrainPoint = entityManager.getMapPoint(lastTick, entityId).toTerrainPoint().getTranslated(-xOffsetTotal, -yOffsetTotal);
-          if (terrainPoint.getX() < minXDraw || terrainPoint.getX() > maxXDraw) {
-            return;
-          }
-          if (terrainPoint.getY() < minYDraw || terrainPoint.getY() > maxYDraw) {
-            return;
-          }
-          MapPoint oldPoint = entityManager.getMapPoint(lastTick - 1, entityId);
-          if (oldPoint != null) {
-            TerrainPoint oldterrainPoint = oldPoint.toTerrainPoint().getTranslated(-xOffsetTotal, -yOffsetTotal);
-            int deltaX = terrainPoint.getX() - oldterrainPoint.getX();
-            int deltaY = terrainPoint.getY() - oldterrainPoint.getY();
-            if (deltaX >= -MAX_INTERPOLATION_DISTANCE && deltaX <= MAX_INTERPOLATION_DISTANCE && deltaY >= -MAX_INTERPOLATION_DISTANCE
-                && deltaY <= MAX_INTERPOLATION_DISTANCE) {
-              // old and new are close enough, do lerp
-              terrainPoint = oldterrainPoint.getTranslated((int) alpha * deltaX, (int) alpha * deltaY);
-            }
-          }
-          SpriteType spriteType = entityManager.getSpriteType(lastTick, entityId);
-          long spriteTime = entityManager.getSpriteTime(lastTick, entityId);
-          spriteManager.drawSpriteType(graphics, spriteType, spriteTime, terrainPoint.getX(), terrainPoint.getY());
-        };
+            entityId -> {
+              TerrainPoint terrainPoint = entityManager.getMapPoint(lastTick, entityId).toTerrainPoint().getTranslated(-xOffsetTotal, -yOffsetTotal);
+              if (terrainPoint.getX() < minXDraw || terrainPoint.getX() > maxXDraw) {
+                return;
+              }
+              if (terrainPoint.getY() < minYDraw || terrainPoint.getY() > maxYDraw) {
+                return;
+              }
+              MapPoint oldPoint = entityManager.getMapPoint(lastTick - 1, entityId);
+              if (oldPoint != null) {
+                TerrainPoint oldterrainPoint = oldPoint.toTerrainPoint().getTranslated(-xOffsetTotal, -yOffsetTotal);
+                int deltaX = terrainPoint.getX() - oldterrainPoint.getX();
+                int deltaY = terrainPoint.getY() - oldterrainPoint.getY();
+                if (deltaX >= -MAX_INTERPOLATION_DISTANCE && deltaX <= MAX_INTERPOLATION_DISTANCE && deltaY >= -MAX_INTERPOLATION_DISTANCE
+                        && deltaY <= MAX_INTERPOLATION_DISTANCE) {
+                  // old and new are close enough, do lerp
+                  terrainPoint = oldterrainPoint.getTranslated((int) alpha * deltaX, (int) alpha * deltaY);
+                }
+              }
+              SpriteType spriteType = entityManager.getSpriteType(lastTick, entityId);
+              long spriteTime = entityManager.getSpriteTime(lastTick, entityId);
+              spriteManager.drawSpriteType(graphics, spriteType, spriteTime, terrainPoint.getX(), terrainPoint.getY());
+            };
 
     entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.PLAYER).forEach(draw);
     entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.BALL).forEach(draw);
@@ -285,97 +288,97 @@ public class Engine {
       MapPoint mapPoint = entityManager.getMapPoint(tick, entityId);
       MapPoint newMapPoint = mapPoint.getTranslated(deltaX, deltaY);
       // unused for now
-        EntityType entityType = entityManager.getEntityType(tick, entityId);
-        // check collisions
-        // check terrain collisions
-        Pair.DoubleFloat delta = newMapPoint.subtract(mapPoint);
-        int width = (int) delta.getFirst();
-        int height = (int) delta.getSecond();
-        Hitbox hitbox = entityManager.getSpriteType(tick, entityId).getHitbox();
-        for (Pair.DoubleFloat offset : hitbox.getKeyPoints(delta.getFirst(), delta.getSecond())) {
-          TerrainPoint start = mapPoint.getTranslated(offset.getFirst(), offset.getSecond()).toTerrainPoint();
-          // brensenham algorithm
-          // taken from http://tech-algorithm.com/articles/drawing-line-using-bresenham-algorithm/
-          int x = start.getX();
-          int y = start.getY();
-          int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
-          if (width < 0) {
-            dx1 = -1;
-          } else if (width > 0) {
-            dx1 = 1;
-          }
-          if (height < 0) {
-            dy1 = -1;
-          } else if (height > 0) {
-            dy1 = 1;
-          }
-          if (width < 0) {
-            dx2 = -1;
-          } else if (width > 0) {
-            dx2 = 1;
-          }
-          int longest = Math.abs(width);
-          int shortest = Math.abs(height);
-          if (longest <= shortest) {
-            int temp = longest;
-            longest = shortest;
-            shortest = temp;
-            if (height < 0) {
-              dy2 = -1;
-            } else if (height > 0) {
-              dy2 = 1;
-            }
-            dx2 = 0;
-          }
-          int numerator = longest >> 1;
-          for (int i = 0; i <= longest; i++) {
-            // collision checking with x and y
-            TerrainPoint point = new TerrainPoint(x, y);
-            TerrainType terrainType = terrainManager.getChunk(tick, point.getChunkPoint()).getBlock(point.getBlockPoint());
-            if (terrainType == TerrainType.BLACK_WALL) {
-              if (entityType == EntityType.BALL) {
-                entityManager.destroyEntity(tick, entityId);
-              }
-              return;
-            }
-            numerator += shortest;
-            if (!(numerator < longest)) {
-              numerator -= longest;
-              x += dx1;
-              y += dy1;
-            } else {
-              x += dx2;
-              y += dy2;
-            }
-          }
+      EntityType entityType = entityManager.getEntityType(tick, entityId);
+      // check collisions
+      // check terrain collisions
+      DoubleFloat delta = newMapPoint.subtract(mapPoint);
+      int width = (int) delta.getFirst();
+      int height = (int) delta.getSecond();
+      Hitbox hitbox = entityManager.getSpriteType(tick, entityId).getHitbox();
+      for (DoubleFloat offset : hitbox.getKeyPoints(delta.getFirst(), delta.getSecond())) {
+        TerrainPoint start = mapPoint.getTranslated(offset.getFirst(), offset.getSecond()).toTerrainPoint();
+        // brensenham algorithm
+        // taken from http://tech-algorithm.com/articles/drawing-line-using-bresenham-algorithm/
+        int x = start.getX();
+        int y = start.getY();
+        int dx1 = 0, dy1 = 0, dx2 = 0, dy2 = 0;
+        if (width < 0) {
+          dx1 = -1;
+        } else if (width > 0) {
+          dx1 = 1;
         }
-        // check entity collisions
-        // only check balls collisions against other entities
-        // only check moving entities against other entities
-        if (entityType == EntityType.BALL) {
-          for (int otherId : entityManager.getEntities(tick)) {
-            int senderId = (int) entityManager.getObjectAttribute(tick, entityId, ObjectAttribute.SENDER);
-            if (senderId == otherId) {
-              continue;
+        if (height < 0) {
+          dy1 = -1;
+        } else if (height > 0) {
+          dy1 = 1;
+        }
+        if (width < 0) {
+          dx2 = -1;
+        } else if (width > 0) {
+          dx2 = 1;
+        }
+        int longest = Math.abs(width);
+        int shortest = Math.abs(height);
+        if (longest <= shortest) {
+          int temp = longest;
+          longest = shortest;
+          shortest = temp;
+          if (height < 0) {
+            dy2 = -1;
+          } else if (height > 0) {
+            dy2 = 1;
+          }
+          dx2 = 0;
+        }
+        int numerator = longest >> 1;
+        for (int i = 0; i <= longest; i++) {
+          // collision checking with x and y
+          TerrainPoint point = new TerrainPoint(x, y);
+          TerrainType terrainType = terrainManager.getChunk(tick, point.getChunkPoint()).getBlock(point.getBlockPoint());
+          if (terrainType == TerrainType.BLACK_WALL) {
+            if (entityType == EntityType.BALL) {
+              entityManager.destroyEntity(tick, entityId);
             }
-            if (entityManager.getEntityType(tick, otherId) != EntityType.PLAYER) {
-              continue;
-            }
-            // check hitbox after id checks because it may be more expensive
-            Hitbox otherHitbox = entityManager.getSpriteType(tick, otherId).getHitbox();
-            MapPoint otherPosition = entityManager.getMapPoint(tick, otherId);
-            if (!Hitbox.collide(hitbox, newMapPoint, otherHitbox, otherPosition)) {
-              continue;
-            }
-            // player-ball collision
-            entityManager.destroyEntity(tick, entityId);
-            int playerHp = (int) entityManager.getObjectAttribute(tick, otherId, ObjectAttribute.HEALTH);
-            entityManager.setObjectAttribute(tick, otherId, ObjectAttribute.HEALTH, playerHp - 1);
             return;
           }
+          numerator += shortest;
+          if (!(numerator < longest)) {
+            numerator -= longest;
+            x += dx1;
+            y += dy1;
+          } else {
+            x += dx2;
+            y += dy2;
+          }
         }
-        entityManager.setMapPoint(tick, entityId, newMapPoint);
-      });
+      }
+      // check entity collisions
+      // only check balls collisions against other entities
+      // only check moving entities against other entities
+      if (entityType == EntityType.BALL) {
+        for (int otherId : entityManager.getEntities(tick)) {
+          int senderId = (int) entityManager.getObjectAttribute(tick, entityId, ObjectAttribute.SENDER);
+          if (senderId == otherId) {
+            continue;
+          }
+          if (entityManager.getEntityType(tick, otherId) != EntityType.PLAYER) {
+            continue;
+          }
+          // check hitbox after id checks because it may be more expensive
+          Hitbox otherHitbox = entityManager.getSpriteType(tick, otherId).getHitbox();
+          MapPoint otherPosition = entityManager.getMapPoint(tick, otherId);
+          if (!Hitbox.collide(hitbox, newMapPoint, otherHitbox, otherPosition)) {
+            continue;
+          }
+          // player-ball collision
+          entityManager.destroyEntity(tick, entityId);
+          int playerHp = (int) entityManager.getObjectAttribute(tick, otherId, ObjectAttribute.HEALTH);
+          entityManager.setObjectAttribute(tick, otherId, ObjectAttribute.HEALTH, playerHp - 1);
+          return;
+        }
+      }
+      entityManager.setMapPoint(tick, entityId, newMapPoint);
+    });
 
     // process actions
     float ballSendAngle = tickInput.getBallSendRequest();
@@ -387,9 +390,9 @@ public class Engine {
         int ballId = entityManager.getAndUseTemporaryId();
         MapPoint position = entityManager.getMapPoint(tick, playerEntityId);
         EntityDataUpdate ball =
-            new EntityDataUpdate.Builder(ballId).entityType(EntityType.BALL).position(position).speedAngle(ballSendAngle)
-                .speedNorm(config.getDefaultBallSpeed()).spriteType(SpriteType.BALL).objectAttribute(ObjectAttribute.SENDER, playerEntityId)
-                .objectAttribute(ObjectAttribute.TICKS_LEFT, config.getDefaultBallLifespan()).build();
+                new Builder(ballId).entityType(EntityType.BALL).position(position).speedAngle(ballSendAngle)
+                        .speedNorm(config.getDefaultBallSpeed()).spriteType(SpriteType.BALL).objectAttribute(ObjectAttribute.SENDER, playerEntityId)
+                        .objectAttribute(ObjectAttribute.TICKS_LEFT, config.getDefaultBallLifespan()).build();
         entityManager.createEntity(tick, ball);
         // notify server of ball send
         messageOutput.accept(OutputMessageFactory.action(tick, new Action(ActionType.SEND_BALL, new Pair<>(ballSendAngle, ballId))));
@@ -437,8 +440,9 @@ public class Engine {
         throw new IllegalStateException("Tick " + tick + " has already been disposed");
       }
       if (tick > lastTick) {
-        if (startedup)
+        if (startedup) {
           throw new IllegalStateException("Tick " + tick + " hasn't been created yet");
+        }
         previousUpdatedTick = lastTick;
       }
       if (previousUpdatedTick != -1) {
@@ -485,8 +489,8 @@ public class Engine {
         break;
       case ACTIONS_DONE:
         @SuppressWarnings("unchecked")
-        List<Pair.Int<Action>> actionList = (List<Pair.Int<Action>>) data[0];
-        for (Pair.Int<Action> actionPair : actionList) {
+        List<Int<Action>> actionList = (List<Int<Action>>) data[0];
+        for (Int<Action> actionPair : actionList) {
           processAction(tick, actionPair.getFirst(), actionPair.getSecond());
         }
         logger.debug("Actions received on tick {}", tick);
@@ -514,7 +518,7 @@ public class Engine {
     }
   }
 
-  public void actions(int tickRemainder, List<Pair.Int<Action>> actions) {
+  public void actions(int tickRemainder, List<Int<Action>> actions) {
     messagesBuffer.add(EngineMessage.newActionsMessage(getTick(tickRemainder), actions));
   }
 
@@ -597,37 +601,4 @@ public class Engine {
     }
     return newTick;
   }
-
-  private static float getPlayerMovementAngle(TickInput tickInput) {
-    float angle = (float) (Math.PI / 4);
-    if (tickInput.isMoveRight()) {
-      if (tickInput.isMoveUp()) {
-        return angle * 1;
-      }
-      if (tickInput.isMoveDown()) {
-        return angle * 7;
-      }
-      return angle * 0;
-    }
-    if (tickInput.isMoveLeft()) {
-      if (tickInput.isMoveUp()) {
-        return angle * 3;
-      }
-      if (tickInput.isMoveDown()) {
-        return angle * 5;
-      }
-      return angle * 4;
-    }
-    {
-      if (tickInput.isMoveUp()) {
-        return angle * 2;
-      }
-      if (tickInput.isMoveDown()) {
-        return angle * 6;
-      }
-      return Float.NaN;
-    }
-  }
-
-
 }

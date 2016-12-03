@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO">
-	<Appenders>
-		<Console name="Console" target="SYSTEM_OUT">
-			<PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %-15logger - %msg%n" />
-		</Console>
-		<File name="File" fileName="miko.log" immediateFlush="false"
-			append="false">
-			<PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %-15logger - %msg%n" />
-		</File>
-	</Appenders>
-	<Loggers>
-		<Root level="TRACE">
-			<AppenderRef ref="Console" />
-			<AppenderRef ref="File" />
-		</Root>
-	</Loggers>
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %-15logger - %msg%n"/>
+    </Console>
+    <File name="File" fileName="miko.log" immediateFlush="false"
+          append="false">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %-15logger - %msg%n"/>
+    </File>
+  </Appenders>
+  <Loggers>
+    <Root level="TRACE">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="File"/>
+    </Root>
+  </Loggers>
 </Configuration>

@@ -1,13 +1,10 @@
 package cr.fr.saucisseroyale.miko.protocol;
 
-
 /**
  * Un bloc immutable de la carte de jeu, indépendant de son type. Utilisé pour indiquer un
  * emplacement sans répéter (bx,by).
- *
  */
 public final class ChunkPoint {
-
   private final int chunkX;
   private final int chunkY;
 
@@ -64,10 +61,6 @@ public final class ChunkPoint {
     if (chunkX != other.chunkX) {
       return false;
     }
-    if (chunkY != other.chunkY) {
-      return false;
-    }
-    return true;
+    return chunkY == other.chunkY;
   }
-
 }

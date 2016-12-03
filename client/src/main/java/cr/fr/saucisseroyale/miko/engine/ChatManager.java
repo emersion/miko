@@ -10,10 +10,8 @@ import java.util.stream.Collectors;
 
 /**
  * Un gestionnaire des messages de chat reçus par le client.
- *
  */
 class ChatManager {
-
   private static final long MESSAGES_DURATION = 20 * 1000000000L; // 20 seconds
   private List<Pair.Long<String>> messages = new LinkedList<>();
 
@@ -43,6 +41,6 @@ class ChatManager {
       }
       messagesIterator.remove();
     }
-    return messages.stream().map(Pair.Long<String>::getSecond).collect(Collectors.toCollection(ArrayList::new));
+    return messages.stream().map(Pair.Long::getSecond).collect(Collectors.toCollection(ArrayList::new));
   }
 }

@@ -1,15 +1,11 @@
 package cr.fr.saucisseroyale.miko.engine;
 
-import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
-import cr.fr.saucisseroyale.miko.protocol.EntityType;
-import cr.fr.saucisseroyale.miko.protocol.EntityUpdateType;
-import cr.fr.saucisseroyale.miko.protocol.ObjectAttribute;
-import cr.fr.saucisseroyale.miko.protocol.SpriteType;
-import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
+import cr.fr.saucisseroyale.miko.protocol.*;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -21,14 +17,11 @@ import java.util.stream.IntStream;
  * @see Snapshots
  */
 class EntityManager {
-
   private static final int TEMPORARY_ID_START = 64536;
   private boolean[] usedTemporaryIds = new boolean[(1 << 16) - TEMPORARY_ID_START];
   // improves performance on temporaryid generating
   private int circularTemporaryId = usedTemporaryIds.length - 1;
-
   private Map<Integer, Entity> map = new HashMap<>();
-
   // cache last entity to improve performance on repeated get and set calls
   private int lastEntityId = -1;
   private Entity lastEntity;
@@ -170,10 +163,10 @@ class EntityManager {
   public void disposeUntilTick(long tick) {
     // NOTE on pourrait ignorer ce call la plupart du temps pour éviter de parcourir toute la map à
     // chaque fois ; il faudrait sans doute modifier la capacité standard
-    Set<Map.Entry<Integer, Entity>> entrySet = map.entrySet();
-    Iterator<Map.Entry<Integer, Entity>> entryIterator = entrySet.iterator();
+    Set<Entry<Integer, Entity>> entrySet = map.entrySet();
+    Iterator<Entry<Integer, Entity>> entryIterator = entrySet.iterator();
     while (entryIterator.hasNext()) {
-      Map.Entry<Integer, Entity> entry = entryIterator.next();
+      Entry<Integer, Entity> entry = entryIterator.next();
       Entity entity = entry.getValue();
       entity.disposeUntilTick(tick);
       if (entity.isEmpty()) {
@@ -198,5 +191,4 @@ class EntityManager {
     lastEntity = map.get(entityId);
     return lastEntity;
   }
-
 }

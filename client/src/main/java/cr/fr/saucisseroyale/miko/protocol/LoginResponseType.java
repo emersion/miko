@@ -5,7 +5,6 @@ import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 
 /**
  * Un type de réponse à une requête de connection.
- *
  */
 public enum LoginResponseType implements UniquelyIdentifiable {
 
@@ -24,17 +23,9 @@ public enum LoginResponseType implements UniquelyIdentifiable {
 
   private final int id;
 
-  private LoginResponseType(int id) {
+  LoginResponseType(int id) {
     assert id < 1 << 8 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
     this.id = id;
-  }
-
-  /**
-   * @return L'identifiant correspondant à la réponse de connection.
-   */
-  @Override
-  public int getId() {
-    return id;
   }
 
   /**
@@ -45,5 +36,13 @@ public enum LoginResponseType implements UniquelyIdentifiable {
    */
   public static LoginResponseType getType(int id) {
     return IdSaver.getValue(LoginResponseType.class, id);
+  }
+
+  /**
+   * @return L'identifiant correspondant à la réponse de connection.
+   */
+  @Override
+  public int getId() {
+    return id;
   }
 }

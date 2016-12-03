@@ -7,16 +7,13 @@ import java.io.InputStream;
 import java.util.Queue;
 import java.util.function.Consumer;
 
-
 /**
  * Thread pour recevoir les données d'un flux en boucle, de manière parallèle.
  * <p>
  * Cette classe supporte {@link #interrupt()}, pour terminer une instance de cette classe, appeler
  * cette méthode.
- *
  */
 class ReceiverThread extends Thread {
-
   private DataInputStream dis;
   private Queue<FutureInputMessage> inputMessages;
   private Consumer<Exception> errorCallback;

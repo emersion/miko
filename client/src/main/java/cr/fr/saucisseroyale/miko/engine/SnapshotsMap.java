@@ -3,6 +3,7 @@ package cr.fr.saucisseroyale.miko.engine;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -15,10 +16,8 @@ import java.util.Set;
  * @param <T> Le type du paramètre pour obtenir une snapshot ("clef" de la map).
  * @param <U> Le type des valeurs du snapshot (variant temporellement).
  * @see Snapshots
- *
  */
 public class SnapshotsMap<T, U> {
-
   private static final int LINKED_LIST = -1;
   private final int snapshotsCapacity;
   private Map<T, Snapshots<U>> map = new HashMap<>();
@@ -45,8 +44,8 @@ public class SnapshotsMap<T, U> {
   /**
    * Ajoute une valeur à la map, à la clef spécifiée, au tick spécifié.
    *
-   * @param tick Le tick auquel ajouter la valeur.
-   * @param key La clef à laquelle ajouter la valeur.
+   * @param tick  Le tick auquel ajouter la valeur.
+   * @param key   La clef à laquelle ajouter la valeur.
    * @param value La valeur à ajouter.
    */
   public void setSnapshot(long tick, T key, U value) {
@@ -66,7 +65,7 @@ public class SnapshotsMap<T, U> {
    * Retourne la valeur à la clef spécifiée, au tick spécifié, ou null si cette valeur n'existe pas.
    *
    * @param tick Le tick de la valeur à renvoyer.
-   * @param key La clef de laquelle renvoyer la valeur.
+   * @param key  La clef de laquelle renvoyer la valeur.
    * @return La valeur spécifiée par la clef et le tick, ou null si elle n'existe pas.
    */
   public U getSnapshot(long tick, T key) {
@@ -84,10 +83,10 @@ public class SnapshotsMap<T, U> {
    * @param tick Le tick (inclus) jusqu'auquel les valeurs ne seront plus demandées.
    */
   public void disposeUntilTick(long tick) {
-    Set<Map.Entry<T, Snapshots<U>>> entrySet = map.entrySet();
-    Iterator<Map.Entry<T, Snapshots<U>>> entryIterator = entrySet.iterator();
+    Set<Entry<T, Snapshots<U>>> entrySet = map.entrySet();
+    Iterator<Entry<T, Snapshots<U>>> entryIterator = entrySet.iterator();
     while (entryIterator.hasNext()) {
-      Map.Entry<T, Snapshots<U>> entry = entryIterator.next();
+      Entry<T, Snapshots<U>> entry = entryIterator.next();
       Snapshots<U> snapshots = entry.getValue();
       snapshots.disposeUntilTick(tick);
       if (snapshots.isEmpty()) {
@@ -95,5 +94,4 @@ public class SnapshotsMap<T, U> {
       }
     }
   }
-
 }

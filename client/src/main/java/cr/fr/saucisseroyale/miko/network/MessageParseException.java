@@ -4,10 +4,8 @@ import java.io.IOException;
 
 /**
  * Une erreur de parse d'un message.
- *
  */
 public class MessageParseException extends IOException {
-
   // this class should not be serialized so use default id
   private static final long serialVersionUID = 1L;
 
@@ -24,5 +22,4 @@ public class MessageParseException extends IOException {
   public MessageParseException(Throwable cause) {
     super(cause);
   }
-
 }

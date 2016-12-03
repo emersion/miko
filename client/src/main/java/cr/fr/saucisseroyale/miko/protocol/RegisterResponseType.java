@@ -5,7 +5,6 @@ import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 
 /**
  * Un type de réponse à une requête de création de compte.
- *
  */
 public enum RegisterResponseType implements UniquelyIdentifiable {
 
@@ -24,17 +23,9 @@ public enum RegisterResponseType implements UniquelyIdentifiable {
 
   private final int id;
 
-  private RegisterResponseType(int id) {
+  RegisterResponseType(int id) {
     assert id < 1 << 8 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
     this.id = id;
-  }
-
-  /**
-   * @return L'identifiant correspondant à la réponse d'enregistrement.
-   */
-  @Override
-  public int getId() {
-    return id;
   }
 
   /**
@@ -45,5 +36,13 @@ public enum RegisterResponseType implements UniquelyIdentifiable {
    */
   public static RegisterResponseType getType(int id) {
     return IdSaver.getValue(RegisterResponseType.class, id);
+  }
+
+  /**
+   * @return L'identifiant correspondant à la réponse d'enregistrement.
+   */
+  @Override
+  public int getId() {
+    return id;
   }
 }

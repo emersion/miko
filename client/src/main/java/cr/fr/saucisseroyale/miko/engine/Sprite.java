@@ -2,7 +2,7 @@ package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.Miko;
 import cr.fr.saucisseroyale.miko.protocol.SpriteType;
-import cr.fr.saucisseroyale.miko.util.Pair;
+import cr.fr.saucisseroyale.miko.util.Pair.Int;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
@@ -12,12 +12,10 @@ import java.util.stream.Collectors;
 /**
  * Une animation d'entité. Chaque entité ne possède qu'un {@link SpriteType} et cet objet est donc
  * partagé et utilisé par {@link SpriteManager}.
- *
  */
 public class Sprite {
-
   private final int spriteTimeDivider;
-  private final List<Pair.Int<BufferedImage>> frames;
+  private final List<Int<BufferedImage>> frames;
 
   /**
    * Crée une animation avec une seule image.
@@ -26,7 +24,7 @@ public class Sprite {
    */
   public Sprite(BufferedImage image) {
     frames = new ArrayList<>(1);
-    frames.add(new Pair.Int<>(1, image));
+    frames.add(new Int<>(1, image));
     spriteTimeDivider = 1;
   }
 
@@ -36,7 +34,7 @@ public class Sprite {
    *
    * @param frames La liste des images avec leur timecode associé.
    */
-  public Sprite(List<Pair.Int<BufferedImage>> frames) {
+  public Sprite(List<Int<BufferedImage>> frames) {
     this.frames = frames.stream().sorted((p1, p2) -> {
       if (p1.getFirst() < p2.getFirst()) {
         return -1;
@@ -62,7 +60,7 @@ public class Sprite {
     // convert ticks to milliseconds!
     long spriteTimeMillis = spriteTime * Miko.TICK_TIME / 1000000;
     int remainder = (int) (spriteTimeMillis % spriteTimeDivider);
-    for (Pair.Int<BufferedImage> frame : frames) {
+    for (Int<BufferedImage> frame : frames) {
       if (remainder < frame.getFirst()) {
         return frame.getSecond();
       }
@@ -70,5 +68,4 @@ public class Sprite {
     // will never get here because last getFirst() returns spriteTimeDivider
     return null;
   }
-
 }
