@@ -147,14 +147,14 @@ func ReadEntityIdChange(r io.Reader) (oldId message.EntityId, newId message.Enti
 }
 
 var clientHandlers = &map[message.Type]TypeHandler{
-	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
-		code := ReadExit(io)
+	message.Types["exit"]: func(ctx *message.Context, conn *message.Conn) error {
+		code := ReadExit(conn)
 		log.Println("Server closed connection, reason:", code)
 
-		return io.Close()
+		return conn.Close()
 	},
-	message.Types["login_response"]: func(ctx *message.Context, io *message.IO) error {
-		code, t, _ := ReadLoginResponse(io)
+	message.Types["login_response"]: func(ctx *message.Context, conn *message.Conn) error {
+		code, t, _ := ReadLoginResponse(conn)
 
 		if code == message.LoginResponseCodes["ok"] {
 			ctx.Clock.Sync(t)
@@ -163,9 +163,9 @@ var clientHandlers = &map[message.Type]TypeHandler{
 		log.Println("Login response:", code)
 		return nil
 	},
-	message.Types["meta_action"]: func(ctx *message.Context, io *message.IO) error {
+	message.Types["meta_action"]: func(ctx *message.Context, conn *message.Conn) error {
 		// TODO: properly handle this tick
-		_, entityId, code, username := ReadMetaAction(io)
+		_, entityId, code, username := ReadMetaAction(conn)
 
 		if code == message.MetaActionCodes["player_joined"] {
 			log.Println("Player joined:", entityId, username)
@@ -183,19 +183,19 @@ var clientHandlers = &map[message.Type]TypeHandler{
 
 		return nil
 	},
-	message.Types["chunk_update"]: func(ctx *message.Context, io *message.IO) error {
-		t, blk := ReadChunkUpdate(io)
+	message.Types["chunk_update"]: func(ctx *message.Context, conn *message.Conn) error {
+		t, blk := ReadChunkUpdate(conn)
 		ctx.Terrain.SetBlock(blk, ctx.Clock.ToAbsoluteTick(t))
 		return nil
 	},
-	message.Types["entities_update"]: func(ctx *message.Context, io *message.IO) error {
-		t := ctx.Clock.ToAbsoluteTick(readTick(io))
+	message.Types["entities_update"]: func(ctx *message.Context, conn *message.Conn) error {
+		t := ctx.Clock.ToAbsoluteTick(readTick(conn))
 
 		var size uint16
-		Read(io, &size)
+		Read(conn, &size)
 
 		for i := 0; i < int(size); i++ {
-			entity, diff := ReadEntity(io)
+			entity, diff := ReadEntity(conn)
 			// TODO: do something with entity
 			log.Println("Received entity update with ID:", entity.Id)
 
@@ -208,45 +208,45 @@ var clientHandlers = &map[message.Type]TypeHandler{
 
 		return nil
 	},
-	message.Types["entity_create"]: func(ctx *message.Context, io *message.IO) error {
-		t := ctx.Clock.ToAbsoluteTick(readTick(io))
+	message.Types["entity_create"]: func(ctx *message.Context, conn *message.Conn) error {
+		t := ctx.Clock.ToAbsoluteTick(readTick(conn))
 
-		entity, _ := ReadEntity(io)
+		entity, _ := ReadEntity(conn)
 		ctx.Entity.Add(entity, t)
 		ctx.Entity.Flush()
 
 		log.Println("Received new entity with ID:", entity.Id)
 		return nil
 	},
-	message.Types["entity_destroy"]: func(ctx *message.Context, io *message.IO) error {
-		t := ctx.Clock.ToAbsoluteTick(readTick(io))
+	message.Types["entity_destroy"]: func(ctx *message.Context, conn *message.Conn) error {
+		t := ctx.Clock.ToAbsoluteTick(readTick(conn))
 
 		var entityId message.EntityId
-		Read(io, &entityId)
+		Read(conn, &entityId)
 		ctx.Entity.Delete(entityId, t)
 		ctx.Entity.Flush()
 
 		log.Println("Entity destroyed:", entityId)
 		return nil
 	},
-	message.Types["actions_done"]: func(ctx *message.Context, io *message.IO) error {
-		readTick(io) // TODO: properly handle this tick
+	message.Types["actions_done"]: func(ctx *message.Context, conn *message.Conn) error {
+		readTick(conn) // TODO: properly handle this tick
 
 		var size uint16
-		Read(io, &size)
+		Read(conn, &size)
 
 		for i := 0; i < int(size); i++ {
-			action := ReadActionDone(io)
+			action := ReadActionDone(conn)
 			// TODO: do something with this action
 			log.Println("Received action with ID", action.Id, "from", action.Initiator)
 		}
 
 		return nil
 	},
-	message.Types["chat_receive"]: func(ctx *message.Context, io *message.IO) error {
+	message.Types["chat_receive"]: func(ctx *message.Context, conn *message.Conn) error {
 		var username, msg string
-		Read(io, &username)
-		Read(io, &msg)
+		Read(conn, &username)
+		Read(conn, &msg)
 
 		log.Println("Chat:", username, msg)
 		return nil

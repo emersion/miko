@@ -30,47 +30,47 @@ func ReadChatSend(r io.Reader) (msg string) {
 }
 
 var serverHandlers = &map[message.Type]TypeHandler{
-	message.Types["version"]: func(ctx *message.Context, io *message.IO) error {
-		io.Version = ReadVersion(io)
+	message.Types["version"]: func(ctx *message.Context, conn *message.Conn) error {
+		conn.Version = ReadVersion(conn)
 
-		if io.Version != message.CurrentVersion {
+		if conn.Version != message.CurrentVersion {
 			code := message.ExitCodes["client_outdated"]
-			if io.Version > message.CurrentVersion {
+			if conn.Version > message.CurrentVersion {
 				code = message.ExitCodes["server_outdated"]
 			}
 
-			if err := builder.SendExit(io, code); err != nil {
+			if err := builder.SendExit(conn, code); err != nil {
 				return err
 			}
 
-			if err := io.Close(); err != nil {
+			if err := conn.Close(); err != nil {
 				return err
 			}
 		} else {
-			io.State = message.Accepted
+			conn.State = message.Accepted
 
-			if err := builder.SendConfig(io, ctx.Config); err != nil {
+			if err := builder.SendConfig(conn, ctx.Config); err != nil {
 				return err
 			}
 		}
 
 		return nil
 	},
-	message.Types["exit"]: func(ctx *message.Context, io *message.IO) error {
-		code := ReadExit(io)
+	message.Types["exit"]: func(ctx *message.Context, conn *message.Conn) error {
+		code := ReadExit(conn)
 		log.Println("Client disconnected with code:", code)
 
-		if err := io.Close(); err != nil {
+		if err := conn.Close(); err != nil {
 			return err
 		}
 
 		return nil
 	},
-	message.Types["login"]: func(ctx *message.Context, io *message.IO) error {
-		username, password := ReadLogin(io)
+	message.Types["login"]: func(ctx *message.Context, conn *message.Conn) error {
+		username, password := ReadLogin(conn)
 
-		code := ctx.Auth.Login(io.Id, username, password)
-		if err := builder.SendLoginResp(io, code, ctx.Clock.GetRelativeTick(), time.Now()); err != nil {
+		code := ctx.Auth.Login(conn.Id, username, password)
+		if err := builder.SendLoginResp(conn, code, ctx.Clock.GetRelativeTick(), time.Now()); err != nil {
 			return err
 		}
 
@@ -80,10 +80,10 @@ var serverHandlers = &map[message.Type]TypeHandler{
 			return nil
 		}
 
-		io.State = message.LoggedIn
+		conn.State = message.LoggedIn
 
 		// Get entity
-		session := ctx.Auth.GetSession(io.Id)
+		session := ctx.Auth.GetSession(conn.Id)
 		if session == nil {
 			return errors.New("Cannot get newly logged in user's session")
 		}
@@ -104,7 +104,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				blks = append(blks, blk)
 			}
 		}
-		err := builder.SendChunksUpdate(io, ctx.Clock.GetRelativeTick(), blks)
+		err := builder.SendChunksUpdate(conn, ctx.Clock.GetRelativeTick(), blks)
 		if err != nil {
 			return err
 		}
@@ -116,7 +116,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				continue
 			}
 
-			err := builder.SendEntityCreate(io, ctx.Clock.GetRelativeTick(), e)
+			err := builder.SendEntityCreate(conn, ctx.Clock.GetRelativeTick(), e)
 			if err != nil {
 				return err
 			}
@@ -128,7 +128,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				continue
 			}
 
-			err := builder.SendPlayerJoined(io, ctx.Clock.GetRelativeTick(), s.Entity.Id, s.Username)
+			err := builder.SendPlayerJoined(conn, ctx.Clock.GetRelativeTick(), s.Entity.Id, s.Username)
 			if err != nil {
 				return err
 			}
@@ -144,52 +144,52 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		// Broadcast new entity to other clients
 		log.Println("Flushing entities diff")
-		err = builder.SendEntitiesDiffToClients(io.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
+		err = builder.SendEntitiesDiffToClients(conn.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
 		if err != nil {
 			return err
 		}
 
 		// Send new entity to this client
-		err = builder.SendEntityCreate(io, ctx.Clock.GetRelativeTick(), session.Entity)
+		err = builder.SendEntityCreate(conn, ctx.Clock.GetRelativeTick(), session.Entity)
 		if err != nil {
 			return err
 		}
 
 		// Mark the io as ready
 		// It will now receive all broadcasts
-		io.State = message.Ready
+		conn.State = message.Ready
 
 		// Broadcast player_joined to everyone (including this client)
-		err = builder.SendPlayerJoined(io.Broadcaster(), ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
+		err = builder.SendPlayerJoined(conn.Broadcaster(), ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
 		if err != nil {
 			return err
 		}
 
 		return nil
 	},
-	message.Types["register"]: func(ctx *message.Context, io *message.IO) error {
-		username, password := ReadRegister(io)
+	message.Types["register"]: func(ctx *message.Context, conn *message.Conn) error {
+		username, password := ReadRegister(conn)
 
-		code := ctx.Auth.Register(io.Id, username, password)
+		code := ctx.Auth.Register(conn.Id, username, password)
 
 		log.Println("Client registered:", username, code)
 
-		return builder.SendRegisterResp(io, code)
+		return builder.SendRegisterResp(conn, code)
 	},
-	message.Types["terrain_request"]: func(ctx *message.Context, io *message.IO) error {
+	message.Types["terrain_request"]: func(ctx *message.Context, conn *message.Conn) error {
 		var size uint8
-		Read(io, &size)
+		Read(conn, &size)
 
 		for i := 0; i < int(size); i++ {
 			var x, y message.BlockCoord
-			Read(io, &x, &y)
+			Read(conn, &x, &y)
 
 			blk, err := ctx.Terrain.GetBlockAt(x, y)
 			if err != nil {
 				return err
 			}
 
-			err = builder.SendChunkUpdate(io, ctx.Clock.GetRelativeTick(), blk)
+			err = builder.SendChunkUpdate(conn, ctx.Clock.GetRelativeTick(), blk)
 			if err != nil {
 				return err
 			}
@@ -197,36 +197,36 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		return nil
 	},
-	message.Types["entity_update"]: func(ctx *message.Context, io *message.IO) error {
+	message.Types["entity_update"]: func(ctx *message.Context, conn *message.Conn) error {
 		// TODO: add update initiator as parameter to ctx.Entity.Update()
 
-		t := ctx.Clock.ToAbsoluteTick(readTick(io))
+		t := ctx.Clock.ToAbsoluteTick(readTick(conn))
 
-		entity, diff := ReadEntity(io)
+		entity, diff := ReadEntity(conn)
 		ctx.Entity.Update(entity, diff, t)
 
 		return nil
 	},
-	message.Types["action_do"]: func(ctx *message.Context, io *message.IO) error {
-		if !ctx.Auth.HasSession(io.Id) {
+	message.Types["action_do"]: func(ctx *message.Context, conn *message.Conn) error {
+		if !ctx.Auth.HasSession(conn.Id) {
 			return errors.New("Cannot execute action: remote not logged in")
 		}
 
-		session := ctx.Auth.GetSession(io.Id)
+		session := ctx.Auth.GetSession(conn.Id)
 
 		action := &message.Action{
 			Initiator: session.Entity.Id,
 		}
 
-		t := ctx.Clock.ToAbsoluteTick(readTick(io))
-		Read(io, &action.Id)
+		t := ctx.Clock.ToAbsoluteTick(readTick(conn))
+		Read(conn, &action.Id)
 
 		// TODO: move action params somewhere else
 		// [GAME-SPECIFIC]
 		if action.Id == 0 { // throw_ball
 			var angle float32
 			var tmpId message.EntityId
-			Read(io, &angle, &tmpId)
+			Read(conn, &angle, &tmpId)
 			log.Println("Received ball action:", angle, tmpId)
 
 			action.Params = []interface{}{angle, tmpId}
@@ -237,18 +237,18 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		ctx.Action.Execute(action, t)
 		return nil
 	},
-	message.Types["chat_send"]: func(ctx *message.Context, io *message.IO) error {
-		msg := ReadChatSend(io)
+	message.Types["chat_send"]: func(ctx *message.Context, conn *message.Conn) error {
+		msg := ReadChatSend(conn)
 
-		if !ctx.Auth.HasSession(io.Id) {
+		if !ctx.Auth.HasSession(conn.Id) {
 			return errors.New("User not authenticated")
 		}
 
-		session := ctx.Auth.GetSession(io.Id)
+		session := ctx.Auth.GetSession(conn.Id)
 		username := session.Username
 
 		log.Println("Broadcasting chat message:", username, msg)
 
-		return builder.SendChatReceive(io.Broadcaster(), ctx.Clock.GetRelativeTick(), username, msg)
+		return builder.SendChatReceive(conn.Broadcaster(), ctx.Clock.GetRelativeTick(), username, msg)
 	},
 }

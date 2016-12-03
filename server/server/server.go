@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"log"
 	"net"
-	"sync"
 
 	"git.emersion.fr/saucisse-royale/miko.git/server/crypto"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
@@ -14,51 +13,39 @@ import (
 
 // Client holds info about connection
 type Client struct {
-	conn   net.Conn
+	*message.Conn
 	Server *Server
-	id     int
-}
-
-// TCP server
-type Server struct {
-	clients []*Client
-	ios     []*message.IO
-
-	address string           // Address to open connection, e.g. localhost:9999
-	Joins   chan *message.IO // Channel for new connections
-}
-
-func (c *Client) Write(data []byte) (n int, err error) {
-	return c.conn.Write(data)
 }
 
 func (c *Client) Close() error {
-	err := c.conn.Close()
+	err := c.Conn.Close()
 	if err != nil {
 		return err
 	}
 
-	c.Server.clients[c.id] = nil
-	c.Server.ios[c.id] = nil
-
+	c.Server.clients = append(c.Server.clients[:c.Id], c.Server.clients[c.Id+1:]...)
 	return nil
+}
+
+type Server struct {
+	clients []*Client
+
+	address string       // Address to open connection, e.g. localhost:9999
+	Joins   chan *Client // Channel for new connections
 }
 
 // Creates new Client instance and starts listening
 func (s *Server) newClient(conn net.Conn) {
+	r := bufio.NewReader(conn)
+	w := bufio.NewWriter(conn)
+
 	c := &Client{
-		conn:   conn,
+		Conn: message.NewConn(len(s.clients), r, w),
 		Server: s,
-		id:     len(s.clients),
 	}
+
 	s.clients = append(s.clients, c)
-
-	r := bufio.NewReader(c.conn)
-	w := bufio.NewWriter(c)
-	io := message.NewIO(c.id, r, w, c, s)
-
-	s.ios = append(s.ios, io)
-	c.Server.Joins <- io
+	c.Server.Joins <- c
 }
 
 // Start network server
@@ -93,46 +80,16 @@ func (s *Server) Listen() error {
 	return nil
 }
 
-func (s *Server) Lock() {
-	var wg sync.WaitGroup
-
-	for _, io := range s.ios {
-		if io == nil || io.State != message.Ready {
-			continue
-		}
-
-		wg.Add(1)
-
-		go (func(io *message.IO) {
-			defer wg.Done()
-
-			io.Lock()
-		})(io)
-	}
-
-	wg.Wait()
-}
-
-func (s *Server) Unlock() {
-	for _, io := range s.ios {
-		if io == nil || io.State != message.Ready {
-			continue
-		}
-
-		io.Unlock()
-	}
-}
-
 // Broadcast a message to all clients
 func (s *Server) Write(data []byte) (int, error) {
 	N := 0
 
-	for _, io := range s.ios {
-		if io == nil || io.State != message.Ready {
+	for _, c := range s.clients {
+		if c.State != message.Ready {
 			continue
 		}
 
-		n, err := io.Write(data)
+		n, err := c.Write(data)
 		if err != nil {
 			log.Println("Warning: error while broadcasting data:", err)
 		}
@@ -147,6 +104,6 @@ func (s *Server) Write(data []byte) (int, error) {
 func New(address string) *Server {
 	return &Server{
 		address: address,
-		Joins:   make(chan *message.IO),
+		Joins:   make(chan *Client),
 	}
 }

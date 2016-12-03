@@ -33,7 +33,7 @@ type Engine struct {
 	srv     *server.Server
 	timeSrv *timeserver.Server
 
-	clients map[int]*message.IO
+	clients map[int]*server.Client
 
 	mover          *Mover
 	running        bool
@@ -292,10 +292,10 @@ func (e *Engine) listenNewClients() {
 
 	for {
 		select {
-		case io := <-e.srv.Joins:
+		case c := <-e.srv.Joins:
 			log.Println("Accepting client")
-			e.clients[io.Id] = io
-			go hdlr.Listen(io)
+			e.clients[c.Id] = c
+			go hdlr.Listen(c.Conn)
 		case <-e.listenStop:
 			return
 		}
@@ -397,7 +397,7 @@ func New(srv *server.Server, timeSrv *timeserver.Server) *Engine {
 		terrain: terrain.New(),
 		config:  game.DefaultConfig(),
 
-		clients:        make(map[int]*message.IO),
+		clients:        make(map[int]*server.Client),
 		brdStop:        make(chan bool),
 		listenStop:     make(chan bool),
 		listenTimeStop: make(chan bool),
