@@ -12,10 +12,11 @@ import (
 type timestampReader struct {
 	conn   *net.UDPConn
 	buffer []byte
-	reader io.Reader
+	reader *bytes.Reader
 }
 
 func (r *timestampReader) Read() (timestamp uint64, addr *net.UDPAddr, err error) {
+	r.reader.Reset(r.buffer)
 	_, addr, err = r.conn.ReadFromUDP(r.buffer)
 	if err != nil {
 		return
@@ -26,7 +27,7 @@ func (r *timestampReader) Read() (timestamp uint64, addr *net.UDPAddr, err error
 }
 
 func newTimestampReader(conn *net.UDPConn) *timestampReader {
-	buf := make([]byte, 64)
+	buf := make([]byte, 8)
 	return &timestampReader{
 		conn:   conn,
 		buffer: buf,
