@@ -3,7 +3,6 @@ package builder
 import (
 	"encoding/binary"
 	"io"
-	"sync"
 	//"log"
 	//"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
@@ -44,27 +43,4 @@ func Write(w io.Writer, data ...interface{}) error {
 		}
 	}
 	return nil
-}
-
-func lock(w io.Writer) {
-	if locker, ok := w.(sync.Locker); ok {
-		locker.Lock()
-	} else {
-		panic("Called lock() on a non-locker variable")
-	}
-}
-
-func unlock(w io.Writer) {
-	if locker, ok := w.(sync.Locker); ok {
-		locker.Unlock()
-	} else {
-		panic("Called unlock() on a non-locker variable")
-	}
-}
-
-func send(w io.Writer, data ...interface{}) error {
-	lock(w)
-	defer unlock(w)
-
-	return Write(w, data...)
 }
