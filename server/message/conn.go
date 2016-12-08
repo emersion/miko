@@ -2,7 +2,10 @@ package message
 
 import (
 	"io"
+	"sync"
 )
+
+type WriteFunc func(io.Writer) error
 
 type flusher interface {
 	Flush() error
@@ -21,40 +24,51 @@ const (
 // A connection.
 type Conn struct {
 	io.Reader
-	io.Writer
-	closer          io.Closer
-	broadcastWriter io.Writer
-	Id              int
-	Version         ProtocolVersion
-	State           State
+
+	writer    io.Writer
+	locker    sync.Locker
+	broadcast func(WriteFunc) error
+
+	Id        int
+	Version   ProtocolVersion
+	State     State
 }
 
 // Implements io.Closer.
 func (c *Conn) Close() error {
 	c.State = Disconnected
 
-	if closer, ok := c.Writer.(io.Closer); ok {
+	if closer, ok := c.writer.(io.Closer); ok {
 		return closer.Close()
 	}
 	return nil
 }
 
-func (c *Conn) Flush() error {
-	if flusher, ok := c.Writer.(flusher); ok {
+func (c *Conn) Write(write WriteFunc) error {
+	c.locker.Lock()
+	defer c.locker.Unlock()
+
+	if err := write(c.writer); err != nil {
+		return err
+	}
+
+	if flusher, ok := c.writer.(flusher); ok {
 		return flusher.Flush()
 	}
 	return nil
 }
 
-func (c *Conn) Broadcaster() io.Writer {
-	return nil // TODO
+func (c *Conn) Broadcast(write WriteFunc) error {
+	return c.broadcast(write)
 }
 
-func NewConn(id int, r io.Reader, w io.Writer) *Conn {
+func NewConn(id int, r io.Reader, w io.Writer, brd func (WriteFunc) error) *Conn {
 	return &Conn{
-		Reader:          r,
-		Writer:          w,
-		Id:              id,
-		State:           Connected,
+		Reader:    r,
+		writer:    w,
+		locker:    &sync.Mutex{},
+		broadcast: brd,
+		Id:        id,
+		State:     Connected,
 	}
 }

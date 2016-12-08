@@ -39,7 +39,10 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				code = message.ExitCodes["server_outdated"]
 			}
 
-			if err := builder.SendExit(conn, code); err != nil {
+			err := conn.Write(func (w io.Writer) error {
+				return builder.SendExit(w, code)
+			})
+			if err != nil {
 				return err
 			}
 
@@ -49,7 +52,10 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		} else {
 			conn.State = message.Accepted
 
-			if err := builder.SendConfig(conn, ctx.Config); err != nil {
+			err := conn.Write(func (w io.Writer) error {
+				return builder.SendConfig(w, ctx.Config)
+			})
+			if err != nil {
 				return err
 			}
 		}
@@ -69,8 +75,12 @@ var serverHandlers = &map[message.Type]TypeHandler{
 	message.Types["login"]: func(ctx *message.Context, conn *message.Conn) error {
 		username, password := ReadLogin(conn)
 
+		// TODO: do not use time.Now(), use the time at which the current tick has begun
 		code := ctx.Auth.Login(conn.Id, username, password)
-		if err := builder.SendLoginResp(conn, code, ctx.Clock.GetRelativeTick(), time.Now()); err != nil {
+		err := conn.Write(func (w io.Writer) error {
+			return builder.SendLoginResp(w, code, ctx.Clock.GetRelativeTick(), time.Now())
+		})
+		if err != nil {
 			return err
 		}
 
@@ -104,7 +114,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				blks = append(blks, blk)
 			}
 		}
-		err := builder.SendChunksUpdate(conn, ctx.Clock.GetRelativeTick(), blks)
+		err = conn.Write(func (w io.Writer) error {
+			return builder.SendChunksUpdate(w, ctx.Clock.GetRelativeTick(), blks)
+		})
 		if err != nil {
 			return err
 		}
@@ -116,7 +128,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				continue
 			}
 
-			err := builder.SendEntityCreate(conn, ctx.Clock.GetRelativeTick(), e)
+			err := conn.Write(func (w io.Writer) error {
+				return builder.SendEntityCreate(w, ctx.Clock.GetRelativeTick(), e)
+			})
 			if err != nil {
 				return err
 			}
@@ -128,7 +142,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				continue
 			}
 
-			err := builder.SendPlayerJoined(conn, ctx.Clock.GetRelativeTick(), s.Entity.Id, s.Username)
+			err := conn.Write(func (w io.Writer) error {
+				return builder.SendPlayerJoined(w, ctx.Clock.GetRelativeTick(), s.Entity.Id, s.Username)
+			})
 			if err != nil {
 				return err
 			}
@@ -144,13 +160,17 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		// Broadcast new entity to other clients
 		log.Println("Flushing entities diff")
-		err = builder.SendEntitiesDiffToClients(conn.Broadcaster(), ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
+		err = conn.Broadcast(func (w io.Writer) error {
+			return builder.SendEntitiesDiffToClients(w, ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
+		})
 		if err != nil {
 			return err
 		}
 
 		// Send new entity to this client
-		err = builder.SendEntityCreate(conn, ctx.Clock.GetRelativeTick(), session.Entity)
+		err = conn.Write(func (w io.Writer) error {
+			return builder.SendEntityCreate(w, ctx.Clock.GetRelativeTick(), session.Entity)
+		})
 		if err != nil {
 			return err
 		}
@@ -160,7 +180,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		conn.State = message.Ready
 
 		// Broadcast player_joined to everyone (including this client)
-		err = builder.SendPlayerJoined(conn.Broadcaster(), ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
+		err = conn.Broadcast(func (w io.Writer) error {
+			return builder.SendPlayerJoined(w, ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
+		})
 		if err != nil {
 			return err
 		}
@@ -174,7 +196,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		log.Println("Client registered:", username, code)
 
-		return builder.SendRegisterResp(conn, code)
+		return conn.Write(func (w io.Writer) error {
+			return builder.SendRegisterResp(w, code)
+		})
 	},
 	message.Types["terrain_request"]: func(ctx *message.Context, conn *message.Conn) error {
 		var size uint8
@@ -189,7 +213,9 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return err
 			}
 
-			err = builder.SendChunkUpdate(conn, ctx.Clock.GetRelativeTick(), blk)
+			err = conn.Write(func (w io.Writer) error {
+				return builder.SendChunkUpdate(w, ctx.Clock.GetRelativeTick(), blk)
+			})
 			if err != nil {
 				return err
 			}
@@ -249,6 +275,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 
 		log.Println("Broadcasting chat message:", username, msg)
 
-		return builder.SendChatReceive(conn.Broadcaster(), ctx.Clock.GetRelativeTick(), username, msg)
+		return conn.Broadcast(func (w io.Writer) error {
+			return builder.SendChatReceive(w, ctx.Clock.GetRelativeTick(), username, msg)
+		})
 	},
 }

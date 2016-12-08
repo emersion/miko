@@ -4,6 +4,10 @@ package engine
 import (
 	"container/list"
 	"errors"
+	"io"
+	"log"
+	"time"
+
 	"git.emersion.fr/saucisse-royale/miko.git/server/action"
 	"git.emersion.fr/saucisse-royale/miko.git/server/auth"
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
@@ -15,8 +19,6 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/server"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 	"git.emersion.fr/saucisse-royale/miko.git/server/timeserver"
-	"log"
-	"time"
 )
 
 const broadcastInterval = 150 * time.Millisecond
@@ -63,8 +65,11 @@ func (e *Engine) processActionRequest(req *action.Request) bool {
 		e.entity.AcceptRequest(r)
 
 		session := e.auth.GetSessionByEntity(req.Action.Initiator)
-		client := e.clients[session.Id]
-		builder.SendEntityIdChange(client, req.Action.Params[1].(message.EntityId), ball.Id)
+
+		// TODO: error handling
+		e.clients[session.Id].Write(func (w io.Writer) error {
+			return builder.SendEntityIdChange(w, req.Action.Params[1].(message.EntityId), ball.Id)
+		})
 	}
 
 	return true
@@ -108,14 +113,18 @@ func (e *Engine) moveEntities(t message.AbsoluteTick) {
 func (e *Engine) broadcastChanges() {
 	if e.ctx.Entity.IsDirty() {
 		log.Println("Entity diff dirty, broadcasting to clients...")
-		err := builder.SendEntitiesDiffToClients(e.srv, e.clock.GetRelativeTick(), e.ctx.Entity.Flush())
+		err := e.srv.Write(func (w io.Writer) error {
+			return builder.SendEntitiesDiffToClients(w, e.clock.GetRelativeTick(), e.ctx.Entity.Flush())
+		})
 		if err != nil {
 			log.Println("Cannot broadcast entities diff:", err)
 		}
 	}
 	if e.ctx.Action.IsDirty() {
 		log.Println("Actions diff dirty, broadcasting to clients...")
-		err := builder.SendActionsDone(e.srv, e.clock.GetRelativeTick(), e.ctx.Action.Flush())
+		err := e.srv.Write(func (w io.Writer) error {
+			return builder.SendActionsDone(w, e.clock.GetRelativeTick(), e.ctx.Action.Flush())
+		})
 		if err != nil {
 			log.Println("Cannot broadcast actions:", err)
 		}
@@ -372,7 +381,9 @@ func (e *Engine) Stop() {
 	}
 
 	for _, client := range e.clients {
-		builder.SendExit(client, message.ExitCodes["server_closed"])
+		client.Write(func (w io.Writer) error {
+			return builder.SendExit(w, message.ExitCodes["server_closed"])
+		})
 		client.Close()
 	}
 }

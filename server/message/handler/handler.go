@@ -24,7 +24,10 @@ func (h *Handler) Handle(t message.Type, conn *message.Conn) error {
 	if h.ctx.IsServer() {
 		if t != message.Types["version"] && conn.Version == 0 {
 			// Client didn't send his version number
-			if err := builder.SendExit(conn, message.ExitCodes["client_outdated"]); err != nil {
+			err := conn.Write(func (w io.Writer) error {
+				return builder.SendExit(w, message.ExitCodes["client_outdated"])
+			})
+			if err != nil {
 				return err
 			}
 			return conn.Close()
@@ -56,7 +59,9 @@ func (h *Handler) Listen(conn *message.Conn) {
 			session = h.ctx.Auth.GetSession(conn.Id)
 			if session != nil {
 				h.ctx.Auth.Logout(conn.Id)
-				builder.SendPlayerLeft(conn.Broadcaster(), h.ctx.Clock.GetRelativeTick(), session.Entity.Id)
+				conn.Broadcast(func (w io.Writer) error {
+					return builder.SendPlayerLeft(w, h.ctx.Clock.GetRelativeTick(), session.Entity.Id)
+				})
 			}
 		}
 		if h.ctx.IsClient() {

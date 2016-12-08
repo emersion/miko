@@ -3,7 +3,9 @@ package server
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/tls"
+	"io"
 	"log"
 	"net"
 
@@ -40,7 +42,7 @@ func (s *Server) newClient(conn net.Conn) {
 	w := bufio.NewWriter(conn)
 
 	c := &Client{
-		Conn: message.NewConn(len(s.clients), r, w),
+		Conn: message.NewConn(len(s.clients), r, w, s.Write),
 		Server: s,
 	}
 
@@ -81,23 +83,33 @@ func (s *Server) Listen() error {
 }
 
 // Broadcast a message to all clients
-func (s *Server) Write(data []byte) (int, error) {
-	N := 0
+func (s *Server) Write(write message.WriteFunc) error {
+	// Write to a buffer
+	var buf bytes.Buffer
+	if err := write(&buf); err != nil {
+		return err
+	}
 
+	done := make(chan error)
+	len := len(s.clients)
 	for _, c := range s.clients {
 		if c.State != message.Ready {
 			continue
 		}
 
-		n, err := c.Write(data)
-		if err != nil {
-			log.Println("Warning: error while broadcasting data:", err)
-		}
-
-		N += n
+		go func() {
+			done <- c.Write(func(w io.Writer) error {
+				_, err := w.Write(buf.Bytes())
+				return err
+			})
+		}()
 	}
 
-	return N, nil
+	// TODO: handle per-conn errors
+	for i := 0; i < len; i++ {
+		<-done
+	}
+	return nil
 }
 
 // Creates new tcp server instance

@@ -92,7 +92,7 @@ func ReadEntity(r io.Reader) (*message.Entity, *message.EntityDiff) {
 var commonHandlers = &map[message.Type]TypeHandler{
 	message.Types["ping"]: func(ctx *message.Context, conn *message.Conn) error {
 		log.Println("Ping received!")
-		return builder.SendPong(conn)
+		return conn.Write(builder.SendPong)
 	},
 	message.Types["pong"]: func(ctx *message.Context, conn *message.Conn) error {
 		log.Println("Pong received!")
