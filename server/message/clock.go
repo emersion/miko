@@ -38,6 +38,9 @@ type ClockService interface {
 	// Get the current relative tick.
 	GetRelativeTick() Tick
 
+	// Get the time at which the current tick has started.
+	GetTickTime() time.Time
+
 	// Synchronize the internal clock with another one.
 	// Most of the time, it is used to synchronize the client's clock with the
 	// server's one.

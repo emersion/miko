@@ -6,7 +6,6 @@ import (
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"io"
 	"log"
-	"time"
 )
 
 func ReadVersion(r io.Reader) (version message.ProtocolVersion) {
@@ -78,7 +77,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		// TODO: do not use time.Now(), use the time at which the current tick has begun
 		code := ctx.Auth.Login(conn.Id, username, password)
 		err := conn.Write(func (w io.Writer) error {
-			return builder.SendLoginResp(w, code, ctx.Clock.GetRelativeTick(), time.Now())
+			return builder.SendLoginResp(w, code, ctx.Clock.GetRelativeTick(), ctx.Clock.GetTickTime())
 		})
 		if err != nil {
 			return err

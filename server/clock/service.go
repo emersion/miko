@@ -11,11 +11,15 @@ const TickDuration = time.Millisecond * 20
 
 // The clock service.
 type Service struct {
-	ticks message.AbsoluteTick
+	startedAt time.Time
+	ticks     message.AbsoluteTick
 }
 
 // Increment the clock's tick count.
 func (s *Service) Tick() {
+	if s.ticks == 0 {
+		s.startedAt = time.Now().Add(-TickDuration)
+	}
 	s.ticks++
 }
 
@@ -27,6 +31,11 @@ func (s *Service) GetAbsoluteTick() message.AbsoluteTick {
 // Get the current relative tick.
 func (s *Service) GetRelativeTick() message.Tick {
 	return s.ToRelativeTick(s.ticks)
+}
+
+// Get the time at which the current tick has started.
+func (s *Service) GetTickTime() time.Time {
+	return s.startedAt.Add(TickDuration * time.Duration(s.ticks))
 }
 
 // Convert an absolute tick to a relative tick.
