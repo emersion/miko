@@ -132,5 +132,6 @@ func New(addrStr string) *Server {
 	return &Server{
 		addr:  addr,
 		Joins: make(chan *Client),
+      clients: make(map[string]*Client),
 	}
 }
