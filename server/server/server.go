@@ -41,8 +41,13 @@ func (s *Server) newClient(conn net.Conn) {
 	r := bufio.NewReader(conn)
 	w := bufio.NewWriter(conn)
 
+	wc := struct{
+		io.Writer
+		io.Closer
+	}{w, conn}
+
 	c := &Client{
-		Conn: message.NewConn(len(s.clients), r, w, s.Write),
+		Conn: message.NewConn(len(s.clients), r, wc, s.Write),
 		Server: s,
 	}
 
