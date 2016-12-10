@@ -14,5 +14,9 @@
       <AppenderRef ref="Console"/>
       <AppenderRef ref="File"/>
     </Root>
+    <Logger name="miko.output" level="DEBUG">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="File"/>
+    </Logger>
   </Loggers>
 </Configuration>

@@ -24,7 +24,7 @@ public class Config {
    * @return Le nombre maximum de ticks pour le rollback.
    */
   public int getMaxRollbackTicks() {
-    return maxRollbackTicks;
+    return maxRollbackTicks + 10;
   }
 
   /**
