@@ -11,7 +11,7 @@ import (
 )
 
 // A handler for a specific message
-type TypeHandler func(*message.Context, *message.IO) error
+type TypeHandler func(*message.Context, *message.Conn) error
 
 // Handles messages from remote
 type Handler struct {
@@ -20,19 +20,22 @@ type Handler struct {
 }
 
 // Handle a message of the specified type
-func (h *Handler) Handle(t message.Type, io *message.IO) error {
+func (h *Handler) Handle(t message.Type, conn *message.Conn) error {
 	if h.ctx.IsServer() {
-		if t != message.Types["version"] && io.Version == 0 {
+		if t != message.Types["version"] && conn.Version == 0 {
 			// Client didn't send his version number
-			if err := builder.SendExit(io, message.ExitCodes["client_outdated"]); err != nil {
+			err := conn.Write(func (w io.Writer) error {
+				return builder.SendExit(w, message.ExitCodes["client_outdated"])
+			})
+			if err != nil {
 				return err
 			}
-			return io.Close()
+			return conn.Close()
 		}
 	}
 
 	if val, ok := h.handlers[t]; ok {
-		err := val(h.ctx, io)
+		err := val(h.ctx, conn)
 
 		if err != nil {
 			return err
@@ -45,18 +48,20 @@ func (h *Handler) Handle(t message.Type, io *message.IO) error {
 }
 
 // Listen to a remote stream
-func (h *Handler) Listen(clientIO *message.IO) {
+func (h *Handler) Listen(conn *message.Conn) {
 	defer (func() {
 		// Will be executed when the connection is closed
 
-		clientIO.Close()
+		conn.Close()
 
 		var session *message.Session
 		if h.ctx.IsServer() {
-			session = h.ctx.Auth.GetSession(clientIO.Id)
+			session = h.ctx.Auth.GetSession(conn.Id)
 			if session != nil {
-				h.ctx.Auth.Logout(clientIO.Id)
-				builder.SendPlayerLeft(clientIO.Broadcaster(), h.ctx.Clock.GetRelativeTick(), session.Entity.Id)
+				h.ctx.Auth.Logout(conn.Id)
+				conn.Broadcast(func (w io.Writer) error {
+					return builder.SendPlayerLeft(w, h.ctx.Clock.GetRelativeTick(), session.Entity.Id)
+				})
 			}
 		}
 		if h.ctx.IsClient() {
@@ -71,7 +76,7 @@ func (h *Handler) Listen(clientIO *message.IO) {
 
 	var msgType message.Type
 	for {
-		err := read(clientIO, &msgType)
+		err := read(conn, &msgType)
 		if err == io.EOF {
 			log.Println("Connection closed.")
 			return
@@ -91,7 +96,7 @@ func (h *Handler) Listen(clientIO *message.IO) {
 			}
 		})()
 
-		err = h.Handle(msgType, clientIO)
+		err = h.Handle(msgType, conn)
 		if err != nil {
 			log.Println("Handle failed:", err)
 			log.Println("Message type:", msgType)

@@ -2,42 +2,32 @@ package message_test
 
 import (
 	"bytes"
+	"io"
+	"sync"
+	"testing"
+
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/builder"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message/handler"
-	"sync"
-	"testing"
 )
 
 type mockServer struct {
-	ios []*message.IO
+	conns []*message.Conn
 }
 
-func (s *mockServer) Write(p []byte) (n int, err error) {
-	for _, io := range s.ios {
-		io.Write(p)
+func (s *mockServer) Write(write message.WriteFunc) error {
+	for _, c := range s.conns {
+		c.Write(write)
 	}
-	return
+	return nil
 }
 
-func (s *mockServer) Lock() {
-	for _, io := range s.ios {
-		io.Lock()
-	}
-}
+func TestConn_one(t *testing.T) {
+	conn := newMockConn()
 
-func (s *mockServer) Unlock() {
-	for _, io := range s.ios {
-		io.Unlock()
-	}
-}
-
-func TestIO_one(t *testing.T) {
-	io := newMockIO()
-
-	// One message sent over one io
-	builder.SendPing(io)
-	msgType := handler.ReadType(io)
+	// One message sent over one conn
+	conn.Write(builder.SendPing)
+	msgType := handler.ReadType(conn)
 	if msgType != message.Types["ping"] {
 		t.Error("Sent ping, but didn't received it")
 	}
@@ -50,48 +40,51 @@ func TestIO_one(t *testing.T) {
 		wg.Add(1)
 		go (func() {
 			defer wg.Done()
-			builder.SendChatSend(io, chatMsg)
+			conn.Write(func (w io.Writer) error {
+				return builder.SendChatSend(w, chatMsg)
+			})
 		})()
 	}
 	wg.Wait()
 
 	for i := 0; i < chatCount; i++ {
-		msgType := handler.ReadType(io)
+		msgType := handler.ReadType(conn)
 		if msgType != message.Types["chat_send"] {
 			t.Error("Sent chat_send, but didn't received it at iteration", i)
 		}
-		receivedMsg := handler.ReadChatSend(io)
+		receivedMsg := handler.ReadChatSend(conn)
 		if receivedMsg != chatMsg {
 			t.Error("Bad received chat message content at iteration", i)
 		}
 	}
 }
 
-func TestIO_multiple(t *testing.T) {
+func TestConn_multiple(t *testing.T) {
 	s := &mockServer{}
 
 	var buffers []*bytes.Buffer
 
 	for i := 0; i < 10; i++ {
-		// TODO: use newMockIO()
+		// TODO: use newMockConn()
 		b := &bytes.Buffer{}
-		c := &mockCloser{}
-		io := message.NewIO(0, b, b, c, s)
-		s.ios = append(s.ios, io)
+		conn := message.NewConn(0, b, b, s.Write)
+		s.conns = append(s.conns, conn)
 		buffers = append(buffers, b)
 	}
 
 	// One message sent over all ios
-	builder.SendPing(s)
+	s.Write(func (w io.Writer) error {
+		return builder.SendPing(w)
+	})
 
-	for i, io := range s.ios {
-		msgType := handler.ReadType(io)
+	for i, conn := range s.conns {
+		msgType := handler.ReadType(conn)
 		if msgType != message.Types["ping"] {
 			t.Error("Sent ping, but didn't received it over io", i)
 		}
 	}
 
-	// Multiple messages sent over multiple ios
+	// Multiple messages sent over multiple conns
 	chatCount := 10
 	chatMsg := "Hello World! What's up bro?"
 	var wg sync.WaitGroup
@@ -99,18 +92,21 @@ func TestIO_multiple(t *testing.T) {
 		wg.Add(1)
 		go (func() {
 			defer wg.Done()
-			builder.SendChatSend(s, chatMsg)
+
+			s.Write(func (w io.Writer) error {
+				return builder.SendChatSend(w, chatMsg)
+			})
 		})()
 	}
 	wg.Wait()
 
-	for _, io := range s.ios {
+	for _, conn := range s.conns {
 		for i := 0; i < chatCount; i++ {
-			msgType := handler.ReadType(io)
+			msgType := handler.ReadType(conn)
 			if msgType != message.Types["chat_send"] {
 				t.Error("Sent chat_send, but didn't received it at iteration", i)
 			}
-			receivedMsg := handler.ReadChatSend(io)
+			receivedMsg := handler.ReadChatSend(conn)
 			if receivedMsg != chatMsg {
 				t.Error("Bad received chat message content at iteration", i)
 			}

@@ -10,15 +10,15 @@ import (
 )
 
 func SendPing(w io.Writer) error {
-	return send(w, message.Types["ping"])
+	return Write(w, message.Types["ping"])
 }
 
 func SendPong(w io.Writer) error {
-	return send(w, message.Types["pong"])
+	return Write(w, message.Types["pong"])
 }
 
 func SendExit(w io.Writer, code message.ExitCode) error {
-	return send(w, message.Types["exit"], code)
+	return Write(w, message.Types["exit"], code)
 }
 
 func writeEntityUpdateBody(w io.Writer, entity *message.Entity, diff *message.EntityDiff) error {

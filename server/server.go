@@ -18,7 +18,10 @@ func main() {
 	// Create server & engine
 	log.Println("Creating server with address", address)
 	srv := server.New(address)
+
+	log.Println("Creating time server with address :9998")
 	timeSrv := timeserver.New(":9998")
+
 	e := engine.New(srv, timeSrv)
 	ctx := e.Context()
 

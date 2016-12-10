@@ -17,58 +17,54 @@ func (c *mockCloser) Close() (err error) {
 	return
 }
 
-func newMockIO() *message.IO {
+func newMockConn() *message.Conn {
 	b := &bytes.Buffer{}
-	c := &mockCloser{}
-	return message.NewIO(0, b, b, c, nil)
+	return message.NewConn(0, b, b, nil)
 }
 
-type sender func(*message.IO) error
+type receiver func(*message.Conn, *testing.T)
 
-type receiver func(*message.IO, *testing.T)
+func testMessage(t *testing.T, msgType message.Type, send message.WriteFunc, receive receiver) {
+	conn := newMockConn()
 
-func testMessage(t *testing.T, msgType message.Type, send sender, receive receiver) {
-	io := newMockIO()
-
-	err := send(io)
-	if err != nil {
+	if err := conn.Write(send); err != nil {
 		t.Fatal("Cannot send message:", err)
 	}
 
-	receivedType := handler.ReadType(io)
+	receivedType := handler.ReadType(conn)
 	if msgType != receivedType {
 		t.Fatal("Sent type", msgType, "but received", receivedType)
 	}
 
-	receive(io, t)
+	receive(conn, t)
 
 	// Check that there is no more data waiting to be consumed
 	remaining := make([]byte, 1)
-	n, _ := io.Read(remaining)
+	n, _ := conn.Read(remaining)
 	if n != 0 {
 		t.Fatal("Some data hasn't been consumed by receiver")
 	}
 }
 
 func TestPing(t *testing.T) {
-	testMessage(t, message.Types["ping"], func(io *message.IO) error {
-		return builder.SendPing(io)
-	}, func(io *message.IO, t *testing.T) {})
+	testMessage(t, message.Types["ping"], func(w io.Writer) error {
+		return builder.SendPing(w)
+	}, func(conn *message.Conn, t *testing.T) {})
 }
 
 func TestPong(t *testing.T) {
-	testMessage(t, message.Types["pong"], func(io *message.IO) error {
-		return builder.SendPong(io)
-	}, func(io *message.IO, t *testing.T) {})
+	testMessage(t, message.Types["pong"], func(w io.Writer) error {
+		return builder.SendPong(w)
+	}, func(conn *message.Conn, t *testing.T) {})
 }
 
 func TestExit(t *testing.T) {
 	code := message.ExitCodes["client_banned"]
 
-	testMessage(t, message.Types["exit"], func(io *message.IO) error {
-		return builder.SendExit(io, code)
-	}, func(io *message.IO, t *testing.T) {
-		c := handler.ReadExit(io)
+	testMessage(t, message.Types["exit"], func(w io.Writer) error {
+		return builder.SendExit(w, code)
+	}, func(conn *message.Conn, t *testing.T) {
+		c := handler.ReadExit(conn)
 		if c != code {
 			t.Fatal("Sent code", code, "but received", c)
 		}
@@ -80,10 +76,10 @@ func TestLoginResponse_Ok(t *testing.T) {
 	tick := message.Tick(42)
 	time := time.Unix(70817303, 868000)
 
-	testMessage(t, message.Types["login_response"], func(io *message.IO) error {
-		return builder.SendLoginResp(io, code, tick, time)
-	}, func(io *message.IO, t *testing.T) {
-		receivedCode, receivedTick, receivedTime := handler.ReadLoginResponse(io)
+	testMessage(t, message.Types["login_response"], func(w io.Writer) error {
+		return builder.SendLoginResp(w, code, tick, time)
+	}, func(conn *message.Conn, t *testing.T) {
+		receivedCode, receivedTick, receivedTime := handler.ReadLoginResponse(conn)
 		if receivedCode != code {
 			t.Fatal("Sent code", code, "but received", receivedCode)
 		}
@@ -99,10 +95,10 @@ func TestLoginResponse_Ok(t *testing.T) {
 func TestLoginResponse_WrongPassword(t *testing.T) {
 	code := message.LoginResponseCodes["wrong_password"]
 
-	testMessage(t, message.Types["login_response"], func(io *message.IO) error {
-		return builder.SendLoginResp(io, code, 0, time.Now())
-	}, func(io *message.IO, t *testing.T) {
-		c, _, _ := handler.ReadLoginResponse(io)
+	testMessage(t, message.Types["login_response"], func(w io.Writer) error {
+		return builder.SendLoginResp(w, code, 0, time.Now())
+	}, func(conn *message.Conn, t *testing.T) {
+		c, _, _ := handler.ReadLoginResponse(conn)
 		if c != code {
 			t.Fatal("Sent code", code, "but received", c)
 		}
@@ -112,10 +108,10 @@ func TestLoginResponse_WrongPassword(t *testing.T) {
 func TestRegisterResponse(t *testing.T) {
 	code := message.RegisterResponseCodes["too_many_tries"]
 
-	testMessage(t, message.Types["register_response"], func(io *message.IO) error {
-		return builder.SendRegisterResp(io, code)
-	}, func(io *message.IO, t *testing.T) {
-		c := handler.ReadRegisterResponse(io)
+	testMessage(t, message.Types["register_response"], func(w io.Writer) error {
+		return builder.SendRegisterResp(w, code)
+	}, func(conn *message.Conn, t *testing.T) {
+		c := handler.ReadRegisterResponse(conn)
 		if c != code {
 			t.Fatal("Sent code", code, "but received", c)
 		}
@@ -128,10 +124,10 @@ func TestMetaAction_PlayerJoined(t *testing.T) {
 	entityId := message.EntityId(69)
 	username := "délthàs"
 
-	testMessage(t, message.Types["meta_action"], func(io *message.IO) error {
-		return builder.SendPlayerJoined(io, tick, entityId, username)
-	}, func(io *message.IO, t *testing.T) {
-		rt, id, c, u := handler.ReadMetaAction(io)
+	testMessage(t, message.Types["meta_action"], func(w io.Writer) error {
+		return builder.SendPlayerJoined(w, tick, entityId, username)
+	}, func(conn *message.Conn, t *testing.T) {
+		rt, id, c, u := handler.ReadMetaAction(conn)
 		if rt != tick {
 			t.Fatal("Sent tick", tick, "but received", rt)
 		}
@@ -152,10 +148,10 @@ func TestMetaAction_PlayerLeft(t *testing.T) {
 	tick := message.Tick(42)
 	entityId := message.EntityId(69)
 
-	testMessage(t, message.Types["meta_action"], func(io *message.IO) error {
-		return builder.SendPlayerLeft(io, tick, entityId)
-	}, func(io *message.IO, t *testing.T) {
-		rt, id, c, _ := handler.ReadMetaAction(io)
+	testMessage(t, message.Types["meta_action"], func(w io.Writer) error {
+		return builder.SendPlayerLeft(w, tick, entityId)
+	}, func(conn *message.Conn, t *testing.T) {
+		rt, id, c, _ := handler.ReadMetaAction(conn)
 		if rt != tick {
 			t.Fatal("Sent tick", tick, "but received", rt)
 		}
@@ -178,10 +174,10 @@ func TestChunkUpdate(t *testing.T) {
 		blk.Points[20+i][10] = 2
 	}
 
-	testMessage(t, message.Types["chunk_update"], func(io *message.IO) error {
-		return builder.SendChunkUpdate(io, tick, blk)
-	}, func(io *message.IO, t *testing.T) {
-		rt, rblk := handler.ReadChunkUpdate(io)
+	testMessage(t, message.Types["chunk_update"], func(w io.Writer) error {
+		return builder.SendChunkUpdate(w, tick, blk)
+	}, func(conn *message.Conn, t *testing.T) {
+		rt, rblk := handler.ReadChunkUpdate(conn)
 		if rt != tick {
 			t.Fatal("Sent tick", tick, "but received", rt)
 		}
@@ -216,10 +212,10 @@ func TestChunksUpdate(t *testing.T) {
 
 	blks := []*message.Block{blk1, blk2}
 
-	testMessage(t, message.Types["chunks_update"], func(io *message.IO) error {
-		return builder.SendChunksUpdate(io, tick, blks)
-	}, func(io *message.IO, t *testing.T) {
-		rt, rblks := handler.ReadChunksUpdate(io)
+	testMessage(t, message.Types["chunks_update"], func(w io.Writer) error {
+		return builder.SendChunksUpdate(w, tick, blks)
+	}, func(conn *message.Conn, t *testing.T) {
+		rt, rblks := handler.ReadChunksUpdate(conn)
 		if rt != tick {
 			t.Fatal("Sent tick", tick, "but received", rt)
 		}
@@ -253,10 +249,10 @@ func TestEntityCreate(t *testing.T) {
 	entity.Sprite = 12
 	// TODO: populate other attributes
 
-	testMessage(t, message.Types["entity_create"], func(io *message.IO) error {
-		return builder.SendEntityCreate(io, tick, entity)
-	}, func(io *message.IO, t *testing.T) {
-		rt, e := handler.ReadEntityCreate(io)
+	testMessage(t, message.Types["entity_create"], func(w io.Writer) error {
+		return builder.SendEntityCreate(w, tick, entity)
+	}, func(conn *message.Conn, t *testing.T) {
+		rt, e := handler.ReadEntityCreate(conn)
 		if rt != tick {
 			t.Fatal("Sent tick", tick, "but received", rt)
 		}
@@ -287,10 +283,10 @@ func TestEntitiesUpdate(t *testing.T) {
 	entities := []*message.Entity{entity1, entity2}
 	diffs := []*message.EntityDiff{diff1, diff2}
 
-	testMessage(t, message.Types["entities_update"], func(io *message.IO) error {
-		return builder.SendEntitiesUpdate(io, tick, entities, diffs)
-	}, func(io *message.IO, t *testing.T) {
-		rt, rentities, rdiffs := handler.ReadEntitiesUpdate(io)
+	testMessage(t, message.Types["entities_update"], func(w io.Writer) error {
+		return builder.SendEntitiesUpdate(w, tick, entities, diffs)
+	}, func(conn *message.Conn, t *testing.T) {
+		rt, rentities, rdiffs := handler.ReadEntitiesUpdate(conn)
 		if rt != tick {
 			t.Fatal("Sent tick", tick, "but received", rt)
 		}
@@ -317,10 +313,10 @@ func TestEntityDestroy(t *testing.T) {
 	tick := message.Tick(42)
 	entityId := message.EntityId(93)
 
-	testMessage(t, message.Types["entity_destroy"], func(io *message.IO) error {
-		return builder.SendEntityDestroy(io, tick, entityId)
-	}, func(io *message.IO, t *testing.T) {
-		rt, id := handler.ReadEntityDestroy(io)
+	testMessage(t, message.Types["entity_destroy"], func(w io.Writer) error {
+		return builder.SendEntityDestroy(w, tick, entityId)
+	}, func(conn *message.Conn, t *testing.T) {
+		rt, id := handler.ReadEntityDestroy(conn)
 		if rt != tick {
 			t.Fatal("Sent tick", tick, "but received", rt)
 		}
@@ -340,10 +336,10 @@ func TestActionsDone(t *testing.T) {
 	actions := []*message.Action{action1}
 	// TODO: more actions tests, with action params
 
-	testMessage(t, message.Types["actions_done"], func(io *message.IO) error {
-		return builder.SendActionsDone(io, tick, actions)
-	}, func(io *message.IO, t *testing.T) {
-		rt, ractions := handler.ReadActionsDone(io)
+	testMessage(t, message.Types["actions_done"], func(w io.Writer) error {
+		return builder.SendActionsDone(w, tick, actions)
+	}, func(conn *message.Conn, t *testing.T) {
+		rt, ractions := handler.ReadActionsDone(conn)
 		if rt != tick {
 			t.Fatal("Sent tick", tick, "but received", rt)
 		}
@@ -365,10 +361,10 @@ func TestChatReceive(t *testing.T) {
 	username := "délthàs-s@@s"
 	msg := "How r u guys? aéoaéoaèo"
 
-	testMessage(t, message.Types["chat_receive"], func(io *message.IO) error {
-		return builder.SendChatReceive(io, tick, username, msg)
-	}, func(io *message.IO, t *testing.T) {
-		rt, rusername, rmsg := handler.ReadChatReceive(io)
+	testMessage(t, message.Types["chat_receive"], func(w io.Writer) error {
+		return builder.SendChatReceive(w, tick, username, msg)
+	}, func(conn *message.Conn, t *testing.T) {
+		rt, rusername, rmsg := handler.ReadChatReceive(conn)
 		if rt != tick {
 			t.Fatal("Sent tick", tick, "but received", rt)
 		}
@@ -400,11 +396,11 @@ func (c *config) ReadFrom(r io.Reader) (n int64, err error) {
 func TestConfig(t *testing.T) {
 	conf := &config{42, 69.97543, "Hello World!"}
 
-	testMessage(t, message.Types["config"], func(io *message.IO) error {
-		return builder.SendConfig(io, conf)
-	}, func(io *message.IO, t *testing.T) {
+	testMessage(t, message.Types["config"], func(w io.Writer) error {
+		return builder.SendConfig(w, conf)
+	}, func(conn *message.Conn, t *testing.T) {
 		rconf := &config{}
-		err := handler.ReadConfig(io, rconf)
+		err := handler.ReadConfig(conn, rconf)
 		if err != nil {
 			t.Fatal("Error while reading config:", err)
 		}
@@ -425,10 +421,10 @@ func TestEntityIdChange(t *testing.T) {
 	oldId := message.EntityId(24)
 	newId := message.EntityId(87)
 
-	testMessage(t, message.Types["entity_id_change"], func(io *message.IO) error {
-		return builder.SendEntityIdChange(io, oldId, newId)
-	}, func(io *message.IO, t *testing.T) {
-		roldId, rnewId := handler.ReadEntityIdChange(io)
+	testMessage(t, message.Types["entity_id_change"], func(w io.Writer) error {
+		return builder.SendEntityIdChange(w, oldId, newId)
+	}, func(conn *message.Conn, t *testing.T) {
+		roldId, rnewId := handler.ReadEntityIdChange(conn)
 		if roldId != oldId {
 			t.Fatal("Sent old id", oldId, "but received", roldId)
 		}

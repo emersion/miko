@@ -17,18 +17,18 @@ func SendLoginResp(w io.Writer, code message.LoginResponseCode, tick message.Tic
 		data = append(data, tick, message.TimeToTimestamp(t))
 	}
 
-	return send(w, data...)
+	return Write(w, data...)
 }
 
 func SendRegisterResp(w io.Writer, code message.RegisterResponseCode) error {
-	return send(w, message.Types["register_response"], code)
+	return Write(w, message.Types["register_response"], code)
 }
 
 func SendPlayerJoined(w io.Writer, t message.Tick, id message.EntityId, username string) error {
-	return send(w, message.Types["meta_action"], t, id, message.MetaActionCodes["player_joined"], username)
+	return Write(w, message.Types["meta_action"], t, id, message.MetaActionCodes["player_joined"], username)
 }
 func SendPlayerLeft(w io.Writer, t message.Tick, id message.EntityId) error {
-	return send(w, message.Types["meta_action"], t, id, message.MetaActionCodes["player_left"])
+	return Write(w, message.Types["meta_action"], t, id, message.MetaActionCodes["player_left"])
 }
 
 func WriteBlock(w io.Writer, blk *message.Block) error {
@@ -73,9 +73,6 @@ func WriteBlock(w io.Writer, blk *message.Block) error {
 }
 
 func SendChunkUpdate(w io.Writer, t message.Tick, blk *message.Block) error {
-	lock(w)
-	defer unlock(w)
-
 	if err := Write(w, message.Types["chunk_update"], t); err != nil {
 		return err
 	}
@@ -83,9 +80,6 @@ func SendChunkUpdate(w io.Writer, t message.Tick, blk *message.Block) error {
 }
 
 func SendChunksUpdate(w io.Writer, t message.Tick, blks []*message.Block) error {
-	lock(w)
-	defer unlock(w)
-
 	err := Write(w, message.Types["chunks_update"], t, uint16(len(blks)))
 	if err != nil {
 		return err
@@ -101,9 +95,6 @@ func SendChunksUpdate(w io.Writer, t message.Tick, blks []*message.Block) error 
 }
 
 func SendEntityCreate(w io.Writer, t message.Tick, entity *message.Entity) error {
-	lock(w)
-	defer unlock(w)
-
 	if err := Write(w, message.Types["entity_create"], t); err != nil {
 		return err
 	}
@@ -112,9 +103,6 @@ func SendEntityCreate(w io.Writer, t message.Tick, entity *message.Entity) error
 }
 
 func SendEntitiesUpdate(w io.Writer, t message.Tick, entities []*message.Entity, diffs []*message.EntityDiff) error {
-	lock(w)
-	defer unlock(w)
-
 	if err := Write(w, message.Types["entities_update"], t, uint16(len(entities))); err != nil {
 		return err
 	}
@@ -131,13 +119,10 @@ func SendEntitiesUpdate(w io.Writer, t message.Tick, entities []*message.Entity,
 }
 
 func SendEntityDestroy(w io.Writer, t message.Tick, id message.EntityId) error {
-	return send(w, message.Types["entity_destroy"], t, id)
+	return Write(w, message.Types["entity_destroy"], t, id)
 }
 
 func SendActionsDone(w io.Writer, t message.Tick, actions []*message.Action) error {
-	lock(w)
-	defer unlock(w)
-
 	err := Write(w, message.Types["actions_done"], t, uint16(len(actions)))
 	if err != nil {
 		return err
@@ -158,13 +143,10 @@ func SendActionsDone(w io.Writer, t message.Tick, actions []*message.Action) err
 }
 
 func SendChatReceive(w io.Writer, t message.Tick, username string, msg string) error {
-	return send(w, message.Types["chat_receive"], t, username, msg)
+	return Write(w, message.Types["chat_receive"], t, username, msg)
 }
 
 func SendConfig(w io.Writer, config message.Config) error {
-	lock(w)
-	defer unlock(w)
-
 	if err := Write(w, message.Types["config"]); err != nil {
 		return err
 	}
@@ -174,7 +156,7 @@ func SendConfig(w io.Writer, config message.Config) error {
 }
 
 func SendEntityIdChange(w io.Writer, oldId message.EntityId, newId message.EntityId) error {
-	return send(w, message.Types["entity_id_change"], oldId, newId)
+	return Write(w, message.Types["entity_id_change"], oldId, newId)
 }
 
 func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.EntityDiffPool) error {

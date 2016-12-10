@@ -36,8 +36,8 @@ func (c *Client) listen() {
 	defer c.Close()
 
 	reader := bufio.NewReader(c.conn)
-	io := message.NewIO(c.id, reader, c.conn, c.conn, c.Server)
-	c.Server.handler.Listen(io)
+	conn := message.NewConn(c.id, reader, c.conn, c.Server.Write)
+	c.Server.handler.Listen(conn)
 }
 
 func (c *Client) Close() error {
@@ -73,21 +73,19 @@ func (s *server) Listen() {
 }
 
 // Broadcast a message to all clients
-func (s *server) Write(msg []byte) (n int, err error) {
-	N := 0
+func (s *server) Write(write message.WriteFunc) error {
 	for _, c := range s.clients {
 		if c == nil {
 			continue
 		}
 
-		n, err = c.conn.Write(msg)
+		err := write(c.conn)
 		if err != nil {
 			log.Println("Error broadcasting message:", err)
 		}
-
-		N += n
 	}
-	return N, nil
+
+	return nil
 }
 
 // Creates new http server instance
