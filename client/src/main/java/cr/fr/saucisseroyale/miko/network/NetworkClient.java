@@ -8,6 +8,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -96,6 +97,13 @@ public class NetworkClient {
       }
       socket = null;
     }
+  }
+
+  public InetSocketAddress getAddress() {
+    if (socket == null || socket.isClosed()) {
+      return null;
+    }
+    return (InetSocketAddress) socket.getRemoteSocketAddress();
   }
 
   /**

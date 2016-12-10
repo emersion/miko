@@ -22,6 +22,7 @@ class ReceiverThread extends Thread {
     dis = new DataInputStream(new BufferedInputStream(is));
     this.inputMessages = inputMessages;
     this.errorCallback = errorCallback;
+    setName("Miko Network Receiver");
   }
 
   @Override

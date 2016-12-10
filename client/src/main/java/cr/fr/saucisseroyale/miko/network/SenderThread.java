@@ -22,6 +22,7 @@ class SenderThread extends Thread {
     dos = new DataOutputStream(new BufferedOutputStream(os));
     this.outputMessages = outputMessages;
     this.errorCallback = errorCallback;
+    setName("Miko Network Sender");
   }
 
   @Override

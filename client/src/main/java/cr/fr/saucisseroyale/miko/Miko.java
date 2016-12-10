@@ -8,6 +8,7 @@ import cr.fr.saucisseroyale.miko.engine.Engine;
 import cr.fr.saucisseroyale.miko.network.FutureInputMessage;
 import cr.fr.saucisseroyale.miko.network.NetworkClient;
 import cr.fr.saucisseroyale.miko.network.OutputMessageFactory;
+import cr.fr.saucisseroyale.miko.network.TimeClient;
 import cr.fr.saucisseroyale.miko.protocol.*;
 import cr.fr.saucisseroyale.miko.util.Pair;
 import cr.fr.saucisseroyale.miko.util.Pair.Int;
@@ -24,7 +25,7 @@ public class Miko implements MessageHandler {
   public static final int PROTOCOL_VERSION = 10;
   public static final int TICK_TIME = 20 * 1000000; // milliseconds
   private static final long SERVER_TIMEOUT = 20 * 1000000000L; // seconds
-  private static final String DEFAULT_SERVER_ADDRESS = "naota.emersion.fr";
+  private static final String DEFAULT_SERVER_ADDRESS = "localhost";
   private static final int DEFAULT_SERVER_PORT = 9999;
   private static final Preferences uiPrefsNode = Preferences.userRoot().node("miko.ui");
   private static Logger logger = LogManager.getLogger("miko.main");
@@ -40,11 +41,10 @@ public class Miko implements MessageHandler {
   private UiWindow window;
   private boolean closeRequested = false;
   private NetworkClient networkClient;
+  private TimeClient timeClient;
   private KeyStateManager keyStateManager;
   private long accumulator;
   private float alpha; // for #render(), updated each loop
-  private long debugStartTime;
-  private int debugStartTick;
 
   public static void main(String... args) throws Exception {
     if (args.length == 1) {
@@ -72,6 +72,7 @@ public class Miko implements MessageHandler {
 
   private void disconnect() {
     networkClient.disconnect();
+    timeClient.disconnect();
     lastMessageReceived = Long.MAX_VALUE;
     changeStateTo(MikoState.CONNECTION_REQUEST);
   }
@@ -114,17 +115,18 @@ public class Miko implements MessageHandler {
   }
 
   private void logic() {
-    if (state != MikoState.EXIT) {
-      return;
+    switch (state) {
+      case LOGIN_REQUEST:
+        uiLogin.setLoginEnabled(timeClient.getClockDifference().isPresent());
+        break;
+      case EXIT:
+        while (accumulator >= TICK_TIME) {
+          engine.processNextTick(keyStateManager.getEventsAndFlush(), window.getMousePosition());
+          accumulator -= TICK_TIME;
+        }
+        break;
+      default:
     }
-    while (accumulator >= TICK_TIME) {
-      engine.processNextTick(keyStateManager.getEventsAndFlush(), window.getMousePosition());
-      long exp = engine.getTick();
-      long the = (System.nanoTime() - debugStartTime) / TICK_TIME + debugStartTick;
-      System.out.format("Tick : Expérimental -> %5d - %5d <- Théorique - Différence (exp-thé) : %5d%n", exp, the, exp - the);
-      accumulator -= TICK_TIME;
-    }
-    System.out.println("dille");
   }
 
   private void loop() {
@@ -290,10 +292,11 @@ public class Miko implements MessageHandler {
     }
   }
 
-  private void run() throws Exception {
+  private void run() {
     logger.debug("Initializing window");
     initWindow();
     networkClient = new NetworkClient();
+    timeClient = new TimeClient();
     changeStateTo(MikoState.CONNECTION_REQUEST);
     logger.debug("Starting game loop");
     loop();
@@ -446,16 +449,16 @@ public class Miko implements MessageHandler {
       logger.warn("Ignored loginsuccess message received in state {}", state);
       return;
     }
-    logger.info("Login success, starting engine at tick {}, timestamp {}", tickRemainder, timestamp);
+    long clockDifference = timeClient.getClockDifference().get();
+    timeClient.disconnect();
+    long tickLocalStartTimestamp = timestamp + clockDifference;
+    logger.info("Login success, starting engine at tick {}, timestamp {}", tickRemainder, tickLocalStartTimestamp);
+    accumulator = System.nanoTime() - tickLocalStartTimestamp * 1000;
     changeStateTo(MikoState.JOIN);
     try {
       engine = new Engine(config, window.getConfiguration(), networkClient::putMessage, window.getWidth(), window.getHeight(), tickRemainder);
-      accumulator = 0;
-      long lastFrame = System.nanoTime();
-      debugStartTick = tickRemainder;
-      debugStartTime = System.nanoTime();
     } catch (IOException e) {
-      uiConnect.setStatusText("Erreur lors de la création du jeu : erreur de lecture de données.");
+      uiConnect.setStatusText("Erreur lors de la création du jeu : erreur de lecture de données. " + e.getMessage());
       disconnect();
     }
   }
@@ -488,19 +491,9 @@ public class Miko implements MessageHandler {
       logger.info("Received self player join, finished initializing engine, starting game");
       engine.setPlayerEntityId(entityId);
       engine.playerJoined(tickRemainder, entityId, pseudo);
-      System.out.println(accumulator);
-      System.out.println(TICK_TIME);
-      System.out.println(engine.getTick());
       long ticksSinceStartup = accumulator / TICK_TIME;
-      System.out.println(ticksSinceStartup);
-      System.out.println(debugStartTick);
-      System.out.println("dilleaoreaoeoaeaoeaoe nadylle trap cc dille bjrjrbrbjr " + (ticksSinceStartup + engine.getTick()));
       accumulator %= TICK_TIME;
       engine.endStartup(ticksSinceStartup);
-      long exp = engine.getTick();
-      long the = (System.nanoTime() - debugStartTime) / TICK_TIME + debugStartTick;
-      System.out.format("LLIIILL Tick : Expérimental -> %5d - %5d <- Théorique - Différence (exp-thé) : %5d%n", exp, the, exp - the);
-      System.out.println(accumulator);
       changeStateTo(MikoState.EXIT);
     } else {
       engine.playerJoined(tickRemainder, entityId, pseudo);
@@ -574,6 +567,7 @@ public class Miko implements MessageHandler {
     this.config = config;
     uiLogin.setStatusText("Connexion réussie, connectez ou enregistrez-vous.");
     changeStateTo(MikoState.LOGIN_REQUEST);
+    timeClient.connect(networkClient.getAddress().getAddress().getHostAddress(), config.getTimeServerPort());
   }
 
   private void messageReceived() {

@@ -57,6 +57,7 @@ final class UiComponents {
 
   public static class Login extends JPanel {
     private JLabel statusField;
+    private JButton loginButton;
 
     public Login(BiConsumer<String, String> registerCallback, BiConsumer<String, String> loginCallback) {
       setLayout(new GridLayout(4, 2, 10, 10));
@@ -69,7 +70,8 @@ final class UiComponents {
       JButton registerButton = new JButton("S'inscrire");
       registerButton.addActionListener(e -> registerCallback.accept(usernameField.getText(), new String(passwordField.getPassword())));
       add(registerButton);
-      JButton loginButton = new JButton("Se connecter");
+      loginButton = new JButton("Se connecter");
+      loginButton.setEnabled(false);
       loginButton.addActionListener(e -> loginCallback.accept(usernameField.getText(), new String(passwordField.getPassword())));
       add(loginButton);
       statusField = new JLabel();
@@ -78,6 +80,10 @@ final class UiComponents {
 
     public void setStatusText(String text) {
       statusField.setText(text);
+    }
+
+    public void setLoginEnabled(boolean enabled) {
+      loginButton.setEnabled(enabled);
     }
   }
 

@@ -44,7 +44,7 @@ public class Engine {
   private ChatManager chatManager = new ChatManager();
   private TickInputManager tickInputManager = new TickInputManager();
   private SpriteManager spriteManager;
-  private List<EngineMessage> messagesBuffer = new ArrayList<>();
+  private List<EngineMessage> messagesBuffer = new LinkedList<>();
   private int playerEntityId = -1;
   private long lastDisposedTick = -1;
   private long lastReceivedTick = -1;
@@ -434,14 +434,16 @@ public class Engine {
   private void processBufferedMessages() {
     messagesBuffer.sort(Comparator.naturalOrder());
     long previousUpdatedTick = -1;
-    for (EngineMessage engineMessage : messagesBuffer) {
+    Iterator<EngineMessage> it = messagesBuffer.iterator();
+    while (it.hasNext()) {
+      EngineMessage engineMessage = it.next();
       long tick = engineMessage.getTick();
       if (tick <= lastDisposedTick) {
         throw new IllegalStateException("Tick " + tick + " has already been disposed");
       }
       if (tick > lastTick) {
         if (startedup) {
-          throw new IllegalStateException("Tick " + tick + " hasn't been created yet");
+          throw new IllegalStateException("Tick " + tick + " has not been crated yet");
         }
         previousUpdatedTick = lastTick;
       }
@@ -453,8 +455,8 @@ public class Engine {
       }
       previousUpdatedTick = tick;
       processMessage(engineMessage);
+      it.remove();
     }
-    messagesBuffer.clear();
     if (previousUpdatedTick != -1) {
       lastReceivedTick = previousUpdatedTick > lastReceivedTick ? previousUpdatedTick : lastReceivedTick;
       // update to current tick
