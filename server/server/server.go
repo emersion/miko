@@ -42,7 +42,7 @@ func (s *Server) newClient(conn net.Conn) {
 	w := bufio.NewWriter(conn)
 
 	wc := struct{
-		io.Writer
+		*bufio.Writer
 		io.Closer
 	}{w, conn}
 

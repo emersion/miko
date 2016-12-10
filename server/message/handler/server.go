@@ -33,6 +33,8 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		conn.Version = ReadVersion(conn)
 
 		if conn.Version != message.CurrentVersion {
+			log.Println("Protocol version mismatch")
+
 			code := message.ExitCodes["client_outdated"]
 			if conn.Version > message.CurrentVersion {
 				code = message.ExitCodes["server_outdated"]
@@ -49,6 +51,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 				return err
 			}
 		} else {
+			log.Println("Sending config to client")
 			conn.State = message.Accepted
 
 			err := conn.Write(func (w io.Writer) error {
