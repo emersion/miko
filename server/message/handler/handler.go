@@ -85,24 +85,22 @@ func (h *Handler) Listen(conn *message.Conn) {
 			return
 		}
 
-		done := make(chan bool)
-		go (func() {
-			select {
-			case <-done:
-				return
-			case <-time.After(time.Second * 8):
-				log.Println("TIMED OUT:", message.GetTypeName(msgType))
-				panic("Message handling timed out")
+		done := make(chan error, 1)
+		go func() {
+			done <- h.Handle(msgType, conn)
+		}()
+
+		select {
+		case err = <-done:
+			if err != nil {
+				log.Printf("Message handling failed for %q: %v\n", message.GetTypeName(msgType), err)
 			}
-		})()
-
-		err = h.Handle(msgType, conn)
-		if err != nil {
-			log.Println("Handle failed:", err)
-			log.Println("Message type:", msgType)
+			return
+		case <-time.After(time.Second * 15):
+			log.Printf("Message handling timed out for %q\n", message.GetTypeName(msgType))
+			err = fmt.Errorf("Message handling timed out for %q", message.GetTypeName(msgType))
+			return
 		}
-
-		done <- true
 	}
 }
 
