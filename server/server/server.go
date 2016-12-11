@@ -42,7 +42,7 @@ func (s *Server) newClient(conn net.Conn) {
 	w := bufio.NewWriter(conn)
 
 	wc := struct{
-		io.Writer
+		*bufio.Writer
 		io.Closer
 	}{w, conn}
 
@@ -95,8 +95,8 @@ func (s *Server) Write(write message.WriteFunc) error {
 		return err
 	}
 
+	n := 0
 	done := make(chan error)
-	len := len(s.clients)
 	for _, c := range s.clients {
 		if c.State != message.Ready {
 			continue
@@ -108,10 +108,12 @@ func (s *Server) Write(write message.WriteFunc) error {
 				return err
 			})
 		}()
+
+		n++
 	}
 
 	// TODO: handle per-conn errors
-	for i := 0; i < len; i++ {
+	for i := 0; i < n; i++ {
 		<-done
 	}
 	return nil
