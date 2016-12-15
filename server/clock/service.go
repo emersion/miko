@@ -44,14 +44,14 @@ func (s *Service) ToRelativeTick(at message.AbsoluteTick) message.Tick {
 }
 
 // Convert a relative tick to an absolute tick.
-// Returns 0 if an error occured.
+// Returns message.InvalidTick if an error occured.
 func (s *Service) ToAbsoluteTick(rt message.Tick) message.AbsoluteTick {
 	current := s.GetRelativeTick()
 
 	at := message.AbsoluteTick(rt) + message.AbsoluteTick(s.ticks-s.ticks%message.MaxTick)
 	if current < rt {
 		if at < message.MaxTick {
-			return 0 // Overflow error
+			return message.InvalidTick // Underflow error
 		}
 		at -= message.AbsoluteTick(message.MaxTick)
 	}
