@@ -470,7 +470,7 @@ public class Miko implements MessageHandler {
       return;
     }
     logger.error("Network error, disconnecting", e);
-    uiConnect.setStatusText("Déconnexion forcée : erreur de réseau : " + e.getClass().getCanonicalName() + ": " + e.getLocalizedMessage());
+    uiConnect.setStatusText("Déconnexion forcée : erreur de réseau : " + e.getClass().getCanonicalName() + (e.getLocalizedMessage() != null ? ": " + e.getLocalizedMessage() : ""));
     disconnect();
   }
 
@@ -567,7 +567,7 @@ public class Miko implements MessageHandler {
     this.config = config;
     uiLogin.setStatusText("Connexion réussie, connectez ou enregistrez-vous.");
     changeStateTo(MikoState.LOGIN_REQUEST);
-    timeClient.connect(networkClient.getAddress().getAddress().getHostAddress(), config.getTimeServerPort());
+    timeClient.connect(networkClient.getLastAddress().getAddress().getHostAddress(), config.getTimeServerPort());
   }
 
   private void messageReceived() {

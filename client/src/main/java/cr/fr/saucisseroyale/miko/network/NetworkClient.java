@@ -29,6 +29,7 @@ public class NetworkClient {
   private Socket socket;
   private ReceiverThread receiverThread;
   private SenderThread senderThread;
+  private InetSocketAddress lastAddress;
   private Queue<FutureInputMessage> inputMessages = new ConcurrentLinkedQueue<>();
   private BlockingQueue<FutureOutputMessage> outputMessages = new LinkedBlockingQueue<>();
 
@@ -70,6 +71,7 @@ public class NetworkClient {
     senderThread = new SenderThread(socket.getOutputStream(), outputMessages, this::networkError);
     receiverThread.start();
     senderThread.start();
+    lastAddress = (InetSocketAddress) socket.getRemoteSocketAddress();
     logger.info("Connected to server {} at port {}", address, port);
   }
 
@@ -99,11 +101,11 @@ public class NetworkClient {
     }
   }
 
-  public InetSocketAddress getAddress() {
-    if (socket == null || socket.isClosed()) {
-      return null;
-    }
-    return (InetSocketAddress) socket.getRemoteSocketAddress();
+  /**
+   * @return la dernière addresse de serveur auquel le client était connecté, ou null s'il n'a jamais été connecté.
+   */
+  public InetSocketAddress getLastAddress() {
+    return lastAddress;
   }
 
   /**
