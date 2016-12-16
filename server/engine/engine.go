@@ -368,7 +368,7 @@ func (e *Engine) Start() {
 			return
 		}
 
-		time.Sleep(clock.TickDuration*time.Duration(tick+1) + engineStart - tickEnd)
+		time.Sleep(clock.TickDuration*time.Duration(tick) + engineStart - tickEnd)
 	}
 }
 
