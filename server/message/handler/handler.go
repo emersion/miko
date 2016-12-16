@@ -94,8 +94,8 @@ func (h *Handler) Listen(conn *message.Conn) {
 		case err = <-done:
 			if err != nil {
 				log.Printf("Message handling failed for %q: %v\n", message.GetTypeName(msgType), err)
+				return
 			}
-			return
 		case <-time.After(time.Second * 15):
 			log.Printf("Message handling timed out for %q\n", message.GetTypeName(msgType))
 			err = fmt.Errorf("Message handling timed out for %q", message.GetTypeName(msgType))

@@ -21,6 +21,9 @@ const MaxTick = 65536
 // The maximum interval of time that can be rewinded by a Rewindable.
 const MaxRewind AbsoluteTick = 20
 
+// A value that represents an invalid tick.
+const InvalidTick AbsoluteTick = 0
+
 // A clock service keeps track of the server's current in-game time.
 type ClockService interface {
 	// Trigger a new tick.

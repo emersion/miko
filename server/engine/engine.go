@@ -160,7 +160,7 @@ func (e *Engine) executeTick(currentTick message.AbsoluteTick) {
 		}
 
 		t := req.GetTick()
-		if t == 0 {
+		if t == message.InvalidTick {
 			req.Done(errors.New("Invalid tick"))
 			log.Println("Warning: Dropped request, invalid tick")
 			continue
@@ -368,7 +368,7 @@ func (e *Engine) Start() {
 			return
 		}
 
-		time.Sleep(clock.TickDuration*time.Duration(tick+1) + engineStart - tickEnd)
+		time.Sleep(clock.TickDuration*time.Duration(tick) + engineStart - tickEnd)
 	}
 }
 
