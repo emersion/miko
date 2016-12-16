@@ -443,7 +443,9 @@ public class Engine {
       }
       if (tick > lastTick) {
         if (startedup) {
-          throw new IllegalStateException("Tick " + tick + " has not been crated yet");
+          logger.warn("Tick " + tick + " has not been created yet");
+          //throw new IllegalStateException("Tick " + tick + " has not been created yet");
+          break;
         }
         previousUpdatedTick = lastTick;
       }

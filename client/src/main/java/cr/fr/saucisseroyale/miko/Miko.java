@@ -44,6 +44,7 @@ public class Miko implements MessageHandler {
   private TimeClient timeClient;
   private KeyStateManager keyStateManager;
   private long accumulator;
+  private long lastFrame;
   private float alpha; // for #render(), updated each loop
 
   public static void main(String... args) throws Exception {
@@ -130,7 +131,7 @@ public class Miko implements MessageHandler {
   }
 
   private void loop() {
-    long lastFrame = System.nanoTime();
+    lastFrame = System.nanoTime();
     accumulator = 0;
     while (!closeRequested) {
       long newTime = System.nanoTime();
@@ -453,7 +454,9 @@ public class Miko implements MessageHandler {
     timeClient.disconnect();
     long tickLocalStartTimestamp = timestamp + clockDifference;
     logger.info("Login success, starting engine at tick {}, timestamp {}", tickRemainder, tickLocalStartTimestamp);
-    accumulator = System.nanoTime() - tickLocalStartTimestamp * 1000;
+    long currentTime = System.nanoTime();
+    accumulator = currentTime - tickLocalStartTimestamp * 1000;
+    lastFrame = currentTime;
     changeStateTo(MikoState.JOIN);
     try {
       engine = new Engine(config, window.getConfiguration(), networkClient::putMessage, window.getWidth(), window.getHeight(), tickRemainder);
