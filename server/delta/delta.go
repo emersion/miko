@@ -3,6 +3,7 @@ package delta
 
 import (
 	"container/list"
+
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 

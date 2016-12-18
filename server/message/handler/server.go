@@ -231,6 +231,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		t := ctx.Clock.ToAbsoluteTick(readTick(conn))
 
 		entity, diff := ReadEntity(conn)
+		log.Printf("Received entity update: tick=%v entity=%+v position=%+v speed=%+v\n", t, entity, entity.Position, entity.Speed)
 		ctx.Entity.Update(entity, diff, t)
 
 		return nil

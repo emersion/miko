@@ -201,7 +201,7 @@ func (e *Engine) executeTick(currentTick message.AbsoluteTick) {
 
 	// Initiate lag compensation if necessary
 	if acceptedMinTick < currentTick {
-		//log.Println("Back to the past!", currentTick, currentTick-acceptedMinTick)
+		log.Println("Back to the past!", currentTick, acceptedMinTick)
 		e.terrain.Rewind(e.terrain.GetTick() - acceptedMinTick)
 		e.entity.Rewind(e.entity.GetTick() - acceptedMinTick)
 	}
@@ -294,6 +294,12 @@ func (e *Engine) executeTick(currentTick message.AbsoluteTick) {
 	// Cleanup
 	e.entity.Cleanup(currentTick)
 	e.action.Cleanup(currentTick)
+
+	// DEBUG: print all entites
+	log.Printf("Tick %v finished, entities:\n", currentTick)
+	for _, ent := range e.entity.List() {
+		log.Printf("entity=%+v position=%+v speed=%+v", ent, ent.Position, ent.Speed)
+	}
 }
 
 func (e *Engine) listenNewClients() {

@@ -163,12 +163,12 @@ func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.Entity
 	if pool.IsEmpty() {
 		return nil
 	}
-	log.Println("Sending entities diff:", pool)
 
 	// TODO: broadcast only to clients who need it
 
 	// Created entities
 	for _, entity := range pool.Created {
+		log.Printf("Sending entity create: tick=%v entity=%+v position=%+v speed=%+v\n", t, entity, entity.Position, entity.Speed)
 		err := SendEntityCreate(w, t, entity)
 		if err != nil {
 			return err
@@ -181,6 +181,7 @@ func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.Entity
 		diffs := make([]*message.EntityDiff, len(pool.Updated))
 		i := 0
 		for entity, diff := range pool.Updated {
+			log.Printf("Sending entity update: tick=%v entity=%+v position=%+v speed=%+v\n", t, entity, entity.Position, entity.Speed)
 			entities[i] = entity
 			diffs[i] = diff
 			i++
@@ -194,6 +195,7 @@ func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.Entity
 
 	// Deleted entities
 	for _, entityId := range pool.Deleted {
+		log.Printf("Sending entity destroy: tick=%v entity.Id=%v\n", t, entityId)
 		err := SendEntityDestroy(w, t, entityId)
 		if err != nil {
 			return err
