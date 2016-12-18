@@ -118,7 +118,7 @@ func (e *Engine) broadcastChanges() {
 	if e.ctx.Entity.IsDirty() {
 		log.Println("Entity diff dirty, broadcasting to clients...")
 		err := e.srv.Write(func (w io.Writer) error {
-			return builder.SendEntitiesDiffToClients(w, e.clock.GetRelativeTick(), e.ctx.Entity.Flush())
+			return builder.SendEntitiesDiffToClients(w, e.ctx.Entity.Flush())
 		})
 		if err != nil {
 			log.Println("Cannot broadcast entities diff:", err)

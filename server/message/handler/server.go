@@ -163,7 +163,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		// Broadcast new entity to other clients
 		log.Println("Flushing entities diff")
 		err = conn.Broadcast(func (w io.Writer) error {
-			return builder.SendEntitiesDiffToClients(w, ctx.Clock.GetRelativeTick(), ctx.Entity.Flush())
+			return builder.SendEntitiesDiffToClients(w, ctx.Entity.Flush())
 		})
 		if err != nil {
 			return err

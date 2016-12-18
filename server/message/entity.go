@@ -164,6 +164,8 @@ func NewFilledEntityDiff(val bool) *EntityDiff {
 // An entity diff pool.
 // Contains three lists for created, updated and deleted entities.
 type EntityDiffPool struct {
+	Tick Tick
+
 	Created []*Entity
 	Updated map[*Entity]*EntityDiff
 	Deleted []EntityId

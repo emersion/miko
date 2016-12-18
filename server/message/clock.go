@@ -9,11 +9,28 @@ import (
 // is not set.
 type AbsoluteTick uint64
 
+// ToRelative converts an absolute tick to a relative tick.
+func (at AbsoluteTick) ToRelative() Tick {
+	return Tick(at)
+}
+
 // A relative tick. Absolute ticks are not designed to be sent over the network
 // because of their size. Instead, a smaller relative tick is used. Because of
 // its capacity, it reaches much more quickly its maximum value, so it is
 // regularly reset.
 type Tick uint16
+
+// ToAbsolute converts a relative tick to an absolute tick.
+func (t Tick) ToAbsolute(now AbsoluteTick) AbsoluteTick {
+	at := AbsoluteTick(t) + AbsoluteTick(now-now%MaxTick)
+	if now.ToRelative() < t {
+		if at < MaxTick {
+			return InvalidTick // Underflow error
+		}
+		at -= AbsoluteTick(MaxTick)
+	}
+	return at
+}
 
 // The maximum value for a relative tick.
 const MaxTick = 65536

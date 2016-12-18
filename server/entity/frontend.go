@@ -61,6 +61,7 @@ func (f *Frontend) Flush() *message.EntityDiffPool {
 	log.Println("Flushing entity frontend, deltas count:", f.deltas.Len())
 	flattened := flattenDeltas(f.deltas)
 	pool := deltasToDiffPool(flattened)
+	pool.Tick = f.backend.tick.ToRelative()
 	f.deltas.Reset()
 	return pool
 }

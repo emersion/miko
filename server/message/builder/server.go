@@ -159,7 +159,7 @@ func SendEntityIdChange(w io.Writer, oldId message.EntityId, newId message.Entit
 	return Write(w, message.Types["entity_id_change"], oldId, newId)
 }
 
-func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.EntityDiffPool) error {
+func SendEntitiesDiffToClients(w io.Writer, pool *message.EntityDiffPool) error {
 	if pool.IsEmpty() {
 		return nil
 	}
@@ -168,8 +168,8 @@ func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.Entity
 
 	// Created entities
 	for _, entity := range pool.Created {
-		log.Printf("Sending entity create: tick=%v entity=%+v position=%+v speed=%+v\n", t, entity, entity.Position, entity.Speed)
-		err := SendEntityCreate(w, t, entity)
+		log.Printf("Sending entity create: tick=%v entity=%+v position=%+v speed=%+v\n", pool.Tick, entity, entity.Position, entity.Speed)
+		err := SendEntityCreate(w, pool.Tick, entity)
 		if err != nil {
 			return err
 		}
@@ -181,13 +181,13 @@ func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.Entity
 		diffs := make([]*message.EntityDiff, len(pool.Updated))
 		i := 0
 		for entity, diff := range pool.Updated {
-			log.Printf("Sending entity update: tick=%v entity=%+v position=%+v speed=%+v\n", t, entity, entity.Position, entity.Speed)
+			log.Printf("Sending entity update: tick=%v entity=%+v position=%+v speed=%+v\n", pool.Tick, entity, entity.Position, entity.Speed)
 			entities[i] = entity
 			diffs[i] = diff
 			i++
 		}
 
-		err := SendEntitiesUpdate(w, t, entities, diffs)
+		err := SendEntitiesUpdate(w, pool.Tick, entities, diffs)
 		if err != nil {
 			return err
 		}
@@ -195,8 +195,8 @@ func SendEntitiesDiffToClients(w io.Writer, t message.Tick, pool *message.Entity
 
 	// Deleted entities
 	for _, entityId := range pool.Deleted {
-		log.Printf("Sending entity destroy: tick=%v entity.Id=%v\n", t, entityId)
-		err := SendEntityDestroy(w, t, entityId)
+		log.Printf("Sending entity destroy: tick=%v entity.Id=%v\n", pool.Tick, entityId)
+		err := SendEntityDestroy(w, pool.Tick, entityId)
 		if err != nil {
 			return err
 		}
