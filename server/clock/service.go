@@ -2,8 +2,9 @@
 package clock
 
 import (
-	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"time"
+
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 // The duration of a single tick.

@@ -1,11 +1,12 @@
 package engine
 
 import (
+	"time"
+
 	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
 	"git.emersion.fr/saucisse-royale/miko.git/server/entity"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
-	"time"
 )
 
 func CheckRoute(route terrain.Route, ent *entity.Entity, trn message.Terrain) *terrain.Position {
@@ -44,6 +45,9 @@ func (m *Mover) UpdateEntity(ent *entity.Entity, now message.AbsoluteTick) *enti
 	if dt == 0 {
 		return nil
 	}
+	if dt < 0 {
+		return nil // TODO: figure out if it's the right thing to do here
+	}
 
 	speed := ent.Speed
 	pos := ent.Position
@@ -63,6 +67,7 @@ func (m *Mover) UpdateEntity(ent *entity.Entity, now message.AbsoluteTick) *enti
 	}
 
 	newEnt := entity.New()
+	newEnt.Id = ent.Id
 	newEnt.Position = nextPos
 	diff := &message.EntityDiff{Position: true}
 

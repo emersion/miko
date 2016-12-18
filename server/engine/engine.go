@@ -62,7 +62,10 @@ func (e *Engine) processActionRequest(req *action.Request) bool {
 		ball.Attributes[game.TicksLeftAttr] = e.config.DefaultBallLifespan
 		ball.Attributes[game.SenderAttr] = initiator.Id
 		r := entity.NewCreateRequest(req.GetTick(), ball)
-		e.entity.AcceptRequest(r)
+		if err := e.entity.AcceptRequest(r); err != nil {
+			// This shouldn't fail
+			panic(err)
+		}
 
 		session := e.auth.GetSessionByEntity(req.Action.Initiator)
 
@@ -83,8 +86,7 @@ func (e *Engine) processRequest(req message.Request) {
 			return
 		}
 
-		err := e.action.AcceptRequest(r)
-		if err != nil {
+		if err := e.action.AcceptRequest(r); err != nil {
 			log.Println("Warning: Error while accepting action request:", err)
 		}
 	case entity.Request:
@@ -93,8 +95,7 @@ func (e *Engine) processRequest(req message.Request) {
 			return
 		}
 
-		err := e.entity.AcceptRequest(r)
-		if err != nil {
+		if err := e.entity.AcceptRequest(r); err != nil {
 			log.Println("Warning: Error while accepting entity request:", err)
 		}
 	}
@@ -105,7 +106,10 @@ func (e *Engine) moveEntities(t message.AbsoluteTick) {
 		req := e.mover.UpdateEntity(entity, t)
 		if req != nil {
 			// Let's assume mover already did all security checks
-			e.entity.AcceptRequest(req)
+			if err := e.entity.AcceptRequest(req); err != nil {
+				// This should not fail
+				panic(err)
+			}
 		}
 	}
 }
@@ -284,7 +288,11 @@ func (e *Engine) executeTick(currentTick message.AbsoluteTick) {
 		if val, ok := ent.Attributes[game.TicksLeftAttr]; ok {
 			ttl := val.(game.TicksLeft)
 			if ttl == 0 { // Destroy entity
-				e.entity.AcceptRequest(entity.NewDeleteRequest(currentTick, ent.Id))
+				err := e.entity.AcceptRequest(entity.NewDeleteRequest(currentTick, ent.Id))
+				if err != nil {
+					// This shouldn't fail
+					panic(err)
+				}
 			} else {
 				ent.Attributes[game.TicksLeftAttr] = ttl - 1
 			}
