@@ -181,7 +181,7 @@ func SendEntitiesDiffToClients(w io.Writer, pool *message.EntityDiffPool) error 
 		diffs := make([]*message.EntityDiff, len(pool.Updated))
 		i := 0
 		for entity, diff := range pool.Updated {
-			log.Printf("Sending entity update: tick=%v entity=%+v position=%+v speed=%+v\n", pool.Tick, entity, entity.Position, entity.Speed)
+			log.Printf("Sending entity update: tick=%v entity=%+v diff=%+v position=%+v speed=%+v\n", pool.Tick, entity, diff, entity.Position, entity.Speed)
 			entities[i] = entity
 			diffs[i] = diff
 			i++
