@@ -102,8 +102,15 @@ func (e *Engine) processRequest(req message.Request) {
 }
 
 func (e *Engine) moveEntities(t message.AbsoluteTick) {
-	for _, entity := range e.entity.List() {
-		req := e.mover.UpdateEntity(entity, t)
+	for _, ent := range e.entity.List() {
+		req, collides := e.mover.UpdateEntity(ent, t)
+
+		// [GAME-SPECIFIC] Destroy balls when they collide
+		if collides && ent.Type == game.BallEntity {
+			ent.Attributes[game.TicksLeftAttr] = game.TicksLeft(0)
+			continue
+		}
+
 		if req != nil {
 			// Let's assume mover already did all security checks
 			if err := e.entity.AcceptRequest(req); err != nil {
