@@ -10,6 +10,8 @@ import (
 )
 
 func CheckRoute(route terrain.Route, ent *entity.Entity, trn message.Terrain) *terrain.Position {
+	// TODO: check for collisions with entities too
+
 	var last terrain.RouteStep
 	for _, step := range route {
 		t, err := trn.GetPointAt(step[0], step[1])
@@ -58,6 +60,8 @@ func (m *Mover) UpdateEntity(ent *entity.Entity, now message.AbsoluteTick) (req 
 	}
 
 	// Check terrain
+	// TODO: use brensenham algorithm
+	// See http://tech-algorithm.com/articles/drawing-line-using-bresenham-algorithm/
 	route := terrain.GetRouteBetween(pos, nextPos)
 
 	stoppedAt := CheckRoute(route, ent, m.engine.ctx.Terrain)
