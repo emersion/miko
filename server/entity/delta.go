@@ -77,7 +77,7 @@ func flattenDeltas(deltas *delta.List) []*Delta {
 		if current, ok := m[d.EntityId]; ok {
 			// TODO: check that current.To and d.From are compatible
 
-			if d.Diff != nil && current.To != nil && d.To != nil {
+			if d.Diff != nil && current.To != nil {
 				current.To.ApplyDiff(d.Diff, d.To)
 			} else {
 				// Deep copy To since it can be modified by this loop
@@ -126,9 +126,8 @@ func deltasToDiffPool(deltas []*Delta) *message.EntityDiffPool {
 			from := d.From.ToMessage()
 			to := d.To.ToMessage()
 
-			// TODO: only send attributes that changed (e.g. if speed hasn't changed,
-			// do not send it)
-			if from.EqualsWithDiff(to, d.Diff) {
+			d.Diff.Shrink(from, to)
+			if d.Diff.IsZero() {
 				continue
 			}
 
