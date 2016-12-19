@@ -87,7 +87,9 @@ func (s *Service) acceptCreate(req *CreateRequest) error {
 		//log.Println("Accepted create request, deltas count:", s.deltas.Len())
 	}
 	if s.frontend != nil {
+		s.frontend.locker.Lock()
 		s.frontend.deltas.Insert(d)
+		s.frontend.locker.Unlock()
 	}
 
 	s.tick = req.tick
@@ -126,7 +128,9 @@ func (s *Service) acceptUpdate(req *UpdateRequest) error {
 	// TODO: fix this
 	// && !current.ToMessage().EqualsWithDiff(entity.ToMessage(), diff)
 	if s.frontend != nil {
+		s.frontend.locker.Lock()
 		s.frontend.deltas.Insert(d)
+		s.frontend.locker.Unlock()
 	}
 
 	s.tick = req.tick
@@ -157,7 +161,9 @@ func (s *Service) acceptDelete(req *DeleteRequest) error {
 		//log.Println("Accepted delete request, deltas count:", s.deltas.Len())
 	}
 	if s.frontend != nil {
+		s.frontend.locker.Lock()
 		s.frontend.deltas.Insert(d)
+		s.frontend.locker.Unlock()
 	}
 
 	s.tick = req.tick
@@ -208,7 +214,9 @@ func (s *Service) Rewind(dt message.AbsoluteTick) error {
 		}
 
 		if s.frontend != nil {
+			s.frontend.locker.Lock()
 			s.frontend.deltas.Insert(d.Inverse().(*Delta))
+			s.frontend.locker.Unlock()
 		}
 	}
 
