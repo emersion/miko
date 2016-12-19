@@ -77,7 +77,7 @@ func flattenDeltas(deltas *delta.List) []*Delta {
 		if current, ok := m[d.EntityId]; ok {
 			// TODO: check that current.To and d.From are compatible
 
-			if d.Diff != nil {
+			if d.Diff != nil && current.To != nil && d.To != nil {
 				current.To.ApplyDiff(d.Diff, d.To)
 			} else {
 				// Deep copy To since it can be modified by this loop

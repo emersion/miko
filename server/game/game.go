@@ -7,21 +7,25 @@ import (
 )
 
 const (
-	PlayerEntity message.EntityType = 0
-	BallEntity                      = 1
+	PlayerEntity message.EntityType = iota
+	BallEntity
 )
 
 const (
-	PlaceholderSprite message.Sprite = 0
-	PlayerSprite                     = 1
-	BallSprite                       = 2
+	PlaceholderSprite message.Sprite = iota
+	PlayerSprite
+	BallSprite
 )
 
 const (
-	TicksLeftAttr   message.EntityAttrId = 0
-	HealthAttr                           = 1
-	SenderAttr                           = 2
+	TicksLeftAttr   message.EntityAttrId = iota
+	HealthAttr
+	SenderAttr
 	CooldownOneAttr                      = 30000
+)
+
+const (
+	PointTypeEmpty message.PointType = iota
 )
 
 type TicksLeft uint16
@@ -29,7 +33,7 @@ type Health uint16
 type Cooldown uint16
 
 const (
-	ThrowBallAction message.ActionId = 0
+	ThrowBallAction message.ActionId = iota
 )
 
 func GetHitbox(sprite message.Sprite) hitbox.Hitbox {
@@ -42,4 +46,8 @@ func GetHitbox(sprite message.Sprite) hitbox.Hitbox {
 		return hitbox.NewCircle(10)
 	}
 	return nil
+}
+
+func Collides(a, b message.EntityType) bool {
+	return true
 }

@@ -49,7 +49,9 @@ func (e *Engine) processEntityRequest(req entity.Request) bool {
 }
 
 func (e *Engine) processActionRequest(req *action.Request) bool {
-	if req.Action.Id == game.ThrowBallAction {
+	// [GAME-SPECIFIC] Handle action requests according to game rules
+	switch req.Action.Id {
+	case game.ThrowBallAction:
 		log.Println("Accepting ball", req)
 
 		initiator := e.entity.Get(req.Action.Initiator)
@@ -103,11 +105,31 @@ func (e *Engine) processRequest(req message.Request) {
 
 func (e *Engine) moveEntities(t message.AbsoluteTick) {
 	for _, ent := range e.entity.List() {
-		req, collides := e.mover.UpdateEntity(ent, t)
+		req, collidesWith := e.mover.UpdateEntity(ent, t)
 
 		// [GAME-SPECIFIC] Destroy balls when they collide
-		if collides && ent.Type == game.BallEntity {
-			ent.Attributes[game.TicksLeftAttr] = game.TicksLeft(0)
+		if collidesWith != nil && ent.Type == game.BallEntity {
+			req := entity.NewDeleteRequest(t, ent.Id)
+			if err := e.entity.AcceptRequest(req); err != nil {
+				panic(err) // This shouldn't happen
+			}
+
+			// If the ball collides with a player, decrease his health
+			if collidesWith, ok := collidesWith.(*message.Entity); ok && collidesWith.Type == game.PlayerEntity {
+				sender := ent.Attributes[game.SenderAttr].(message.EntityId)
+				if sender != collidesWith.Id {
+					health := collidesWith.Attributes[game.HealthAttr].(game.Health)
+
+					updated := entity.New()
+					updated.Attributes[game.HealthAttr] = health - 1
+					diff := message.NewEntityDiff()
+					diff.Attributes = true
+					req := entity.NewUpdateRequest(t, updated, diff)
+					if err := e.entity.AcceptRequest(req); err != nil {
+						panic(err) // This shouldn't happen
+					}
+				}
+			}
 			continue
 		}
 
