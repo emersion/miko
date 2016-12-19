@@ -1,7 +1,6 @@
 package hitbox
 
 import (
-	"errors"
 	"git.emersion.fr/saucisse-royale/miko.git/server/terrain"
 )
 
@@ -27,7 +26,7 @@ func (hb *Point) intersects(center *terrain.Position, other Hitbox, otherCenter 
 		d := dist(center, otherCenter)
 		intersects = (d <= o.radius)
 	default:
-		err = errors.New("Unsupported hitbox")
+		err = errUnsupportedHitbox
 	}
 	return
 }
