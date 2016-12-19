@@ -10,6 +10,8 @@ import (
 )
 
 func CheckRoute(route terrain.Route, ent *entity.Entity, trn message.Terrain) *terrain.Position {
+	// TODO: check for collisions with entities too
+
 	var last terrain.RouteStep
 	for _, step := range route {
 		t, err := trn.GetPointAt(step[0], step[1])
@@ -32,7 +34,7 @@ type Mover struct {
 
 // Compute an entity's new position.
 // Returns an EntityDiff if the entity has changed, nil otherwise.
-func (m *Mover) UpdateEntity(ent *entity.Entity, now message.AbsoluteTick) *entity.UpdateRequest {
+func (m *Mover) UpdateEntity(ent *entity.Entity, now message.AbsoluteTick) (req *entity.UpdateRequest, collides bool) {
 	// TODO: remove Mover.lastUpdates?
 	var last message.AbsoluteTick
 	var ok bool
@@ -43,10 +45,10 @@ func (m *Mover) UpdateEntity(ent *entity.Entity, now message.AbsoluteTick) *enti
 	m.lastUpdates[ent.Id] = now
 	dt := time.Duration(now-last) * clock.TickDuration // Convert to seconds
 	if dt == 0 {
-		return nil
+		return
 	}
 	if dt < 0 {
-		return nil // TODO: figure out if it's the right thing to do here
+		return // TODO: figure out if it's the right thing to do here
 	}
 
 	speed := ent.Speed
@@ -54,16 +56,19 @@ func (m *Mover) UpdateEntity(ent *entity.Entity, now message.AbsoluteTick) *enti
 
 	nextPos := speed.GetNextPosition(pos, dt)
 	if nextPos == nil {
-		return nil
+		return
 	}
 
 	// Check terrain
+	// TODO: use brensenham algorithm
+	// See http://tech-algorithm.com/articles/drawing-line-using-bresenham-algorithm/
 	route := terrain.GetRouteBetween(pos, nextPos)
 
 	stoppedAt := CheckRoute(route, ent, m.engine.ctx.Terrain)
 	if stoppedAt != nil {
-		// The entity could has been stopped while moving
+		// The entity has been stopped while moving
 		nextPos = stoppedAt
+		collides = true
 	}
 
 	newEnt := entity.New()
@@ -71,7 +76,8 @@ func (m *Mover) UpdateEntity(ent *entity.Entity, now message.AbsoluteTick) *enti
 	newEnt.Position = nextPos
 	diff := &message.EntityDiff{Position: true}
 
-	return entity.NewUpdateRequest(now, newEnt, diff)
+	req = entity.NewUpdateRequest(now, newEnt, diff)
+	return
 }
 
 func NewMover(engine *Engine) *Mover {
