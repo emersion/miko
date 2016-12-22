@@ -51,7 +51,7 @@ final class UiComponents {
       });
       addComponent(Ui.getWidth() * 6 / 10, 200, Ui.getWidth() * 3 / 10, 30, optionsButton);
       statusLabel = new Label();
-      addComponent(0, 0, Ui.getWidth(), 30, statusLabel);
+      addComponent(0, 10, Ui.getWidth(), 30, statusLabel);
     }
 
     public void setStatusText(String text) {
@@ -91,7 +91,7 @@ final class UiComponents {
       });
       addComponent(Ui.getWidth() * 6 / 10, 200, Ui.getWidth() * 3 / 10, 30, registerButton);
       statusLabel = new Label();
-      addComponent(0, 0, Ui.getWidth(), 30, statusLabel);
+      addComponent(0, 10, Ui.getWidth(), 30, statusLabel);
     }
 
     public void setStatusText(String text) {
@@ -122,7 +122,7 @@ final class UiComponents {
         fullscreenCheckBox.setText(fullscreenCheckBox.isChecked() ? "Plein écran" : "Fenêtré sans bordures");
         uiPrefsNode.putBoolean("fullscreen", fullscreenCheckBox.isChecked());
       });
-      addComponent(Ui.getWidth() / 2 - 100, Ui.getHeight() / 2 - 20, 500, 40, fullscreenCheckBox);
+      addComponent(Ui.getWidth() / 2 - 250, Ui.getHeight() / 2 - 20, 500, 40, fullscreenCheckBox);
     }
   }
 
