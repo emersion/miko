@@ -18,6 +18,7 @@ final class EngineMessage implements Comparable<EngineMessage> {
   private final long tick;
   private final Type type;
   private final Object[] data;
+
   private EngineMessage(long tick, Type type, Object[] data) {
     this.tick = tick;
     this.type = type;

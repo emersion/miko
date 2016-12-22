@@ -3,8 +3,8 @@ package cr.fr.saucisseroyale.miko.engine;
 import cr.fr.saucisseroyale.miko.Miko;
 import cr.fr.saucisseroyale.miko.protocol.SpriteType;
 import cr.fr.saucisseroyale.miko.util.Pair.Int;
+import fr.delthas.uitest.Image;
 
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,14 +15,14 @@ import java.util.stream.Collectors;
  */
 public class Sprite {
   private final int spriteTimeDivider;
-  private final List<Int<BufferedImage>> frames;
+  private final List<Int<Image>> frames;
 
   /**
    * Crée une animation avec une seule image.
    *
    * @param image L'unique image de l'animation.
    */
-  public Sprite(BufferedImage image) {
+  public Sprite(Image image) {
     frames = new ArrayList<>(1);
     frames.add(new Int<>(1, image));
     spriteTimeDivider = 1;
@@ -34,7 +34,7 @@ public class Sprite {
    *
    * @param frames La liste des images avec leur timecode associé.
    */
-  public Sprite(List<Int<BufferedImage>> frames) {
+  public Sprite(List<Int<Image>> frames) {
     this.frames = frames.stream().sorted((p1, p2) -> {
       if (p1.getFirst() < p2.getFirst()) {
         return -1;
@@ -56,11 +56,11 @@ public class Sprite {
    * @param spriteTime Le temps en ticks depuis que l'animation a été choisie.
    * @return L'image correspondant
    */
-  public BufferedImage getImage(long spriteTime) {
+  public Image getImage(long spriteTime) {
     // convert ticks to milliseconds!
     long spriteTimeMillis = spriteTime * Miko.TICK_TIME / 1000000;
     int remainder = (int) (spriteTimeMillis % spriteTimeDivider);
-    for (Int<BufferedImage> frame : frames) {
+    for (Int<Image> frame : frames) {
       if (remainder < frame.getFirst()) {
         return frame.getSecond();
       }

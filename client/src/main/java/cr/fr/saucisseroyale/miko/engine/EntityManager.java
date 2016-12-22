@@ -30,7 +30,13 @@ class EntityManager {
   private Entity lastEntity;
 
   public void applyUpdate(long tick, EntityDataUpdate entityDataUpdate) {
-    getEntity(entityDataUpdate.getEntityId()).applyUpdate(tick, entityDataUpdate);
+    Entity entity = getEntity(entityDataUpdate.getEntityId());
+    if (entity == null) {
+      logger.warn("Tried applying update to entity {} at tick {} but it doesn't exist", entityDataUpdate.getEntityId(), tick);
+      // throw new RuntimeException();
+      return;
+    }
+    entity.applyUpdate(tick, entityDataUpdate);
   }
 
   public void createEntity(long tick, EntityDataUpdate entityDataUpdate) {
@@ -45,8 +51,9 @@ class EntityManager {
 
   public void destroyEntity(long tick, int entityId) {
     Entity entity = getEntity(entityId);
-    if(entity == null) {
+    if (entity == null) {
       logger.warn("Tried destroying entity {} at tick {} but it doesn't exist", entityId, tick);
+      // throw new RuntimeException();
       return;
     }
     entity.disable(tick);

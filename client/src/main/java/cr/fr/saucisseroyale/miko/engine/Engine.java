@@ -9,12 +9,14 @@ import cr.fr.saucisseroyale.miko.util.Pair;
 import cr.fr.saucisseroyale.miko.util.Pair.DoubleFloat;
 import cr.fr.saucisseroyale.miko.util.Pair.Int;
 import cr.fr.saucisseroyale.miko.util.Triplet;
+import fr.delthas.uitest.Drawer;
+import fr.delthas.uitest.Font;
+import fr.delthas.uitest.Image;
+import fr.delthas.uitest.Ui;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
-import java.awt.image.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -32,13 +34,9 @@ public class Engine {
   private static final int MAX_INTERPOLATION_DISTANCE = 100;
   private static Logger logger = LogManager.getLogger("miko.engine");
   private final Consumer<FutureOutputMessage> messageOutput;
-  AffineTransform graphicsTransform;
   private Config config;
-  private int screenWidth;
-  private int screenHeight;
-  private BufferedImage terrainImage;
-  private int[] terrainImageData;
-  private TerrainManager terrainManager = new TerrainManager();
+  private TerrainManager terrainManager;
+  private TerrainImageManager terrainImageManager;
   private EntityManager entityManager = new EntityManager();
   private PlayerManager playerManager = new PlayerManager();
   private ChatManager chatManager = new ChatManager();
@@ -52,21 +50,15 @@ public class Engine {
   private long createTick = -1;
   private boolean startedup = false;
 
-  public Engine(Config config, GraphicsConfiguration graphicsConfiguration, Consumer<FutureOutputMessage> messageOutput, int width, int height,
+  public Engine(Config config, Consumer<FutureOutputMessage> messageOutput,
                 int tickRemainder) throws IOException {
     logger.debug("Created engine");
     this.config = config;
     this.messageOutput = messageOutput;
-    screenWidth = width;
-    screenHeight = height;
-    terrainImageData = new int[screenWidth * screenHeight];
-    DataBuffer buffer = new DataBufferInt(terrainImageData, terrainImageData.length);
-    WritableRaster raster = Raster.createPackedRaster(buffer, screenWidth, screenHeight, screenWidth, new int[]{0xFF0000, 0xFF00, 0xFF}, null);
-    terrainImage = new BufferedImage(new DirectColorModel(24, 0xFF0000, 0xFF00, 0xFF), raster, false, null);
-    graphicsTransform = new AffineTransform();
-    graphicsTransform.translate(0, screenHeight - 1);
-    graphicsTransform.scale(1.0, -1.0);
-    spriteManager = new SpriteManager(graphicsConfiguration, width, height);
+    terrainManager = new TerrainManager();
+    terrainImageManager = new TerrainImageManager(terrainManager::getChunk);
+    terrainManager.setChunkUpdateConsumer(terrainImageManager::update);
+    spriteManager = new SpriteManager();
     spriteManager.loadImages();
     long tick = tickRemainder;
     lastTick = tick;
@@ -108,8 +100,8 @@ public class Engine {
     return lastTick;
   }
 
-  public void processNextTick(List<Triplet<Boolean, Integer, Point>> eventList, Point mousePosition) {
-    tickInputManager.addInput(lastTick, eventList, mousePosition);
+  public void processNextTick(List<Triplet<Integer, Integer, Point.Double>> eventList) {
+    tickInputManager.addInput(lastTick, eventList);
     // redo logic until current tick
     processBufferedMessages();
 
@@ -119,7 +111,7 @@ public class Engine {
   }
 
   public void endStartup(long deltaTick) {
-    tickInputManager.addInput(lastTick, Collections.emptyList(), new Point());
+    tickInputManager.addInput(lastTick, Collections.emptyList());
     processBufferedMessages();
     long newTick = createTick + deltaTick;
     logger.trace("Creating ticks until {} and finishing engine startup", newTick);
@@ -130,65 +122,35 @@ public class Engine {
     startedup = true;
   }
 
-  public void render(Graphics2D graphics, float alpha, Point mousePosition) {
+  public void render(Drawer drawer, float alpha, Point.Double mousePosition) {
     if (!startedup) {
       return;
     }
     TerrainPoint playerPoint = entityManager.getMapPoint(lastTick, playerEntityId).toTerrainPoint();
-    TerrainPoint drawCenterPoint;
-    if (mousePosition == null) {
-      drawCenterPoint = playerPoint;
-    } else {
-      int xOffset = (int) (MOUSE_SCREEN_MOVING * mousePosition.x);
-      int yOffset = (int) (MOUSE_SCREEN_MOVING * mousePosition.y);
-      drawCenterPoint = playerPoint.getTranslated(xOffset, yOffset);
-    }
-    int minChunkX = drawCenterPoint.getChunkX() - (screenWidth / 2 + 255 - 1 - drawCenterPoint.getBlockX()) / 256 - 1;
-    int maxChunkX = drawCenterPoint.getChunkX() + (screenWidth / 2 - 1 + drawCenterPoint.getBlockX()) / 256 + 1;
-    int minChunkY = drawCenterPoint.getChunkY() - (screenHeight / 2 + 255 - 1 - drawCenterPoint.getBlockY()) / 256 - 1;
-    int maxChunkY = drawCenterPoint.getChunkY() + (screenHeight / 2 - 1 + drawCenterPoint.getBlockY()) / 256 + 1;
+    int xOffset = (int) (MOUSE_SCREEN_MOVING * (mousePosition.x - Ui.getWidth() / 2));
+    int yOffset = (int) (MOUSE_SCREEN_MOVING * (mousePosition.y - Ui.getHeight() / 2));
+    TerrainPoint drawCenterPoint = playerPoint.getTranslated(xOffset, yOffset);
+    int minChunkX = drawCenterPoint.getChunkX() - (Ui.getWidth() / 2 + 255 - 1 - drawCenterPoint.getBlockX()) / 256 - 1;
+    int maxChunkX = drawCenterPoint.getChunkX() + (Ui.getWidth() / 2 - 1 + drawCenterPoint.getBlockX()) / 256 + 1;
+    int minChunkY = drawCenterPoint.getChunkY() - (Ui.getHeight() / 2 + 255 - 1 - drawCenterPoint.getBlockY()) / 256 - 1;
+    int maxChunkY = drawCenterPoint.getChunkY() + (Ui.getHeight() / 2 - 1 + drawCenterPoint.getBlockY()) / 256 + 1;
     for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (int chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-        Chunk chunk = terrainManager.getChunk(lastTick, new ChunkPoint(chunkX, chunkY));
-        int defaultColor = chunk.getDefaultType().getColor();
-        int xMinPos = (chunkX - drawCenterPoint.getChunkX()) * 256 + screenWidth / 2 - drawCenterPoint.getBlockX();
-        int yMinPos = (chunkY - drawCenterPoint.getChunkY()) * 256 + screenHeight / 2 - drawCenterPoint.getBlockY();
-        int xMinOffset = xMinPos < 0 ? -xMinPos : 0;
-        int xMaxOffset = xMinPos + 255 >= screenWidth ? screenWidth - xMinPos - 1 : 255;
-        int xDrawWidth = xMaxOffset - xMinOffset + 1;
-        int yMinOffset = yMinPos < 0 ? -yMinPos : 0;
-        int yMaxOffset = yMinPos + 255 >= screenHeight ? screenHeight - yMinPos - 1 : 255;
-        int yDrawWidth = yMaxOffset - yMinOffset + 1;
-        int startPos = xMinPos + xMinOffset + (yMinPos + yMinOffset) * screenWidth;
-        int endPos = xMinPos + xMinOffset + (yMinPos + yMinOffset + yDrawWidth) * screenWidth;
-        for (int pos = startPos; pos < endPos; pos += screenWidth) {
-          for (int i = 0; i < xDrawWidth; i++) {
-            terrainImageData[pos + i] = defaultColor;
-          }
-        }
-        for (Block block : chunk.getDefinedBlocks()) {
-          if (block.getX() < xMinOffset || block.getX() > xMaxOffset || block.getY() < yMinOffset || block.getY() > yMaxOffset) {
-            continue;
-          }
-          int pos = xMinPos + block.getX() + (yMinPos + block.getY()) * screenWidth;
-          terrainImageData[pos] = block.getType().getColor();
-        }
+        Image image = terrainImageManager.getChunkImage(new ChunkPoint(chunkX, chunkY));
+        int xMinPos = (chunkX - drawCenterPoint.getChunkX()) * 256 + Ui.getWidth() / 2 - drawCenterPoint.getBlockX();
+        int yMinPos = (chunkY - drawCenterPoint.getChunkY()) * 256 + Ui.getHeight() / 2 - drawCenterPoint.getBlockY();
+        drawer.drawImage(xMinPos, yMinPos, image, false);
       }
     }
-    // draw with transform
-    AffineTransform saveTransform = graphics.getTransform();
-    graphics.transform(graphicsTransform);
-    graphics.drawImage(terrainImage, 0, 0, null);
-    graphics.setTransform(saveTransform);
 
     final int maxDrawDistance = 50;
     int minXDraw = -maxDrawDistance;
-    int maxXDraw = screenWidth + maxDrawDistance;
+    int maxXDraw = Ui.getWidth() + maxDrawDistance;
     int minYDraw = -maxDrawDistance;
-    int maxYDraw = screenHeight + maxDrawDistance;
+    int maxYDraw = Ui.getHeight() + maxDrawDistance;
 
-    int xOffsetTotal = drawCenterPoint.getX() - screenWidth / 2;
-    int yOffsetTotal = drawCenterPoint.getY() - screenHeight / 2;
+    int xOffsetTotal = drawCenterPoint.getX() - Ui.getWidth() / 2;
+    int yOffsetTotal = drawCenterPoint.getY() - Ui.getHeight() / 2;
 
     IntConsumer draw =
             entityId -> {
@@ -212,16 +174,16 @@ public class Engine {
               }
               SpriteType spriteType = entityManager.getSpriteType(lastTick, entityId);
               long spriteTime = entityManager.getSpriteTime(lastTick, entityId);
-              spriteManager.drawSpriteType(graphics, spriteType, spriteTime, terrainPoint.getX(), terrainPoint.getY());
+              spriteManager.drawSpriteType(drawer, spriteType, spriteTime, terrainPoint.getX(), terrainPoint.getY());
             };
 
     entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.PLAYER).forEach(draw);
     entityManager.getEntitiesStream(lastTick).filter(id -> entityManager.getEntityType(lastTick, id) == EntityType.BALL).forEach(draw);
 
-    int chatLineHeight = graphics.getFontMetrics().getHeight();
-    int yChatPosition = screenHeight - chatLineHeight;
+    float chatLineHeight = drawer.getLineHeight(Font.COMIC, 12);
+    float yChatPosition = chatLineHeight;
     for (String line : chatManager.getMessages()) {
-      graphics.drawString(line, 10, yChatPosition);
+      drawer.drawText(10, yChatPosition, line, Font.COMIC, 12, false, false);
       yChatPosition -= chatLineHeight;
     }
   }
@@ -399,11 +361,15 @@ public class Engine {
       }
     }
 
-    if (startedup) {
+    if (startedup && tick == lastTick) {
       // send client position
       Set<EntityUpdateType> updateTypes = EnumSet.of(EntityUpdateType.POSITION, EntityUpdateType.SPEED_ANGLE, EntityUpdateType.SPEED_NORM);
       EntityDataUpdate playerUpdate = entityManager.generateDataUpdate(tick, playerEntityId, updateTypes, null);
       messageOutput.accept(OutputMessageFactory.entityUpdate(tick, playerUpdate));
+    }
+
+    if (tick == lastTick) {
+      terrainImageManager.updateTick(lastTick);
     }
   }
 

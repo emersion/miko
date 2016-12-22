@@ -3,7 +3,32 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>cr.fr.saucisseroyale</groupId>
   <artifactId>miko</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.1.0-SNAPSHOT</version>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>keytool-maven-plugin</artifactId>
+      <version>1.5</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>2.4.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>2.4.1</version>
+    </dependency>
+    <dependency>
+      <groupId>fr.delthas</groupId>
+      <artifactId>uitest</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -149,26 +174,9 @@
       </plugins>
     </pluginManagement>
   </build>
-  <dependencies>
-    <dependency>
-      <groupId>org.codehaus.mojo</groupId>
-      <artifactId>keytool-maven-plugin</artifactId>
-      <version>1.5</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-api</artifactId>
-      <version>2.4.1</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-core</artifactId>
-      <version>2.4.1</version>
-    </dependency>
-  </dependencies>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
+
 </project>

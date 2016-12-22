@@ -1,10 +1,8 @@
 package cr.fr.saucisseroyale.miko;
 
-import javax.swing.*;
-import javax.swing.text.NumberFormatter;
-import java.awt.*;
-import java.text.NumberFormat;
-import java.text.ParseException;
+import fr.delthas.uitest.*;
+import org.lwjgl.glfw.GLFW;
+
 import java.util.function.BiConsumer;
 import java.util.prefs.Preferences;
 
@@ -14,72 +12,90 @@ final class UiComponents {
 
   private UiComponents() {}
 
-  public static class Connect extends JPanel {
-    private JLabel statusField;
+  public static class Connect extends Layer {
+    private Label statusLabel;
 
-    public Connect(String defaultAddress, int defaultPort, BiConsumer<String, Integer> connectCallback, Runnable optionsCallback) {
-      setLayout(new GridLayout(0, 2, 10, 10));
-      add(new JLabel("Adresse"));
-      JTextField addressField = new JTextField(defaultAddress);
-      add(addressField);
-      add(new JLabel("Port"));
-      NumberFormat longFormat = NumberFormat.getIntegerInstance();
-      longFormat.setGroupingUsed(false);
-      NumberFormatter numberFormatter = new NumberFormatter(longFormat);
-      numberFormatter.setAllowsInvalid(false);
-      numberFormatter.setValueClass(Integer.class);
-      numberFormatter.setMinimum(0);
-      JFormattedTextField portField = new JFormattedTextField(numberFormatter);
-      portField.setValue(Integer.valueOf(defaultPort));
-      add(portField);
-      JButton connectButton = new JButton("Se connecter");
-      connectButton.addActionListener(event -> {
-        try {
-          portField.commitEdit();
-        } catch (ParseException e) {
-          // will never happen since we disallowed invalids
-          throw new RuntimeException(e);
+    public Connect(Runnable backCallback, String address, int port, BiConsumer<String, Integer> connectCallback, Runnable optionsCallback) {
+      addComponent(new Component() {
+        @Override
+        protected boolean pushKeyButton(double x, double y, int key, boolean down) {
+          if (key != GLFW.GLFW_KEY_ESCAPE || !down) {
+            return false;
+          }
+          backCallback.run();
+          return true;
         }
-        connectCallback.accept(addressField.getText(), (Integer) portField.getValue());
       });
-      add(connectButton);
-      JButton optionsButton = new JButton("Options");
-      optionsButton.addActionListener(event -> optionsCallback.run());
-      add(optionsButton);
-      statusField = new JLabel();
-      add(statusField);
+      addComponent(Ui.getWidth() / 10, Ui.getHeight() / 2 + 10, Ui.getWidth() * 3 / 10, 40, new Label("Adresse"));
+      addComponent(Ui.getWidth() / 10, Ui.getHeight() / 2 - 50, Ui.getWidth() * 3 / 10, 40, new Label("Port"));
+      TextField addressField = new TextField(address);
+      addComponent(Ui.getWidth() * 6 / 10, Ui.getHeight() / 2 + 10, Ui.getWidth() * 3 / 10, 40, addressField);
+      TextField portField = new TextField(Integer.toString(port));
+      portField.setListener(s -> {
+        try {
+          int i = Integer.parseInt(s);
+          return i >= 0 && i < 32768;
+        } catch (NumberFormatException ignore) {
+          return false;
+        }
+      });
+      addComponent(Ui.getWidth() * 6 / 10, Ui.getHeight() / 2 - 50, Ui.getWidth() * 3 / 10, 40, portField);
+      Button connectButton = new Button("Se connecter");
+      connectButton.setListener((x, y) -> {
+        connectCallback.accept(addressField.getText(), Integer.parseInt(portField.getText()));
+      });
+      addComponent(Ui.getWidth() / 10, 200, Ui.getWidth() * 3 / 10, 30, connectButton);
+      Button optionsButton = new Button("Options");
+      optionsButton.setListener((x, y) -> {
+        optionsCallback.run();
+      });
+      addComponent(Ui.getWidth() * 6 / 10, 200, Ui.getWidth() * 3 / 10, 30, optionsButton);
+      statusLabel = new Label();
+      addComponent(0, 0, Ui.getWidth(), 30, statusLabel);
     }
 
     public void setStatusText(String text) {
-      statusField.setText(text);
+      statusLabel.setText(text);
     }
   }
 
-  public static class Login extends JPanel {
-    private JLabel statusField;
-    private JButton loginButton;
+  public static class Login extends Layer {
+    private Label statusLabel;
+    private Button loginButton;
 
-    public Login(BiConsumer<String, String> registerCallback, BiConsumer<String, String> loginCallback) {
-      setLayout(new GridLayout(4, 2, 10, 10));
-      add(new JLabel("Nom d'utilisateur"));
-      JTextField usernameField = new JTextField();
-      add(usernameField);
-      add(new JLabel("Mot de passe"));
-      JPasswordField passwordField = new JPasswordField();
-      add(passwordField);
-      JButton registerButton = new JButton("S'inscrire");
-      registerButton.addActionListener(e -> registerCallback.accept(usernameField.getText(), new String(passwordField.getPassword())));
-      add(registerButton);
-      loginButton = new JButton("Se connecter");
-      loginButton.setEnabled(false);
-      loginButton.addActionListener(e -> loginCallback.accept(usernameField.getText(), new String(passwordField.getPassword())));
-      add(loginButton);
-      statusField = new JLabel();
-      add(statusField);
+    public Login(Runnable backCallback, BiConsumer<String, String> registerCallback, BiConsumer<String, String> loginCallback) {
+      addComponent(new Component() {
+        @Override
+        protected boolean pushKeyButton(double x, double y, int key, boolean down) {
+          if (key != GLFW.GLFW_KEY_ESCAPE || !down) {
+            return false;
+          }
+          backCallback.run();
+          return true;
+        }
+      });
+      addComponent(Ui.getWidth() / 10, Ui.getHeight() / 2 + 10, Ui.getWidth() * 3 / 10, 40, new Label("Nom d'utilisateur"));
+      addComponent(Ui.getWidth() / 10, Ui.getHeight() / 2 - 50, Ui.getWidth() * 3 / 10, 40, new Label("Mot de passe"));
+      TextField userField = new TextField();
+      addComponent(Ui.getWidth() * 6 / 10, Ui.getHeight() / 2 + 10, Ui.getWidth() * 3 / 10, 40, userField);
+      TextField passField = new TextField();
+      addComponent(Ui.getWidth() * 6 / 10, Ui.getHeight() / 2 - 50, Ui.getWidth() * 3 / 10, 40, passField);
+      loginButton = new Button("Se connecter");
+      loginButton.setListener((x, y) -> {
+        loginCallback.accept(userField.getText(), passField.getText());
+      });
+      addComponent(Ui.getWidth() / 10, 200, Ui.getWidth() * 3 / 10, 30, loginButton);
+      Button registerButton = new Button("S'inscrire");
+      registerButton.setListener((x, y) -> {
+        registerCallback.accept(userField.getText(), passField.getText());
+      });
+      addComponent(Ui.getWidth() * 6 / 10, 200, Ui.getWidth() * 3 / 10, 30, registerButton);
+      statusLabel = new Label();
+      addComponent(0, 0, Ui.getWidth(), 30, statusLabel);
     }
 
     public void setStatusText(String text) {
-      statusField.setText(text);
+      statusLabel.setText(text);
     }
 
     public void setLoginEnabled(boolean enabled) {
@@ -87,19 +103,66 @@ final class UiComponents {
     }
   }
 
-  public static class Options extends JPanel {
-    public Options(boolean fullscreen) {
-      setLayout(new BorderLayout());
-      add(new JLabel("Les changements prendront effet au prochain lancement de l'application."), BorderLayout.SOUTH);
-      JPanel panel = new JPanel();
-      panel.setLayout(new GridLayout());
-      add(panel, BorderLayout.CENTER);
-      JCheckBox fullscreenCheckBox = new JCheckBox(fullscreen ? "Plein écran" : "Fenêtré sans bordures", fullscreen);
-      fullscreenCheckBox.addActionListener(l -> {
-        fullscreenCheckBox.setText(fullscreenCheckBox.isSelected() ? "Plein écran" : "Fenêtré sans bordures");
-        uiPrefsNode.putBoolean("fullscreen", fullscreenCheckBox.isSelected());
+  public static class Options extends Layer {
+    public Options(Runnable backCallback, boolean fullscreen) {
+      addComponent(new Component() {
+        @Override
+        protected boolean pushKeyButton(double x, double y, int key, boolean down) {
+          if (key != GLFW.GLFW_KEY_ESCAPE || !down) {
+            return false;
+          }
+          backCallback.run();
+          return true;
+        }
       });
-      panel.add(fullscreenCheckBox);
+      addComponent(0, 10, Ui.getWidth(), 30, new Label("Les changements prendront effet au prochain lancement de l'application."));
+      CheckBox fullscreenCheckBox = new CheckBox(fullscreen ? "Plein écran" : "Fenêtré sans bordures");
+      fullscreenCheckBox.setChecked(fullscreen);
+      fullscreenCheckBox.setListener((x, y) -> {
+        fullscreenCheckBox.setText(fullscreenCheckBox.isChecked() ? "Plein écran" : "Fenêtré sans bordures");
+        uiPrefsNode.putBoolean("fullscreen", fullscreenCheckBox.isChecked());
+      });
+      addComponent(Ui.getWidth() / 2 - 100, Ui.getHeight() / 2 - 20, 500, 40, fullscreenCheckBox);
+    }
+  }
+
+  public static class MikoLayer extends Layer {
+    public MikoLayer(Runnable backCallback, BiConsumer<InputState, Drawer> render, InputStateManager inputStateManager) {
+      setOpaque(true);
+      addComponent(new Component() {
+        @Override
+        protected boolean pushKeyButton(double x, double y, int key, boolean down) {
+          if (key != GLFW.GLFW_KEY_ESCAPE || !down) {
+            return false;
+          }
+          backCallback.run();
+          return true;
+        }
+      });
+      addComponent(new Component() {
+        @Override
+        protected boolean pushKeyButton(double x, double y, int key, boolean down) {
+          inputStateManager.pushKeyButton(x, y, key, down);
+          return true;
+        }
+
+        @Override
+        protected boolean pushMouseButton(double x, double y, int button, boolean down) {
+          inputStateManager.pushMouseButton(x, y, button, down);
+          return true;
+        }
+
+        @Override
+        protected boolean pushMouseMove(double x, double y) {
+          inputStateManager.pushMouseMove(x, y);
+          return true;
+        }
+
+        @Override
+        protected void render(InputState inputState, Drawer drawer) {
+          render.accept(inputState, drawer);
+        }
+      });
     }
   }
 }

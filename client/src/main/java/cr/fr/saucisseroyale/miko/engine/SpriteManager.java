@@ -2,56 +2,43 @@ package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.protocol.SpriteType;
 import cr.fr.saucisseroyale.miko.util.Pair.Int;
+import fr.delthas.uitest.Drawer;
+import fr.delthas.uitest.Image;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.util.*;
-import java.util.List;
 
 /**
  * Un gestionnaire de sprite gérant des sprites en mémoire et pouvant les afficher sur des
  * graphiques.
  */
 public class SpriteManager {
-  private final GraphicsConfiguration graphicsConfiguration;
-  private final int screenHeight;
   private Map<SpriteType, Sprite> sprites = new HashMap<>();
-
-  public SpriteManager(GraphicsConfiguration graphicsConfiguration, int width, int height) {
-    this.graphicsConfiguration = graphicsConfiguration;
-    screenHeight = height;
-    @SuppressWarnings("unused")
-    // could be useful in the future
-            int screenWidth = width;
-  }
 
   /**
    * Affiche le sprite spécifié sur les graphiques, à l'endroit spécifié.
    *
-   * @param graphics   Les graphiques sur lesquels peindre l'image.
+   * @param drawer     Le drawer avec lequel peindre l'image.
    * @param spriteType Le sprite identifiant l'animation de laquelle peindre.
    * @param spriteTime Le temps en ticks depuis que le sprite a été sélectionné.
    * @param x          La position en x du centre de l'image à afficher.
    * @param y          La position en y du centre de l'image à afficher.
    */
-  public void drawSpriteType(Graphics2D graphics, SpriteType spriteType, long spriteTime, int x, int y) {
+  public void drawSpriteType(Drawer drawer, SpriteType spriteType, long spriteTime, int x, int y) {
     Sprite sprite = sprites.get(spriteType);
     if (sprite == null) {
       throw new IllegalArgumentException("SpriteType " + spriteType + " doesn't have a sprite.");
     }
-    BufferedImage image = sprite.getImage(spriteTime);
-    graphics.drawImage(image, x - image.getWidth() / 2, screenHeight - (y - image.getHeight() / 2) - 1 - image.getHeight(), null);
+    Image image = sprite.getImage(spriteTime);
+    drawer.drawImage(x, y, image);
   }
 
   /**
    * Charge les sprites en mémoire pour pouvoir les utiliser après. Doit être appelé avant tout
-   * appel à {@link #drawSpriteType(Graphics2D, SpriteType, long, int, int)}.
+   * appel à {@link #drawSpriteType(Drawer, SpriteType, long, int, int)}.
    *
    * @throws IOException S'il y a une erreur lors de l'accès ou de la lecture des sprites.
    */
@@ -79,7 +66,7 @@ public class SpriteManager {
           int id;
           try {
             id = Integer.parseUnsignedInt(directoryName);
-          } catch (NumberFormatException e) {
+          } catch (NumberFormatException ignore) {
             continue;
           }
           SpriteType spriteType = SpriteType.getType(id);
@@ -87,7 +74,7 @@ public class SpriteManager {
             continue;
           }
           try (DirectoryStream<Path> imagePathStream = Files.newDirectoryStream(spritePath)) {
-            List<Int<BufferedImage>> images = new LinkedList<>();
+            List<Int<Image>> images = new LinkedList<>();
             for (Path imagePath : imagePathStream) {
               String imageName = imagePath.getFileName().toString();
               if (!imageName.endsWith(".png")) {
@@ -98,13 +85,10 @@ public class SpriteManager {
                 // 4 == ".png".length()
                 String timecodeString = imageName.substring(0, imageName.length() - 4);
                 timecode = Integer.parseUnsignedInt(timecodeString);
-              } catch (NumberFormatException e) {
+              } catch (NumberFormatException ignore) {
                 continue;
               }
-              try (InputStream is = Files.newInputStream(imagePath)) {
-                BufferedImage image = readImage(is);
-                images.add(new Int<>(timecode, image));
-              }
+              images.add(new Int<>(timecode, Image.createImage(imagePath.toString())));
             }
             sprites.put(spriteType, new Sprite(images));
           }
@@ -118,7 +102,7 @@ public class SpriteManager {
             // 4 == ".png".length()
             String idString = imageName.substring(0, imageName.length() - 4);
             id = Integer.parseUnsignedInt(idString);
-          } catch (NumberFormatException e) {
+          } catch (NumberFormatException ignore) {
             continue;
           }
           SpriteType spriteType = SpriteType.getType(id);
@@ -128,31 +112,9 @@ public class SpriteManager {
           if (sprites.containsKey(spriteType)) {
             continue;
           }
-          try (InputStream is = Files.newInputStream(spritePath)) {
-            BufferedImage image = readImage(is);
-            sprites.put(spriteType, new Sprite(image));
-          }
+          sprites.put(spriteType, new Sprite(Image.createImage(spritePath.toString())));
         }
       }
     }
-  }
-
-  private BufferedImage readImage(InputStream is) throws IOException {
-    return readImage(ImageIO.read(is));
-  }
-
-  private BufferedImage readImage(BufferedImage image) {
-    BufferedImage compatibleImage;
-    if (image.getColorModel().equals(graphicsConfiguration.getColorModel())
-            && (image.getTransparency() == Transparency.BITMASK || image.getTransparency() == Transparency.OPAQUE)) {
-      compatibleImage = image;
-    } else {
-      compatibleImage = graphicsConfiguration.createCompatibleImage(image.getWidth(), image.getHeight(), Transparency.BITMASK);
-      Graphics2D g2d = (Graphics2D) compatibleImage.getGraphics();
-      g2d.drawImage(image, 0, 0, null);
-      g2d.dispose();
-      image.flush();
-    }
-    return compatibleImage;
   }
 }

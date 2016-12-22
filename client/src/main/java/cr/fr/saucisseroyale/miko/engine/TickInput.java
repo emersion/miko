@@ -2,9 +2,12 @@ package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.util.MikoMath;
 import cr.fr.saucisseroyale.miko.util.Triplet;
+import fr.delthas.uitest.Ui;
+import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.geom.Point2D;
 import java.util.Collections;
 import java.util.List;
 import java.util.prefs.Preferences;
@@ -14,10 +17,10 @@ import java.util.prefs.Preferences;
  */
 class TickInput {
   private static final Preferences prefsNode = Preferences.userRoot().node("miko.input");
-  private static final int ballSendKeycode = prefsNode.getInt("ballSend", KeyEvent.VK_SPACE);
-  private static final int moveLeftKeycode = prefsNode.getInt("left", KeyEvent.VK_Q);
-  private static final int moveRightKeycode = prefsNode.getInt("right", KeyEvent.VK_D);
-  private static final int moveUpKeycode = prefsNode.getInt("up", KeyEvent.VK_Z);
+  private static final int ballSendKeycode = prefsNode.getInt("ballSend", GLFW.GLFW_KEY_SPACE);
+  private static final int moveLeftKeycode = prefsNode.getInt("left", GLFW.GLFW_KEY_A);
+  private static final int moveRightKeycode = prefsNode.getInt("right", GLFW.GLFW_KEY_D);
+  private static final int moveUpKeycode = prefsNode.getInt("up", GLFW.GLFW_KEY_W);
   private static final int moveDownKeycode = prefsNode.getInt("down", KeyEvent.VK_S);
   private boolean moveLeft;
   private boolean moveRight;
@@ -25,7 +28,7 @@ class TickInput {
   private boolean moveDown;
   private float ballSendAngle = Float.NaN;
 
-  public TickInput(TickInput previous, List<Triplet<Boolean, Integer, Point>> eventList, Point mousePosition) {
+  public TickInput(TickInput previous, List<Triplet<Integer, Integer, Point.Double>> eventList) {
 
     int lastLeftRightPressed = 0;
     int lastUpDownPressed = 0;
@@ -35,59 +38,69 @@ class TickInput {
       moveRight = previous.moveRight;
       moveUp = previous.moveUp;
       moveDown = previous.moveDown;
-      if (!Float.isNaN(previous.ballSendAngle)) {
-        ballSendAngle = getAngleFromMousePosition(mousePosition);
-      }
     }
 
-    for (Triplet<Boolean, Integer, Point> event : eventList) {
+    float mouseAngle = Float.NaN;
+
+    for (Triplet<Integer, Integer, Point.Double> event : eventList) {
       int key = event.getSecond();
-      if (event.getFirst()) {
-        if (key == ballSendKeycode) {
-          // angle can be calculated from screen middle because the render translation (offset based
-          // on mouse position) has the same direction
-          ballSendAngle = getAngleFromMousePosition(event.getThird());
-        }
-        if (key == moveLeftKeycode) {
-          lastLeftRightPressed = -1;
-          moveLeft = true;
-          continue;
-        }
-        if (key == moveRightKeycode) {
-          lastLeftRightPressed = 1;
-          moveRight = true;
-          continue;
-        }
-        if (key == moveUpKeycode) {
-          lastUpDownPressed = -1;
-          moveUp = true;
-          continue;
-        }
-        if (key == moveDownKeycode) {
-          lastUpDownPressed = 1;
-          moveDown = true;
-          continue;
-        }
-      } else {
-        if (key == ballSendKeycode) {
-          ballSendAngle = Float.NaN;
-        }
-        if (key == moveLeftKeycode) {
-          moveLeft = false;
-          continue;
-        }
-        if (key == moveRightKeycode) {
-          moveRight = false;
-          continue;
-        }
-        if (key == moveUpKeycode) {
-          moveUp = false;
-          continue;
-        }
-        if (key == moveDownKeycode) {
-          moveDown = false;
-          continue;
-        }
+      switch (event.getFirst()) {
+        case 0:
+          mouseAngle = getAngleFromMousePosition(event.getThird());
+          break;
+        case 1:
+          if (key == ballSendKeycode) {
+            // angle can be calculated from screen middle because the render translation (offset based
+            // on mouse position) has the same direction
+            ballSendAngle = getAngleFromMousePosition(event.getThird());
+          }
+          if (key == moveLeftKeycode) {
+            lastLeftRightPressed = -1;
+            moveLeft = true;
+            break;
+          }
+          if (key == moveRightKeycode) {
+            lastLeftRightPressed = 1;
+            moveRight = true;
+            break;
+          }
+          if (key == moveUpKeycode) {
+            lastUpDownPressed = -1;
+            moveUp = true;
+            break;
+          }
+          if (key == moveDownKeycode) {
+            lastUpDownPressed = 1;
+            moveDown = true;
+            break;
+          }
+          break;
+        case 2:
+          if (key == ballSendKeycode) {
+            ballSendAngle = Float.NaN;
+          }
+          if (key == moveLeftKeycode) {
+            moveLeft = false;
+            break;
+          }
+          if (key == moveRightKeycode) {
+            moveRight = false;
+            break;
+          }
+          if (key == moveUpKeycode) {
+            moveUp = false;
+            break;
+          }
+          if (key == moveDownKeycode) {
+            moveDown = false;
+            break;
+          }
+          break;
+        case 3:
+          ballSendAngle = mouseAngle;
+          break;
+        default:
+          //ignore
       }
     }
 
@@ -102,13 +115,13 @@ class TickInput {
     }
   }
 
-  private static float getAngleFromMousePosition(Point mousePosition) {
+  private static float getAngleFromMousePosition(Point.Double mousePosition) {
     if (mousePosition == null) {
       return Float.NaN;
     }
     // angle can be calculated from screen middle because the render translation (offset based
     // on mouse position) has the same direction
-    float angle = MikoMath.atan2(mousePosition);
+    float angle = MikoMath.atan2(new Point2D.Double(mousePosition.getX() - Ui.getWidth() / 2, mousePosition.getY() - Ui.getHeight() / 2));
     return angle;
   }
 
@@ -119,7 +132,7 @@ class TickInput {
    * @return Un input par défaut basé sur l'input passé en paramètre.
    */
   public static TickInput getNextFrom(TickInput previous) {
-    return new TickInput(previous, Collections.emptyList(), null);
+    return new TickInput(previous, Collections.emptyList());
   }
 
   /**

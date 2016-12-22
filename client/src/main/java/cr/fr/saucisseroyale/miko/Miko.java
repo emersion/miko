@@ -2,6 +2,7 @@ package cr.fr.saucisseroyale.miko;
 
 import cr.fr.saucisseroyale.miko.UiComponents.Connect;
 import cr.fr.saucisseroyale.miko.UiComponents.Login;
+import cr.fr.saucisseroyale.miko.UiComponents.MikoLayer;
 import cr.fr.saucisseroyale.miko.UiComponents.Options;
 import cr.fr.saucisseroyale.miko.engine.Chunk;
 import cr.fr.saucisseroyale.miko.engine.Engine;
@@ -12,11 +13,14 @@ import cr.fr.saucisseroyale.miko.network.TimeClient;
 import cr.fr.saucisseroyale.miko.protocol.*;
 import cr.fr.saucisseroyale.miko.util.Pair;
 import cr.fr.saucisseroyale.miko.util.Pair.Int;
+import fr.delthas.uitest.Drawer;
+import fr.delthas.uitest.Icon;
+import fr.delthas.uitest.InputState;
+import fr.delthas.uitest.Ui;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.List;
 import java.util.prefs.Preferences;
@@ -29,21 +33,22 @@ public class Miko implements MessageHandler {
   private static final int DEFAULT_SERVER_PORT = 9999;
   private static final Preferences uiPrefsNode = Preferences.userRoot().node("miko.ui");
   private static Logger logger = LogManager.getLogger("miko.main");
+  private static Connect connect;
+  private static Login login;
+  private static Options options;
+  private static MikoLayer mikoLayer;
   private long lastMessageReceived = Long.MAX_VALUE;
   private boolean pingSent;
   private String username;
-  private Config config;
   private Engine engine;
-  private Connect uiConnect;
-  private Login uiLogin;
-  private Options uiOptions;
   private MikoState state = MikoState.NETWORK;
-  private UiWindow window;
   private boolean closeRequested = false;
   private NetworkClient networkClient;
   private TimeClient timeClient;
-  private KeyStateManager keyStateManager;
+  private InputStateManager inputStateManager = new InputStateManager();
+  private Config config;
   private long accumulator;
+  @SuppressWarnings("FieldCanBeLocal")
   private long lastFrame;
   private float alpha; // for #render(), updated each loop
 
@@ -62,9 +67,7 @@ public class Miko implements MessageHandler {
 
   private void exit() {
     logger.info("Starts exiting");
-    if (window != null) {
-      window.dispose();
-    }
+    Ui.getUi().destroy();
     if (networkClient != null) {
       networkClient.disconnect();
     }
@@ -78,51 +81,25 @@ public class Miko implements MessageHandler {
     changeStateTo(MikoState.CONNECTION_REQUEST);
   }
 
-  private void initWindow() {
+  private void initWindow() throws IOException {
 
-    // TODO utiliser un synth l&f une fois que le xml est écrit.
-    /*
-     * try { UiWindow.initUI(Miko.class.getResourceAsStream("/style.xml"), Miko.class); } catch
-     * (ParseException e) { // should never happen in production // dump stack trace for developers
-     * logger.fatal("Couldn't parse Miko UI Style", e); e.printStackTrace(); exit(); }
-     */
+    Ui.getUi().create("Miko", Icon.createIcon("icon.png"));
+    connect = new Connect(this::backRequested, DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT, this::connectRequested, this::optionsRequested);
+    login = new Login(this::backRequested, this::registerRequested, this::loginRequested);
+    options = new Options(this::backRequested, true);
+    mikoLayer = new MikoLayer(this::backRequested, this::render, inputStateManager);
 
-    // utiliser un par défaut en attendant
-    UiWindow.initUI();
-
-    boolean fullscreen = uiPrefsNode.getBoolean("fullscreen", false);
-
-    window = new UiWindow(fullscreen);
-    window.setRenderable(this::render);
-    uiConnect = new Connect(DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT, this::connectRequested, this::optionsRequested);
-    uiLogin = new Login(this::registerRequested, this::loginRequested);
-    uiOptions = new Options(fullscreen);
-    window.addUi(uiConnect);
-    window.addUi(uiLogin);
-    window.addUi(uiOptions);
-
-    keyStateManager = new KeyStateManager(window::getMousePosition);
-    window.setKeyListener(keyStateManager);
-
-    window.setGlobalKeyDownListener(code -> {
-      switch (code) {
-        case KeyEvent.VK_ESCAPE:
-          backRequested();
-          break;
-        default:
-          // ignore
-      }
-    });
+    // boolean fullscreen = uiPrefsNode.getBoolean("fullscreen", false);
   }
 
   private void logic() {
     switch (state) {
       case LOGIN_REQUEST:
-        uiLogin.setLoginEnabled(timeClient.getClockDifference().isPresent());
+        login.setLoginEnabled(timeClient.getClockDifference().isPresent());
         break;
       case EXIT:
         while (accumulator >= TICK_TIME) {
-          engine.processNextTick(keyStateManager.getEventsAndFlush(), window.getMousePosition());
+          engine.processNextTick(inputStateManager.getEventsAndFlush());
           accumulator -= TICK_TIME;
         }
         break;
@@ -139,9 +116,10 @@ public class Miko implements MessageHandler {
       lastFrame = newTime;
       accumulator += deltaTime;
       network();
+      Ui.getUi().input();
       logic();
       alpha = (float) accumulator / TICK_TIME; // update alpha for #render()
-      window.render(); // calls render(graphics)
+      Ui.getUi().render(); // calls render(graphics)
       postLoop();
     }
     exit();
@@ -158,12 +136,11 @@ public class Miko implements MessageHandler {
     }
   }
 
-  private void render(Graphics2D graphics) {
+  private void render(InputState inputState, Drawer drawer) {
     if (state != MikoState.EXIT) {
       return;
     }
-    Point mousePosition = window.getMousePosition();
-    engine.render(graphics, alpha, mousePosition);
+    engine.render(drawer, alpha, new Point.Double(inputState.getMouseX(), inputState.getMouseY()));
   }
 
   private void postLoop() {
@@ -190,7 +167,7 @@ public class Miko implements MessageHandler {
       networkClient.connect(address, port);
     } catch (IOException e) {
       logger.warn("Connection error, disconnecting");
-      uiConnect.setStatusText("Erreur d'établissement de connexion: " + e.getClass().getCanonicalName() + ": " + e.getLocalizedMessage());
+      connect.setStatusText("Erreur d'établissement de connexion: " + e.getClass().getCanonicalName() + ": " + e.getLocalizedMessage());
       disconnect();
       return;
     }
@@ -254,7 +231,7 @@ public class Miko implements MessageHandler {
       case CONFIG:
         // ...disconnect and return to connection panel
         logger.warn("Exited due to user request");
-        uiConnect.setStatusText("Déconnecté par l'utilisateur");
+        connect.setStatusText("Déconnecté par l'utilisateur");
         disconnect();
         break;
       default:
@@ -265,20 +242,20 @@ public class Miko implements MessageHandler {
   private void changeStateTo(MikoState newState) {
     logger.trace("Changing state from {} to {}", state, newState);
     state = newState;
-    window.hideAllUi();
+    Ui.getUi().pop();
     switch (state) {
       case CONNECTION_REQUEST:
-        window.showUi(uiConnect);
+        Ui.getUi().push(connect);
         break;
       case OPTIONS:
-        window.showUi(uiOptions);
+        Ui.getUi().push(options);
         break;
       case CONNECTION:
         break;
       case CONFIG:
         break;
       case LOGIN_REQUEST:
-        window.showUi(uiLogin);
+        Ui.getUi().push(login);
         break;
       case LOGIN:
         break;
@@ -287,13 +264,14 @@ public class Miko implements MessageHandler {
       case JOIN:
         break;
       case EXIT:
+        Ui.getUi().push(mikoLayer);
         break;
       default:
         break;
     }
   }
 
-  private void run() {
+  private void run() throws IOException {
     logger.debug("Initializing window");
     initWindow();
     networkClient = new NetworkClient();
@@ -406,7 +384,7 @@ public class Miko implements MessageHandler {
         statusMessage = "Déconnexion : cause de déconnexion inconnue.";
         break;
     }
-    uiConnect.setStatusText(statusMessage);
+    connect.setStatusText(statusMessage);
     disconnect();
   }
 
@@ -439,7 +417,7 @@ public class Miko implements MessageHandler {
         statusMessage = "Erreur de connexion : erreur de connexion inconnue.";
         break;
     }
-    uiLogin.setStatusText(statusMessage);
+    login.setStatusText(statusMessage);
     changeStateTo(MikoState.LOGIN_REQUEST);
   }
 
@@ -459,9 +437,9 @@ public class Miko implements MessageHandler {
     lastFrame = currentTime;
     changeStateTo(MikoState.JOIN);
     try {
-      engine = new Engine(config, window.getConfiguration(), networkClient::putMessage, window.getWidth(), window.getHeight(), tickRemainder);
+      engine = new Engine(config, networkClient::putMessage, tickRemainder);
     } catch (IOException e) {
-      uiConnect.setStatusText("Erreur lors de la création du jeu : erreur de lecture de données. " + e.getMessage());
+      connect.setStatusText("Erreur lors de la création du jeu : erreur de lecture de données. " + e.getMessage());
       disconnect();
     }
   }
@@ -473,7 +451,7 @@ public class Miko implements MessageHandler {
       return;
     }
     logger.error("Network error, disconnecting", e);
-    uiConnect.setStatusText("Déconnexion forcée : erreur de réseau : " + e.getClass().getCanonicalName() + (e.getLocalizedMessage() != null ? ": " + e.getLocalizedMessage() : ""));
+    connect.setStatusText("Déconnexion forcée : erreur de réseau : " + e.getClass().getCanonicalName() + (e.getLocalizedMessage() != null ? ": " + e.getLocalizedMessage() : ""));
     disconnect();
   }
 
@@ -555,7 +533,7 @@ public class Miko implements MessageHandler {
         statusMessage = "Erreur d'enregistrement : erreur d'enregistrement inconnue.";
         break;
     }
-    uiLogin.setStatusText(statusMessage);
+    login.setStatusText(statusMessage);
     changeStateTo(MikoState.LOGIN_REQUEST);
   }
 
@@ -568,7 +546,7 @@ public class Miko implements MessageHandler {
     }
     logger.debug("Received server config");
     this.config = config;
-    uiLogin.setStatusText("Connexion réussie, connectez ou enregistrez-vous.");
+    login.setStatusText("Connexion réussie, connectez ou enregistrez-vous.");
     changeStateTo(MikoState.LOGIN_REQUEST);
     timeClient.connect(networkClient.getLastAddress().getAddress().getHostAddress(), config.getTimeServerPort());
   }

@@ -4,6 +4,7 @@ import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
 import cr.fr.saucisseroyale.miko.protocol.TerrainType;
 
 import java.util.Collections;
+import java.util.function.BiConsumer;
 
 /**
  * Un gestionnaire du terrain de jeu, stockant tous les chunks à tous les ticks, avec le principe de
@@ -15,6 +16,17 @@ import java.util.Collections;
 class TerrainManager {
   private static final Chunk defaultChunk = new Chunk(TerrainType.UNKNOWN, Collections.emptyList());
   private SnapshotsMap<ChunkPoint, Chunk> map = new SnapshotsMap<>(5);
+  private BiConsumer<Long, ChunkPoint> chunkUpdateConsumer;
+
+  /**
+   * Retourne le chunk que ce gestionnaire fournit si un chunk demandé n'a pas été défini.
+   *
+   * @return Le chunk par défaut.
+   * @see #chunkDefined(ChunkPoint)
+   */
+  public static Chunk getDefaultChunk() {
+    return defaultChunk;
+  }
 
   /**
    * Ajoute un chunk à la carte de jeu, aux coordonnées spécifiées, au tick spécifié.
@@ -25,6 +37,9 @@ class TerrainManager {
    */
   public void setChunk(long tick, ChunkPoint position, Chunk chunk) {
     map.setSnapshot(tick, position, chunk);
+    if (chunkUpdateConsumer != null) {
+      chunkUpdateConsumer.accept(tick, position);
+    }
   }
 
   /**
@@ -65,5 +80,14 @@ class TerrainManager {
    */
   public void disposeUntilTick(long tick) {
     map.disposeUntilTick(tick);
+  }
+
+  /**
+   * Définit le listener qui sera appelé à chaque mise à jour d'un chunk pour le notifier.
+   *
+   * @param chunkUpdateConsumer Le listener à définir.
+   */
+  public void setChunkUpdateConsumer(BiConsumer<Long, ChunkPoint> chunkUpdateConsumer) {
+    this.chunkUpdateConsumer = chunkUpdateConsumer;
   }
 }

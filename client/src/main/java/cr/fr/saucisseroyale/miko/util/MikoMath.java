@@ -40,8 +40,8 @@ public final class MikoMath {
     return (float) Math.sin(number);
   }
 
-  public static float atan2(Point point) {
-    return atan2(point.y, point.x);
+  public static float atan2(Point.Double point) {
+    return atan2((float) point.y, (float) point.x);
   }
 
   public static float atan2(float y, float x) {

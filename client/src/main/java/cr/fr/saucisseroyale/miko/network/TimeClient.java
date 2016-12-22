@@ -33,7 +33,7 @@ public class TimeClient {
         }
         try {
           Thread.sleep(20);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignore) {
           return;
         }
       }

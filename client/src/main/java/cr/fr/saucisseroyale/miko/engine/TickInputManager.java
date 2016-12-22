@@ -14,9 +14,9 @@ class TickInputManager {
   private Map<Long, TickInput> map = new HashMap<>();
   private long firstTick = Long.MAX_VALUE;
 
-  public void addInput(long tick, List<Triplet<Boolean, Integer, Point>> eventList, Point mousePosition) {
+  public void addInput(long tick, List<Triplet<Integer, Integer, Point.Double>> eventList) {
     TickInput previousInput = getInput(tick - 1);
-    TickInput newInput = new TickInput(previousInput, eventList, mousePosition);
+    TickInput newInput = new TickInput(previousInput, eventList);
     map.put(tick, newInput);
     if (tick < firstTick) {
       firstTick = tick;
