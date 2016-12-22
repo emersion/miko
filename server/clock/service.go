@@ -2,8 +2,9 @@
 package clock
 
 import (
-	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"time"
+
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 // The duration of a single tick.
@@ -30,7 +31,7 @@ func (s *Service) GetAbsoluteTick() message.AbsoluteTick {
 
 // Get the current relative tick.
 func (s *Service) GetRelativeTick() message.Tick {
-	return s.ToRelativeTick(s.ticks)
+	return s.ticks.ToRelative()
 }
 
 // Get the time at which the current tick has started.
@@ -40,23 +41,13 @@ func (s *Service) GetTickTime() time.Time {
 
 // Convert an absolute tick to a relative tick.
 func (s *Service) ToRelativeTick(at message.AbsoluteTick) message.Tick {
-	return message.Tick(at)
+	return at.ToRelative()
 }
 
 // Convert a relative tick to an absolute tick.
 // Returns message.InvalidTick if an error occured.
 func (s *Service) ToAbsoluteTick(rt message.Tick) message.AbsoluteTick {
-	current := s.GetRelativeTick()
-
-	at := message.AbsoluteTick(rt) + message.AbsoluteTick(s.ticks-s.ticks%message.MaxTick)
-	if current < rt {
-		if at < message.MaxTick {
-			return message.InvalidTick // Underflow error
-		}
-		at -= message.AbsoluteTick(message.MaxTick)
-	}
-
-	return at
+	return rt.ToAbsolute(s.ticks)
 }
 
 func (s *Service) Sync(t message.Tick) {

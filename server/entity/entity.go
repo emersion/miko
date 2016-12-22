@@ -69,6 +69,14 @@ func (e *Entity) ApplyDiff(d *message.EntityDiff, src *Entity) {
 	}
 }
 
+// Deep copy this entity.
+func (e *Entity) Copy() *Entity {
+	copy := New()
+	copy.Id = e.Id
+	copy.ApplyDiff(message.NewFilledEntityDiff(true), e)
+	return copy
+}
+
 // Create a new empty entity.
 func New() *Entity {
 	return &Entity{

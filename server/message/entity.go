@@ -66,7 +66,7 @@ func (e *Entity) EqualsWithDiff(other *Entity, diff *EntityDiff) bool {
 		return false
 	}
 	if diff.Attributes {
-		// TODO
+		return false // TODO
 	}
 	return true
 }
@@ -93,6 +93,11 @@ type EntityDiff struct {
 	Type       bool
 	Sprite     bool
 	Attributes bool
+}
+
+// IsZero checks if the entity diff does not change anything.
+func (d *EntityDiff) IsZero() bool {
+	return (d.GetBitfield() == 0)
 }
 
 // Get this diff's bitfield.
@@ -135,6 +140,29 @@ func (d *EntityDiff) Equals(other *EntityDiff) bool {
 	return (d.GetBitfield() == other.GetBitfield())
 }
 
+// Shrink sets this diff's fields to false when both entities have the same
+// value.
+func (d *EntityDiff) Shrink(a, b *Entity) {
+	if d.Type && a.Type == b.Type {
+		d.Type = false
+	}
+	if d.Position && a.Position.Equals(b.Position) {
+		d.Position = false
+	}
+	if d.SpeedAngle && a.Speed.Angle == b.Speed.Angle {
+		d.SpeedAngle = false
+	}
+	if d.SpeedNorm && a.Speed.Norm == b.Speed.Norm {
+		d.SpeedNorm = false
+	}
+	if d.Sprite && a.Sprite == b.Sprite {
+		d.Sprite = false
+	}
+	if d.Attributes {
+		// TODO
+	}
+}
+
 // Create a new entity diff.
 func NewEntityDiff() *EntityDiff {
 	return &EntityDiff{}
@@ -164,6 +192,8 @@ func NewFilledEntityDiff(val bool) *EntityDiff {
 // An entity diff pool.
 // Contains three lists for created, updated and deleted entities.
 type EntityDiffPool struct {
+	Tick Tick
+
 	Created []*Entity
 	Updated map[*Entity]*EntityDiff
 	Deleted []EntityId

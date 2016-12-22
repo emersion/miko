@@ -139,7 +139,7 @@ size times:
 
 ### terrain_hint
 
-Le client envoit une liste de blocs dont il veut recevoir le terrain.
+Le client envoie une liste de blocs dont il veut recevoir le terrain.
 
 ```
 uint8 size
@@ -156,6 +156,11 @@ Le client peut envoyer plusieurs entity_update si interaction d'objets différen
 ### entityid
 
 Un identifiant unique de l'entité, représenté par un uint16. Les 1000 dernières valeurs possibles (de 64536 à 65535 inclus) sont réservées pour des ids temporaires générés par le client et ne doivent jamais être générées par le serveur.
+
+### speed
+
+* `speedangle` en radians
+* `speednorm` en distance par tick
 
 ### entity_id_change
 
@@ -181,7 +186,7 @@ entity_update
 ```
 uint16 size
 size times:
-	entity_create
+	entity_update
 ```
 
 ### bitfield
@@ -298,5 +303,5 @@ S (broadcast) player_meta(id, left)
 
 ## Notes de fonctionnement
 
-* le ping peut se résumer à j'envois un ping si j'ai pas reçu de message depuis 5 secondes, et si j'ai rien pendant 10 secondes d'affilée (en tout) je exit(ping timeout)
+* le ping peut se résumer à j'envoie un ping si j'ai pas reçu de message depuis 5 secondes, et si j'ai rien pendant 10 secondes d'affilée (en tout) je exit(ping timeout)
 * spells à channel: envoyer un action pour début channel et un pour fin channel

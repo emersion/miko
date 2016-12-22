@@ -1,3 +1,9 @@
+ifeq ($(OS),Windows_NT)
+	SUDO=
+else
+	SUDO=sudo
+endif
+
 all: server
 server:
 	go build -o miko
@@ -12,5 +18,13 @@ crypto:
 	openssl req -new -x509 -key crypto/server.key -out crypto/server.pem -days 3650
 test:
 	go test ./...
+docker:
+	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -ldflags '-s' -o miko-docker
+	$(SUDO) docker build -t miko .
+start-docker:
+	$(SUDO) docker run -it miko
 
-.PHONY: all server client start start-client crypto
+clean:
+	rm -f miko miko-client miko-docker
+
+.PHONY: all server client start start-client crypto docker start-docker

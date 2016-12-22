@@ -7,12 +7,14 @@ type ProtocolVersion uint16
 // The current protocol version.
 const CurrentVersion ProtocolVersion = 10
 
-type Type uint8 // A message type.
-type ExitCode uint8
-type LoginResponseCode uint8
-type RegisterResponseCode uint8
-type MetaActionCode uint8
-type VersionResponseCode uint8
+type (
+	Type uint8 // A message type.
+	ExitCode uint8
+	LoginResponseCode uint8
+	RegisterResponseCode uint8
+	MetaActionCode uint8
+	VersionResponseCode uint8
+)
 
 type PointType uint8
 

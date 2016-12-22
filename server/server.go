@@ -3,17 +3,20 @@
 package main
 
 import (
-	"git.emersion.fr/saucisse-royale/miko.git/server/engine"
-	"git.emersion.fr/saucisse-royale/miko.git/server/server"
-	"git.emersion.fr/saucisse-royale/miko.git/server/timeserver"
 	"log"
 	"os"
 	"os/signal"
+
+	"git.emersion.fr/saucisse-royale/miko.git/server/engine"
+	"git.emersion.fr/saucisse-royale/miko.git/server/server"
+	"git.emersion.fr/saucisse-royale/miko.git/server/timeserver"
 )
 
 // Miko server
 func main() {
 	address := ":9999"
+
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 
 	// Create server & engine
 	log.Println("Creating server with address", address)

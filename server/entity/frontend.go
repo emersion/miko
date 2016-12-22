@@ -1,9 +1,11 @@
 package entity
 
 import (
+	"log"
+	"sync"
+
 	"git.emersion.fr/saucisse-royale/miko.git/server/delta"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
-	"log"
 )
 
 const frontendChanSize = 128
@@ -11,6 +13,7 @@ const frontendChanSize = 128
 type Frontend struct {
 	backend *Service
 	deltas  *delta.List
+	locker  sync.Mutex
 
 	Creates chan *CreateRequest
 	Updates chan *UpdateRequest
@@ -59,9 +62,14 @@ func (f *Frontend) IsDirty() bool {
 // Flush the diff pool. This returns the current one and replace it by a new one.
 func (f *Frontend) Flush() *message.EntityDiffPool {
 	log.Println("Flushing entity frontend, deltas count:", f.deltas.Len())
+
+	f.locker.Lock()
 	flattened := flattenDeltas(f.deltas)
-	pool := deltasToDiffPool(flattened)
 	f.deltas.Reset()
+	f.locker.Unlock()
+
+	pool := deltasToDiffPool(flattened)
+	pool.Tick = f.backend.tick.ToRelative()
 	return pool
 }
 

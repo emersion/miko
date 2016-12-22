@@ -1,9 +1,11 @@
 package terrain
 
 import (
-	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 	"math"
 	"time"
+
+	"git.emersion.fr/saucisse-royale/miko.git/server/clock"
+	"git.emersion.fr/saucisse-royale/miko.git/server/message"
 )
 
 func round(f float64) int {
@@ -55,8 +57,8 @@ func (s *Speed) GetNextPosition(current *Position, dt time.Duration) *Position {
 	sx, sy := s.Norm*math.Cos(s.Angle), s.Norm*math.Sin(s.Angle)
 
 	return &Position{
-		X: current.X + sx*float64(dt)/float64(time.Second),
-		Y: current.Y + sy*float64(dt)/float64(time.Second),
+		X: current.X + sx*float64(dt)/float64(clock.TickDuration),
+		Y: current.Y + sy*float64(dt)/float64(clock.TickDuration),
 	}
 }
 

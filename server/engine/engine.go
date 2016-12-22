@@ -49,7 +49,9 @@ func (e *Engine) processEntityRequest(req entity.Request) bool {
 }
 
 func (e *Engine) processActionRequest(req *action.Request) bool {
-	if req.Action.Id == game.ThrowBallAction {
+	// [GAME-SPECIFIC] Handle action requests according to game rules
+	switch req.Action.Id {
+	case game.ThrowBallAction:
 		log.Println("Accepting ball", req)
 
 		initiator := e.entity.Get(req.Action.Initiator)
@@ -62,7 +64,10 @@ func (e *Engine) processActionRequest(req *action.Request) bool {
 		ball.Attributes[game.TicksLeftAttr] = e.config.DefaultBallLifespan
 		ball.Attributes[game.SenderAttr] = initiator.Id
 		r := entity.NewCreateRequest(req.GetTick(), ball)
-		e.entity.AcceptRequest(r)
+		if err := e.entity.AcceptRequest(r); err != nil {
+			// This shouldn't fail
+			panic(err)
+		}
 
 		session := e.auth.GetSessionByEntity(req.Action.Initiator)
 
@@ -83,8 +88,7 @@ func (e *Engine) processRequest(req message.Request) {
 			return
 		}
 
-		err := e.action.AcceptRequest(r)
-		if err != nil {
+		if err := e.action.AcceptRequest(r); err != nil {
 			log.Println("Warning: Error while accepting action request:", err)
 		}
 	case entity.Request:
@@ -93,19 +97,48 @@ func (e *Engine) processRequest(req message.Request) {
 			return
 		}
 
-		err := e.entity.AcceptRequest(r)
-		if err != nil {
+		if err := e.entity.AcceptRequest(r); err != nil {
 			log.Println("Warning: Error while accepting entity request:", err)
 		}
 	}
 }
 
 func (e *Engine) moveEntities(t message.AbsoluteTick) {
-	for _, entity := range e.entity.List() {
-		req := e.mover.UpdateEntity(entity, t)
+	for _, ent := range e.entity.List() {
+		req, collidesWith := e.mover.UpdateEntity(ent, t)
+
+		// [GAME-SPECIFIC] Destroy balls when they collide
+		if collidesWith != nil && ent.Type == game.BallEntity {
+			req := entity.NewDeleteRequest(t, ent.Id)
+			if err := e.entity.AcceptRequest(req); err != nil {
+				panic(err) // This shouldn't happen
+			}
+
+			// If the ball collides with a player, decrease his health
+			if collidesWith, ok := collidesWith.(*message.Entity); ok && collidesWith.Type == game.PlayerEntity {
+				sender := ent.Attributes[game.SenderAttr].(message.EntityId)
+				if sender != collidesWith.Id {
+					health := collidesWith.Attributes[game.HealthAttr].(game.Health)
+
+					updated := entity.New()
+					updated.Attributes[game.HealthAttr] = health - 1
+					diff := message.NewEntityDiff()
+					diff.Attributes = true
+					req := entity.NewUpdateRequest(t, updated, diff)
+					if err := e.entity.AcceptRequest(req); err != nil {
+						panic(err) // This shouldn't happen
+					}
+				}
+			}
+			continue
+		}
+
 		if req != nil {
 			// Let's assume mover already did all security checks
-			e.entity.AcceptRequest(req)
+			if err := e.entity.AcceptRequest(req); err != nil {
+				// This should not fail
+				panic(err)
+			}
 		}
 	}
 }
@@ -114,7 +147,7 @@ func (e *Engine) broadcastChanges() {
 	if e.ctx.Entity.IsDirty() {
 		log.Println("Entity diff dirty, broadcasting to clients...")
 		err := e.srv.Write(func (w io.Writer) error {
-			return builder.SendEntitiesDiffToClients(w, e.clock.GetRelativeTick(), e.ctx.Entity.Flush())
+			return builder.SendEntitiesDiffToClients(w, e.ctx.Entity.Flush())
 		})
 		if err != nil {
 			log.Println("Cannot broadcast entities diff:", err)
@@ -201,7 +234,7 @@ func (e *Engine) executeTick(currentTick message.AbsoluteTick) {
 
 	// Initiate lag compensation if necessary
 	if acceptedMinTick < currentTick {
-		//log.Println("Back to the past!", currentTick, currentTick-acceptedMinTick)
+		log.Println("Back to the past!", currentTick, acceptedMinTick)
 		e.terrain.Rewind(e.terrain.GetTick() - acceptedMinTick)
 		e.entity.Rewind(e.entity.GetTick() - acceptedMinTick)
 	}
@@ -284,7 +317,11 @@ func (e *Engine) executeTick(currentTick message.AbsoluteTick) {
 		if val, ok := ent.Attributes[game.TicksLeftAttr]; ok {
 			ttl := val.(game.TicksLeft)
 			if ttl == 0 { // Destroy entity
-				e.entity.AcceptRequest(entity.NewDeleteRequest(currentTick, ent.Id))
+				err := e.entity.AcceptRequest(entity.NewDeleteRequest(currentTick, ent.Id))
+				if err != nil {
+					// This shouldn't fail
+					panic(err)
+				}
 			} else {
 				ent.Attributes[game.TicksLeftAttr] = ttl - 1
 			}
@@ -294,6 +331,12 @@ func (e *Engine) executeTick(currentTick message.AbsoluteTick) {
 	// Cleanup
 	e.entity.Cleanup(currentTick)
 	e.action.Cleanup(currentTick)
+
+	// DEBUG: print all entites
+	log.Printf("Tick %v finished, entities:\n", currentTick)
+	for _, ent := range e.entity.List() {
+		log.Printf("entity=%+v position=%+v speed=%+v", ent, ent.Position, ent.Speed)
+	}
 }
 
 func (e *Engine) listenNewClients() {
