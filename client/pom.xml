@@ -5,6 +5,13 @@
   <artifactId>miko</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 
+  <repositories>
+    <repository>
+      <id>delthas</id>
+      <url>https://maven.delthas.fr/</url>
+    </repository>
+  </repositories>
+
   <dependencies>
     <dependency>
       <groupId>org.codehaus.mojo</groupId>
