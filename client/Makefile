@@ -1,8 +1,10 @@
-all:
-	mvn package
+target/miko.jar:
+  mvn package
 
-start: all
-	java -jar target/miko-*.jar
+all: target/miko.jar
+
+start: target/miko.jar
+	java -jar target/miko.jar
 
 clean:
 	mvn clean
