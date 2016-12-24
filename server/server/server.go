@@ -102,12 +102,12 @@ func (s *Server) Write(write message.WriteFunc) error {
 			continue
 		}
 
-		go func() {
+		go func(c *Client) {
 			done <- c.Write(func(w io.Writer) error {
 				_, err := w.Write(buf.Bytes())
 				return err
 			})
-		}()
+		}(c)
 
 		n++
 	}

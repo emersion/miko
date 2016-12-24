@@ -145,7 +145,7 @@ func (e *Engine) moveEntities(t message.AbsoluteTick) {
 
 func (e *Engine) broadcastChanges() {
 	if e.ctx.Entity.IsDirty() {
-		log.Println("Entity diff dirty, broadcasting to clients...")
+		//log.Println("Entity diff dirty, broadcasting to clients...")
 		err := e.srv.Write(func (w io.Writer) error {
 			return builder.SendEntitiesDiffToClients(w, e.ctx.Entity.Flush())
 		})
