@@ -275,6 +275,7 @@ public final class OutputMessageFactory {
     dos.writeByte(terrainPoint.getBlockY());
   }
 
+  // DOS' writeString method writes some codepoints differently than what we want, use a custom readString method
   private static void writeString(DataOutputStream dos, String string) throws IOException {
     // check length by characters length first to avoid heavy data array creation
     // (length in bytes >= characters length)

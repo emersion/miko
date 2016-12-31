@@ -1,8 +1,6 @@
 package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.protocol.*;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -20,7 +18,6 @@ import java.util.stream.IntStream;
  */
 class EntityManager {
   private static final int TEMPORARY_ID_START = 64536;
-  private static Logger logger = LogManager.getLogger("miko.engine");
   private boolean[] usedTemporaryIds = new boolean[(1 << 16) - TEMPORARY_ID_START];
   // improves performance on temporaryid generating
   private int circularTemporaryId = usedTemporaryIds.length - 1;
@@ -31,11 +28,6 @@ class EntityManager {
 
   public void applyUpdate(long tick, EntityDataUpdate entityDataUpdate) {
     Entity entity = getEntity(entityDataUpdate.getEntityId());
-    if (entity == null) {
-      logger.warn("Tried applying update to entity {} at tick {} but it doesn't exist", entityDataUpdate.getEntityId(), tick);
-      // throw new RuntimeException();
-      return;
-    }
     entity.applyUpdate(tick, entityDataUpdate);
   }
 
@@ -51,11 +43,6 @@ class EntityManager {
 
   public void destroyEntity(long tick, int entityId) {
     Entity entity = getEntity(entityId);
-    if (entity == null) {
-      logger.warn("Tried destroying entity {} at tick {} but it doesn't exist", entityId, tick);
-      // throw new RuntimeException();
-      return;
-    }
     entity.disable(tick);
   }
 

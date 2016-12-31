@@ -1,6 +1,7 @@
 package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
+import fr.delthas.uitest.Drawer;
 import fr.delthas.uitest.Image;
 import org.lwjgl.BufferUtils;
 
@@ -17,7 +18,7 @@ import java.util.function.BiFunction;
 class TerrainImageManager {
   // TODO palette mode, old image modification, image deletion if too far away
   private BiFunction<Long, ChunkPoint, Chunk> chunkProvider;
-  private Image defaultImage;
+  private ChunkData defaultChunk;
   private long tick = Long.MAX_VALUE;
   private Map<ChunkPoint, ChunkData> map = new HashMap<>(50);
   private Set<ChunkPoint> toUpdate = new HashSet<>();
@@ -25,7 +26,7 @@ class TerrainImageManager {
 
   public TerrainImageManager(BiFunction<Long, ChunkPoint, Chunk> chunkProvider) {
     this.chunkProvider = chunkProvider;
-    defaultImage = updateChunk(null, TerrainManager.getDefaultChunk()).image;
+    defaultChunk = updateChunk(null, TerrainManager.getDefaultChunk());
   }
 
   public void updateTick(long newTick) {
@@ -52,24 +53,31 @@ class TerrainImageManager {
     updateChunk(chunkPoint, latestChunk);
   }
 
-  public Image getChunkImage(ChunkPoint chunkPoint) {
-    ChunkData chunkData = map.get(chunkPoint);
-    if (chunkData == null) {
-      return defaultImage;
+  public void drawChunk(Drawer drawer, ChunkPoint chunkPoint) {
+    ChunkData chunkData = map.getOrDefault(chunkPoint, defaultChunk);
+    if (chunkData.image == null) {
+      drawer.setColor(chunkData.chunk.getDefaultType().getColor());
+      drawer.fillRectangle(0, 0, 256, 256, false);
+    } else {
+      drawer.drawImage(0, 0, chunkData.image, false);
     }
-    return chunkData.image;
   }
 
   private ChunkData updateChunk(ChunkPoint chunkPoint, Chunk chunk) {
-    buffer.clear();
-    for (int y = 255; y >= 0; y--) {
-      for (int x = 0; x < 256; x++) {
-        int color = chunk.getBlock(x, y).getColor();
-        buffer.put((byte) (color >> 16 & 0xFF)).put((byte) (color >> 8 & 0xFF)).put((byte) (color & 0xFF));
+    ChunkData chunkData;
+    if (chunk.isUniform()) {
+      chunkData = new ChunkData(chunk);
+    } else {
+      buffer.clear();
+      for (int y = 255; y >= 0; y--) {
+        for (int x = 0; x < 256; x++) {
+          int color = chunk.getBlock(x, y).getColorInt();
+          buffer.put((byte) (color >> 16 & 0xFF)).put((byte) (color >> 8 & 0xFF)).put((byte) (color & 0xFF));
+        }
       }
+      Image image = Image.createImageRaw(buffer, 256, 256, true);
+      chunkData = new ChunkData(chunk, image);
     }
-    Image image = Image.createImageRaw(buffer, 256, 256, true);
-    ChunkData chunkData = new ChunkData(chunk, image);
     if (chunkPoint != null) {
       map.put(chunkPoint, chunkData);
     }
@@ -83,6 +91,11 @@ class TerrainImageManager {
     public ChunkData(Chunk chunk, Image image) {
       this.chunk = chunk;
       this.image = image;
+    }
+
+    public ChunkData(Chunk chunk) {
+      this.chunk = chunk;
+      image = null;
     }
   }
 }

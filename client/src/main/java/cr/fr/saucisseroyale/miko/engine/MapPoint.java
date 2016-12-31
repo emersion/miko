@@ -1,7 +1,7 @@
 package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.protocol.TerrainPoint;
-import cr.fr.saucisseroyale.miko.util.Pair.DoubleFloat;
+import cr.fr.saucisseroyale.miko.util.Pair.FloatFloat;
 
 /**
  * Un point immutable de la carte de jeu, en coordonnées à virgule flottante. Utilisé pour indiquer
@@ -54,10 +54,10 @@ public final class MapPoint {
     return new TerrainPoint((int) x, (int) y);
   }
 
-  public DoubleFloat subtract(MapPoint other) {
+  public FloatFloat subtract(MapPoint other) {
     float deltaX = x - other.x;
     float deltaY = y - other.y;
-    return new DoubleFloat(deltaX, deltaY);
+    return new FloatFloat(deltaX, deltaY);
   }
 
   @Override

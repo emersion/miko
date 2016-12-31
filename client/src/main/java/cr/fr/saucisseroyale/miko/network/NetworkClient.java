@@ -29,6 +29,7 @@ public class NetworkClient {
   private Socket socket;
   private ReceiverThread receiverThread;
   private SenderThread senderThread;
+  private String lastAddressString;
   private InetSocketAddress lastAddress;
   private Queue<FutureInputMessage> inputMessages = new ConcurrentLinkedQueue<>();
   private BlockingQueue<FutureOutputMessage> outputMessages = new LinkedBlockingQueue<>();
@@ -72,6 +73,7 @@ public class NetworkClient {
     receiverThread.start();
     senderThread.start();
     lastAddress = (InetSocketAddress) socket.getRemoteSocketAddress();
+    lastAddressString = address;
     logger.info("Connected to server {} at port {}", address, port);
   }
 
@@ -81,7 +83,7 @@ public class NetworkClient {
    * Le client peut se reconnecter ensuite à un serveur avec {@link #connect(String, int)}. Si des
    * messages sont encores reçus ou ajoutés à la liste d'envoi, ils seront ignorés.
    */
-  public synchronized void disconnect() {
+  public void disconnect() {
     if (receiverThread != null) {
       receiverThread.interrupt();
       receiverThread = null;
@@ -102,10 +104,17 @@ public class NetworkClient {
   }
 
   /**
-   * @return la dernière addresse de serveur auquel le client était connecté, ou null s'il n'a jamais été connecté.
+   * @return La dernière adresse de serveur auquel le client était connecté, ou null s'il n'a jamais été connecté.
    */
   public InetSocketAddress getLastAddress() {
     return lastAddress;
+  }
+
+  /**
+   * @return La dernière adresse de serveur auquel le client était connecté, tel qu'il était entré, ou null s'il n'a jamais été connecté.
+   */
+  public String getLastAddressString() {
+    return lastAddressString;
   }
 
   /**

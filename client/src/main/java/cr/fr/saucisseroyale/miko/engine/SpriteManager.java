@@ -2,6 +2,7 @@ package cr.fr.saucisseroyale.miko.engine;
 
 import cr.fr.saucisseroyale.miko.protocol.SpriteType;
 import cr.fr.saucisseroyale.miko.util.Pair.Int;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import fr.delthas.uitest.Drawer;
 import fr.delthas.uitest.Image;
 
@@ -15,6 +16,7 @@ import java.util.*;
  * Un gestionnaire de sprite gérant des sprites en mémoire et pouvant les afficher sur des
  * graphiques.
  */
+@SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
 public class SpriteManager {
   private Map<SpriteType, Sprite> sprites = new HashMap<>();
 

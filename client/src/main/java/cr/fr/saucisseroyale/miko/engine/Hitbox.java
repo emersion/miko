@@ -1,6 +1,6 @@
 package cr.fr.saucisseroyale.miko.engine;
 
-import cr.fr.saucisseroyale.miko.util.Pair.DoubleFloat;
+import cr.fr.saucisseroyale.miko.util.Pair.FloatFloat;
 import cr.fr.saucisseroyale.miko.util.SingleElementIterable;
 
 import java.util.ArrayList;
@@ -108,34 +108,34 @@ public abstract class Hitbox {
    * @return Les points du contour utile, en paires de décalage en x et y par rapport au centre de
    * la hitbox/l'entité.
    */
-  public abstract Iterable<DoubleFloat> getKeyPoints(float deltaX, float deltaY);
+  public abstract Iterable<FloatFloat> getKeyPoints(float deltaX, float deltaY);
 
   private static class Null extends Hitbox {
     @Override
-    public Iterable<DoubleFloat> getKeyPoints(float deltaX, float deltaY) {
+    public Iterable<FloatFloat> getKeyPoints(float deltaX, float deltaY) {
       return Collections.emptyList();
     }
   }
 
   private static class Circle extends Hitbox {
     private final float radius;
-    private final List<DoubleFloat> keyPoints;
+    private final List<FloatFloat> keyPoints;
 
     public Circle(float radius) {
       this.radius = radius;
       // for now approximate circle to ♦
       // TODO might be optimized to only 4 points
-      List<DoubleFloat> pairList = new ArrayList<>(5);
-      pairList.add(new DoubleFloat(0f, 0f));
-      pairList.add(new DoubleFloat(-radius, 0f));
-      pairList.add(new DoubleFloat(radius, 0f));
-      pairList.add(new DoubleFloat(0f, -radius));
-      pairList.add(new DoubleFloat(0f, radius));
+      List<FloatFloat> pairList = new ArrayList<>(5);
+      pairList.add(new FloatFloat(0f, 0f));
+      pairList.add(new FloatFloat(-radius, 0f));
+      pairList.add(new FloatFloat(radius, 0f));
+      pairList.add(new FloatFloat(0f, -radius));
+      pairList.add(new FloatFloat(0f, radius));
       keyPoints = Collections.unmodifiableList(pairList);
     }
 
     @Override
-    public Iterable<DoubleFloat> getKeyPoints(float deltaX, float deltaY) {
+    public Iterable<FloatFloat> getKeyPoints(float deltaX, float deltaY) {
       return keyPoints;
     }
   }
@@ -143,36 +143,36 @@ public abstract class Hitbox {
   private static class Rectangle extends Hitbox {
     private final float widthHalf;
     private final float heightHalf;
-    private final List<DoubleFloat> keyPoints;
+    private final List<FloatFloat> keyPoints;
 
     public Rectangle(float width, float height) {
       widthHalf = width / 2;
       heightHalf = height / 2;
-      List<DoubleFloat> pairs = new ArrayList<>(5);
-      pairs.add(new DoubleFloat(0f, 0f));
-      pairs.add(new DoubleFloat(widthHalf, heightHalf));
-      pairs.add(new DoubleFloat(widthHalf, -heightHalf));
-      pairs.add(new DoubleFloat(-widthHalf, heightHalf));
-      pairs.add(new DoubleFloat(-widthHalf, -heightHalf));
+      List<FloatFloat> pairs = new ArrayList<>(5);
+      pairs.add(new FloatFloat(0f, 0f));
+      pairs.add(new FloatFloat(widthHalf, heightHalf));
+      pairs.add(new FloatFloat(widthHalf, -heightHalf));
+      pairs.add(new FloatFloat(-widthHalf, heightHalf));
+      pairs.add(new FloatFloat(-widthHalf, -heightHalf));
       keyPoints = Collections.unmodifiableList(pairs);
     }
 
     @Override
-    public Iterable<DoubleFloat> getKeyPoints(float deltaX, float deltaY) {
+    public Iterable<FloatFloat> getKeyPoints(float deltaX, float deltaY) {
       if (deltaX == 0) {
         if (deltaY > 0) {
-          return new SingleElementIterable<>(new DoubleFloat(0f, heightHalf));
+          return new SingleElementIterable<>(new FloatFloat(0f, heightHalf));
         } else if (deltaY < 0) {
-          return new SingleElementIterable<>(new DoubleFloat(0f, -heightHalf));
+          return new SingleElementIterable<>(new FloatFloat(0f, -heightHalf));
         } else {
           return Collections.emptyList();
         }
       }
       if (deltaY == 0) {
         if (deltaX > 0) {
-          return new SingleElementIterable<>(new DoubleFloat(widthHalf, 0f));
+          return new SingleElementIterable<>(new FloatFloat(widthHalf, 0f));
         } else {
-          return new SingleElementIterable<>(new DoubleFloat(-widthHalf, 0f));
+          return new SingleElementIterable<>(new FloatFloat(-widthHalf, 0f));
         }
       }
       int excludeIndex;
@@ -181,7 +181,7 @@ public abstract class Hitbox {
       } else {
         excludeIndex = deltaY > 0 ? 3 : 4;
       }
-      List<DoubleFloat> points = new ArrayList<>(4);
+      List<FloatFloat> points = new ArrayList<>(4);
       for (int i = 0, n = keyPoints.size(); i < n; i++) {
         if (i != excludeIndex) {
           points.add(keyPoints.get(i));

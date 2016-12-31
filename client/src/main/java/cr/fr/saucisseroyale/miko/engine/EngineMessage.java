@@ -5,6 +5,7 @@ import cr.fr.saucisseroyale.miko.protocol.ChunkPoint;
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate;
 import cr.fr.saucisseroyale.miko.util.Pair;
 import cr.fr.saucisseroyale.miko.util.Pair.Int;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.List;
 
@@ -14,6 +15,7 @@ import java.util.List;
  * Note: L'ordre naturel donné par {@link #compareTo(EngineMessage)} n'est pas cohérent avec
  * {@link #equals(Object)} et ne sert que pour comparer l'ordre dans lequel traiter les messages.
  */
+@SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
 final class EngineMessage implements Comparable<EngineMessage> {
   private final long tick;
   private final Type type;

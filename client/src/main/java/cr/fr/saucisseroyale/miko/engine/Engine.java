@@ -5,13 +5,12 @@ import cr.fr.saucisseroyale.miko.network.OutputMessageFactory;
 import cr.fr.saucisseroyale.miko.protocol.*;
 import cr.fr.saucisseroyale.miko.protocol.EntityDataUpdate.Builder;
 import cr.fr.saucisseroyale.miko.util.MikoMath;
+import cr.fr.saucisseroyale.miko.util.Or;
 import cr.fr.saucisseroyale.miko.util.Pair;
-import cr.fr.saucisseroyale.miko.util.Pair.DoubleFloat;
+import cr.fr.saucisseroyale.miko.util.Pair.FloatFloat;
 import cr.fr.saucisseroyale.miko.util.Pair.Int;
-import cr.fr.saucisseroyale.miko.util.Triplet;
 import fr.delthas.uitest.Drawer;
 import fr.delthas.uitest.Font;
-import fr.delthas.uitest.Image;
 import fr.delthas.uitest.Ui;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -100,7 +99,7 @@ public class Engine {
     return lastTick;
   }
 
-  public void processNextTick(List<Triplet<Integer, Integer, Point.Double>> eventList) {
+  public void processNextTick(List<Or<Pair.DoubleDouble, Pair.IntBoolean>> eventList) {
     tickInputManager.addInput(lastTick, eventList);
     // redo logic until current tick
     processBufferedMessages();
@@ -122,13 +121,18 @@ public class Engine {
     startedup = true;
   }
 
-  public void render(Drawer drawer, float alpha, Point.Double mousePosition) {
+  public boolean render(Drawer drawer, float alpha, Point.Double mousePosition) {
     if (!startedup) {
-      return;
+      return false;
     }
-    TerrainPoint playerPoint = entityManager.getMapPoint(lastTick, playerEntityId).toTerrainPoint();
-    int xOffset = (int) (MOUSE_SCREEN_MOVING * (mousePosition.x - Ui.getWidth() / 2));
-    int yOffset = (int) (MOUSE_SCREEN_MOVING * (mousePosition.y - Ui.getHeight() / 2));
+    TerrainPoint playerPoint;
+    if (entityManager.getMapPoint(lastTick - 1, playerEntityId) == null) {
+      playerPoint = entityManager.getMapPoint(lastTick, playerEntityId).toTerrainPoint();
+    } else {
+      playerPoint = entityManager.getMapPoint(lastTick - 1, playerEntityId).toTerrainPoint();
+    }
+    int xOffset = (int) (MOUSE_SCREEN_MOVING * (mousePosition.x - Ui.getWidth() / 2.0));
+    int yOffset = (int) (MOUSE_SCREEN_MOVING * (mousePosition.y - Ui.getHeight() / 2.0));
     TerrainPoint drawCenterPoint = playerPoint.getTranslated(xOffset, yOffset);
     int minChunkX = drawCenterPoint.getChunkX() - (Ui.getWidth() / 2 + 255 - 1 - drawCenterPoint.getBlockX()) / 256 - 1;
     int maxChunkX = drawCenterPoint.getChunkX() + (Ui.getWidth() / 2 - 1 + drawCenterPoint.getBlockX()) / 256 + 1;
@@ -136,10 +140,11 @@ public class Engine {
     int maxChunkY = drawCenterPoint.getChunkY() + (Ui.getHeight() / 2 - 1 + drawCenterPoint.getBlockY()) / 256 + 1;
     for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
       for (int chunkY = minChunkY; chunkY <= maxChunkY; chunkY++) {
-        Image image = terrainImageManager.getChunkImage(new ChunkPoint(chunkX, chunkY));
         int xMinPos = (chunkX - drawCenterPoint.getChunkX()) * 256 + Ui.getWidth() / 2 - drawCenterPoint.getBlockX();
         int yMinPos = (chunkY - drawCenterPoint.getChunkY()) * 256 + Ui.getHeight() / 2 - drawCenterPoint.getBlockY();
-        drawer.drawImage(xMinPos, yMinPos, image, false);
+        drawer.pushTranslate(xMinPos, yMinPos);
+        terrainImageManager.drawChunk(drawer, new ChunkPoint(chunkX, chunkY));
+        drawer.popTranslate();
       }
     }
 
@@ -186,6 +191,8 @@ public class Engine {
       drawer.drawText(10, yChatPosition, line, Font.COMIC, 12, false, false);
       yChatPosition -= chatLineHeight;
     }
+
+    return true;
   }
 
   public void freeTime() {
@@ -253,11 +260,11 @@ public class Engine {
       EntityType entityType = entityManager.getEntityType(tick, entityId);
       // check collisions
       // check terrain collisions
-      DoubleFloat delta = newMapPoint.subtract(mapPoint);
+      FloatFloat delta = newMapPoint.subtract(mapPoint);
       int width = (int) delta.getFirst();
       int height = (int) delta.getSecond();
       Hitbox hitbox = entityManager.getSpriteType(tick, entityId).getHitbox();
-      for (DoubleFloat offset : hitbox.getKeyPoints(delta.getFirst(), delta.getSecond())) {
+      for (FloatFloat offset : hitbox.getKeyPoints(delta.getFirst(), delta.getSecond())) {
         TerrainPoint start = mapPoint.getTranslated(offset.getFirst(), offset.getSecond()).toTerrainPoint();
         // brensenham algorithm
         // taken from http://tech-algorithm.com/articles/drawing-line-using-bresenham-algorithm/
@@ -344,7 +351,7 @@ public class Engine {
 
     // process actions
     float ballSendAngle = tickInput.getBallSendRequest();
-    if (!Float.isNaN(ballSendAngle)) {
+    if (tick == lastTick && !Float.isNaN(ballSendAngle)) {
       int cooldown = (int) entityManager.getObjectAttribute(oldTick, playerEntityId, ObjectAttribute.COOLDOWN_ONE);
       if (cooldown <= 0) {
         entityManager.setObjectAttribute(tick, playerEntityId, ObjectAttribute.COOLDOWN_ONE, config.getPlayerBallCooldown());
@@ -356,6 +363,7 @@ public class Engine {
                         .speedNorm(config.getDefaultBallSpeed()).spriteType(SpriteType.BALL).objectAttribute(ObjectAttribute.SENDER, playerEntityId)
                         .objectAttribute(ObjectAttribute.TICKS_LEFT, config.getDefaultBallLifespan()).build();
         entityManager.createEntity(tick, ball);
+        System.out.println("createmoi " + tick + " " + position.getX() + " " + position.getY() + " " + ballSendAngle + " " + config.getDefaultBallSpeed());
         // notify server of ball send
         messageOutput.accept(OutputMessageFactory.action(tick, new Action(ActionType.SEND_BALL, new Pair<>(ballSendAngle, ballId))));
       }
@@ -371,6 +379,13 @@ public class Engine {
     if (tick == lastTick) {
       terrainImageManager.updateTick(lastTick);
     }
+
+    entityManager.getEntitiesStream(tick).forEach(entityId -> {
+      if (entityManager.getEntityType(tick, entityId) != EntityType.BALL) {
+        return;
+      }
+      System.out.println("etatmoi " + tick + " " + entityId + " " + entityManager.getMapPoint(tick, entityId).getX() + " " + entityManager.getMapPoint(tick, entityId).getY() + " " + entityManager.getSpeedAngle(tick, entityId) + " " + entityManager.getSpeedNorm(tick, entityId));
+    });
   }
 
   private void processAction(long tick, int entityId, Action action) {
@@ -473,6 +488,7 @@ public class Engine {
       case ENTITY_CREATE:
         EntityDataUpdate entityDataCreate = (EntityDataUpdate) data[0];
         entityManager.createEntity(tick, entityDataCreate);
+        System.out.println("create " + tick + " " + entityDataCreate.getEntityId() + " " + entityDataCreate.getPosition().getX() + " " + entityDataCreate.getPosition().getY() + " " + entityDataCreate.getSpeedAngle() + " " + entityDataCreate.getSpeedNorm() + " " + entityDataCreate.getEntityType());
         logger.debug("Entity created with entityId {} on tick {}", entityDataCreate.getEntityId(), tick);
         break;
       case ENTITIES_UPDATE:
@@ -480,6 +496,7 @@ public class Engine {
         List<EntityDataUpdate> entityDataUpdateList = (List<EntityDataUpdate>) data[0];
         for (EntityDataUpdate entityDataUpdate : entityDataUpdateList) {
           entityManager.applyUpdate(tick, entityDataUpdate);
+          System.out.println("update " + tick + " " + entityDataUpdate.getEntityId() + " " + (entityDataUpdate.hasPosition() ? entityDataUpdate.getPosition().getX() + " " + entityDataUpdate.getPosition().getY() + " " : "") + (entityDataUpdate.hasSpeedAngle() ? entityDataUpdate.getSpeedAngle() : "") + " " + (entityDataUpdate.hasSpeedNorm() ? entityDataUpdate.getSpeedNorm() : ""));
         }
         logger.debug("Entities updated on tick {}", tick);
         break;

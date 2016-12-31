@@ -3,6 +3,8 @@ package cr.fr.saucisseroyale.miko.protocol;
 import cr.fr.saucisseroyale.miko.util.IdSaver;
 import cr.fr.saucisseroyale.miko.util.UniquelyIdentifiable;
 
+import java.awt.*;
+
 /**
  * Un type de case de terrain.
  */
@@ -20,12 +22,14 @@ public enum TerrainType implements UniquelyIdentifiable {
   }
 
   private final int id;
-  private final int color;
+  private final int colorInt;
+  private final Color color;
 
   TerrainType(int id, int red, int green, int blue) {
     assert id < 1 << 8 && id >= 0 : "l'identifiant de l'enum est trop petit ou trop grand";
     this.id = id;
-    color = red << 16 | green << 8 | blue;
+    colorInt = red << 16 | green << 8 | blue;
+    color = new Color(colorInt, false);
   }
 
   /**
@@ -49,7 +53,14 @@ public enum TerrainType implements UniquelyIdentifiable {
   /**
    * @return L'entier représentant la couleur de cette case sous la forme 0x00RRGGBB.
    */
-  public int getColor() {
+  public int getColorInt() {
+    return colorInt;
+  }
+
+  /**
+   * @return La couleur de cette case.
+   */
+  public Color getColor() {
     return color;
   }
 }

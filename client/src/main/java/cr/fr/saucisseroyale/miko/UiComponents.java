@@ -1,12 +1,13 @@
 package cr.fr.saucisseroyale.miko;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import fr.delthas.uitest.*;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.BiConsumer;
 import java.util.prefs.Preferences;
 
 @SuppressWarnings("serial")
+@SuppressFBWarnings("ICAST_IDIV_CAST_TO_DOUBLE")
 final class UiComponents {
   private static final Preferences uiPrefsNode = Preferences.userRoot().node("miko.ui");
 
@@ -16,10 +17,11 @@ final class UiComponents {
     private Label statusLabel;
 
     public Connect(Runnable backCallback, String address, int port, BiConsumer<String, Integer> connectCallback, Runnable optionsCallback) {
+      setOpaque(true);
       addComponent(new Component() {
         @Override
         protected boolean pushKeyButton(double x, double y, int key, boolean down) {
-          if (key != GLFW.GLFW_KEY_ESCAPE || !down) {
+          if (key != Ui.KEY_ESCAPE || !down) {
             return false;
           }
           backCallback.run();
@@ -31,7 +33,7 @@ final class UiComponents {
       TextField addressField = new TextField(address);
       addComponent(Ui.getWidth() * 6 / 10, Ui.getHeight() / 2 + 10, Ui.getWidth() * 3 / 10, 40, addressField);
       TextField portField = new TextField(Integer.toString(port));
-      portField.setListener(s -> {
+      portField.setPredicate(s -> {
         try {
           int i = Integer.parseInt(s);
           return i >= 0 && i < 32768;
@@ -64,10 +66,11 @@ final class UiComponents {
     private Button loginButton;
 
     public Login(Runnable backCallback, BiConsumer<String, String> registerCallback, BiConsumer<String, String> loginCallback) {
+      setOpaque(true);
       addComponent(new Component() {
         @Override
         protected boolean pushKeyButton(double x, double y, int key, boolean down) {
-          if (key != GLFW.GLFW_KEY_ESCAPE || !down) {
+          if (key != Ui.KEY_ESCAPE || !down) {
             return false;
           }
           backCallback.run();
@@ -77,8 +80,11 @@ final class UiComponents {
       addComponent(Ui.getWidth() / 10, Ui.getHeight() / 2 + 10, Ui.getWidth() * 3 / 10, 40, new Label("Nom d'utilisateur"));
       addComponent(Ui.getWidth() / 10, Ui.getHeight() / 2 - 50, Ui.getWidth() * 3 / 10, 40, new Label("Mot de passe"));
       TextField userField = new TextField();
+      userField.setHintText("user");
       addComponent(Ui.getWidth() * 6 / 10, Ui.getHeight() / 2 + 10, Ui.getWidth() * 3 / 10, 40, userField);
       TextField passField = new TextField();
+      passField.setHidden(new String(new int[]{8226}, 0, 1));
+      passField.setHintText("pwd");
       addComponent(Ui.getWidth() * 6 / 10, Ui.getHeight() / 2 - 50, Ui.getWidth() * 3 / 10, 40, passField);
       loginButton = new Button("Se connecter");
       loginButton.setListener((x, y) -> {
@@ -105,10 +111,11 @@ final class UiComponents {
 
   public static class Options extends Layer {
     public Options(Runnable backCallback, boolean fullscreen) {
+      setOpaque(true);
       addComponent(new Component() {
         @Override
         protected boolean pushKeyButton(double x, double y, int key, boolean down) {
-          if (key != GLFW.GLFW_KEY_ESCAPE || !down) {
+          if (key != Ui.KEY_ESCAPE || !down) {
             return false;
           }
           backCallback.run();
@@ -132,7 +139,7 @@ final class UiComponents {
       addComponent(new Component() {
         @Override
         protected boolean pushKeyButton(double x, double y, int key, boolean down) {
-          if (key != GLFW.GLFW_KEY_ESCAPE || !down) {
+          if (key != Ui.KEY_ESCAPE || !down) {
             return false;
           }
           backCallback.run();
@@ -142,13 +149,13 @@ final class UiComponents {
       addComponent(new Component() {
         @Override
         protected boolean pushKeyButton(double x, double y, int key, boolean down) {
-          inputStateManager.pushKeyButton(x, y, key, down);
+          inputStateManager.pushKeyButton(key, down);
           return true;
         }
 
         @Override
         protected boolean pushMouseButton(double x, double y, int button, boolean down) {
-          inputStateManager.pushMouseButton(x, y, button, down);
+          inputStateManager.pushMouseButton(button, down);
           return true;
         }
 
@@ -163,6 +170,41 @@ final class UiComponents {
           render.accept(inputState, drawer);
         }
       });
+    }
+  }
+
+  public static class Loading extends Layer {
+    private long loadingStart;
+
+    public Loading() {
+      setOpaque(true);
+      addComponent(new Component() {
+        @Override
+        protected void render(InputState inputState, Drawer drawer) {
+          double maxScreen = Double.min(Ui.getWidth(), Ui.getHeight()) / 2;
+          double max = -maxScreen * Math.expm1(-(System.nanoTime() - loadingStart) / 2000000000.0);
+          double temp = (System.nanoTime() - loadingStart) / (5000000.0 * 50);
+          double offset = (temp - Math.floor(temp)) * 50.0;
+          int n = (int) ((max + offset) / 50);
+          for (int i = 1; i <= n; i++) {
+            drawer.drawLine(Ui.getWidth() / 2 + i * 50 - offset, Ui.getHeight() / 2, Ui.getWidth() / 2, Ui.getHeight() / 2 + i * 50 - offset);
+            drawer.drawLine(Ui.getWidth() / 2 + i * 50 - offset, Ui.getHeight() / 2, Ui.getWidth() / 2, Ui.getHeight() / 2 - i * 50 + offset);
+            drawer.drawLine(Ui.getWidth() / 2 - i * 50 + offset, Ui.getHeight() / 2, Ui.getWidth() / 2, Ui.getHeight() / 2 + i * 50 - offset);
+            drawer.drawLine(Ui.getWidth() / 2 - i * 50 + offset, Ui.getHeight() / 2, Ui.getWidth() / 2, Ui.getHeight() / 2 - i * 50 + offset);
+            if (i == 0) {
+              break;
+            }
+            if (i == n) {
+              i = -1;
+              offset = max;
+            }
+          }
+        }
+      });
+    }
+
+    public void restartLoading() {
+      loadingStart = System.nanoTime();
     }
   }
 }

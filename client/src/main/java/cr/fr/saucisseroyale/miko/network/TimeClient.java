@@ -1,5 +1,6 @@
 package cr.fr.saucisseroyale.miko.network;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -19,6 +20,7 @@ public class TimeClient {
   private volatile boolean clockDifferenceReady;
   private volatile long clockDifference;
 
+  @SuppressFBWarnings("UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
   public TimeClient() {
     Thread timeSenderThread = new Thread(() -> {
       while (true) {
@@ -32,7 +34,7 @@ public class TimeClient {
           }
         }
         try {
-          Thread.sleep(20);
+          Thread.sleep(5);
         } catch (InterruptedException ignore) {
           return;
         }
@@ -57,9 +59,25 @@ public class TimeClient {
         long newTimestamp = System.nanoTime() / 1000;
         long latency = (newTimestamp - localTimestamp) / 2;
         messages.add(new TimeMessage(latency, localTimestamp + latency - remoteTimestamp));
-        clockDifference = (long) messages.stream().mapToLong(t -> t.clockDifference).average().getAsDouble();
-        if (messages.size() > 10) {
-          clockDifferenceReady = true;
+        if (messages.size() > 10000) {
+          messages.remove(0);
+        }
+        double meanLatency = messages.stream().mapToLong(t -> t.latency).average().getAsDouble();
+        if (messages.size() > 400) {
+          int count = 0;
+          long sum = 0;
+          for (TimeMessage timeMessage : messages) {
+            double delta = timeMessage.latency - meanLatency;
+            if (delta < -1000 || delta > 1000) {
+              continue;
+            }
+            count++;
+            sum += timeMessage.clockDifference;
+          }
+          if (count > 300) {
+            clockDifferenceReady = true;
+            clockDifference = (long) (sum / (double) count);
+          }
         }
       }
       clockDifferenceReady = false;

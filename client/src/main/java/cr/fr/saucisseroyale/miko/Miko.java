@@ -1,9 +1,6 @@
 package cr.fr.saucisseroyale.miko;
 
-import cr.fr.saucisseroyale.miko.UiComponents.Connect;
-import cr.fr.saucisseroyale.miko.UiComponents.Login;
-import cr.fr.saucisseroyale.miko.UiComponents.MikoLayer;
-import cr.fr.saucisseroyale.miko.UiComponents.Options;
+import cr.fr.saucisseroyale.miko.UiComponents.*;
 import cr.fr.saucisseroyale.miko.engine.Chunk;
 import cr.fr.saucisseroyale.miko.engine.Engine;
 import cr.fr.saucisseroyale.miko.network.FutureInputMessage;
@@ -13,10 +10,8 @@ import cr.fr.saucisseroyale.miko.network.TimeClient;
 import cr.fr.saucisseroyale.miko.protocol.*;
 import cr.fr.saucisseroyale.miko.util.Pair;
 import cr.fr.saucisseroyale.miko.util.Pair.Int;
-import fr.delthas.uitest.Drawer;
-import fr.delthas.uitest.Icon;
-import fr.delthas.uitest.InputState;
-import fr.delthas.uitest.Ui;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import fr.delthas.uitest.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -31,12 +26,13 @@ public class Miko implements MessageHandler {
   private static final long SERVER_TIMEOUT = 20 * 1000000000L; // seconds
   private static final String DEFAULT_SERVER_ADDRESS = "localhost";
   private static final int DEFAULT_SERVER_PORT = 9999;
-  private static final Preferences uiPrefsNode = Preferences.userRoot().node("miko.ui");
+  private static final Preferences prefsNode = Preferences.userRoot().node("miko.main");
   private static Logger logger = LogManager.getLogger("miko.main");
   private static Connect connect;
   private static Login login;
   private static Options options;
   private static MikoLayer mikoLayer;
+  private static Loading loading;
   private long lastMessageReceived = Long.MAX_VALUE;
   private boolean pingSent;
   private String username;
@@ -53,13 +49,6 @@ public class Miko implements MessageHandler {
   private float alpha; // for #render(), updated each loop
 
   public static void main(String... args) throws Exception {
-    if (args.length == 1) {
-      if (args[0].equalsIgnoreCase("fs")) {
-        uiPrefsNode.putBoolean("fullscreen", true);
-      } else if (args[0].equalsIgnoreCase("nfs")) {
-        uiPrefsNode.putBoolean("fullscreen", false);
-      }
-    }
     logger.info("Starting Miko version {}", PROTOCOL_VERSION);
     Miko miko = new Miko();
     miko.run();
@@ -84,10 +73,12 @@ public class Miko implements MessageHandler {
   private void initWindow() throws IOException {
 
     Ui.getUi().create("Miko", Icon.createIcon("icon.png"));
-    connect = new Connect(this::backRequested, DEFAULT_SERVER_ADDRESS, DEFAULT_SERVER_PORT, this::connectRequested, this::optionsRequested);
+    connect = new Connect(this::backRequested, prefsNode.get("address", DEFAULT_SERVER_ADDRESS), prefsNode.getInt("port", DEFAULT_SERVER_PORT), this::connectRequested, this::optionsRequested);
     login = new Login(this::backRequested, this::registerRequested, this::loginRequested);
     options = new Options(this::backRequested, true);
     mikoLayer = new MikoLayer(this::backRequested, this::render, inputStateManager);
+    loading = new Loading();
+    loading.push();
 
     // boolean fullscreen = uiPrefsNode.getBoolean("fullscreen", false);
   }
@@ -99,7 +90,14 @@ public class Miko implements MessageHandler {
         break;
       case EXIT:
         while (accumulator >= TICK_TIME) {
-          engine.processNextTick(inputStateManager.getEventsAndFlush());
+          try {
+            engine.processNextTick(inputStateManager.getEventsAndFlush());
+          } catch (RuntimeException e) {
+            logger.error("Runtime error in engine logic", e);
+            connect.setStatusText("Erreur dans l'engine lors du jeu.");
+            disconnect();
+            return;
+          }
           accumulator -= TICK_TIME;
         }
         break;
@@ -137,9 +135,6 @@ public class Miko implements MessageHandler {
   }
 
   private void render(InputState inputState, Drawer drawer) {
-    if (state != MikoState.EXIT) {
-      return;
-    }
     engine.render(drawer, alpha, new Point.Double(inputState.getMouseX(), inputState.getMouseY()));
   }
 
@@ -210,6 +205,7 @@ public class Miko implements MessageHandler {
     changeStateTo(MikoState.OPTIONS);
   }
 
+  @SuppressFBWarnings("SF_SWITCH_FALLTHROUGH")
   private void backRequested() {
     switch (state) {
       case NETWORK:
@@ -222,7 +218,6 @@ public class Miko implements MessageHandler {
       case EXIT:
         // send exit message...
         networkClient.putMessage(OutputMessageFactory.exit(ExitType.CLIENT_QUIT));
-        //$FALL-THROUGH$
       case CONNECTION:
       case JOIN:
       case LOGIN:
@@ -242,7 +237,14 @@ public class Miko implements MessageHandler {
   private void changeStateTo(MikoState newState) {
     logger.trace("Changing state from {} to {}", state, newState);
     state = newState;
-    Ui.getUi().pop();
+    Layer top;
+    while (true) {
+      top = Ui.getUi().top();
+      if (top == null || top == loading) {
+        break;
+      }
+      Ui.getUi().pop();
+    }
     switch (state) {
       case CONNECTION_REQUEST:
         Ui.getUi().push(connect);
@@ -268,6 +270,9 @@ public class Miko implements MessageHandler {
         break;
       default:
         break;
+    }
+    if (state != MikoState.EXIT && state != MikoState.CONFIG && state != MikoState.JOIN) {
+      loading.restartLoading();
     }
   }
 
@@ -546,6 +551,8 @@ public class Miko implements MessageHandler {
     }
     logger.debug("Received server config");
     this.config = config;
+    prefsNode.put("address", networkClient.getLastAddressString());
+    prefsNode.putInt("port", networkClient.getLastAddress().getPort());
     login.setStatusText("Connexion réussie, connectez ou enregistrez-vous.");
     changeStateTo(MikoState.LOGIN_REQUEST);
     timeClient.connect(networkClient.getLastAddress().getAddress().getHostAddress(), config.getTimeServerPort());

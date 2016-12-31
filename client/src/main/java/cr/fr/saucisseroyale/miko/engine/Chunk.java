@@ -68,6 +68,10 @@ public final class Chunk {
     return new ArrayIterable<>(blocks);
   }
 
+  public boolean isUniform() {
+    return blocks.length == 0;
+  }
+
   /**
    * @return Le type de terrain par défaut.
    */

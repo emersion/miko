@@ -153,10 +153,14 @@ class Snapshots<T> {
    * @param tick Le tick (inclus) jusqu'auquel les snapshots ne seront plus demandés.
    */
   public void disposeUntilTick(long tick) {
+    if (snapshots.isEmpty()) {
+      return;
+    }
     ListIterator<MutablePair.Long<T>> snapshotIterator = snapshots.listIterator();
     while (snapshotIterator.hasNext()) {
       MutablePair.Long<T> pair = snapshotIterator.next();
       if (pair.getFirst() > tick) {
+        snapshotIterator.previous();
         break;
       }
     }

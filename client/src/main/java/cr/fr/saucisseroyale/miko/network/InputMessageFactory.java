@@ -271,6 +271,7 @@ final class InputMessageFactory {
             }
             Object objectAttributeData = readObject(dis, objectAttribute.getDataType());
             builder.objectAttribute(objectAttribute, objectAttributeData);
+            System.out.println("attension " + objectAttribute + " " + objectAttributeData);
           }
           break;
         default:
@@ -319,8 +320,7 @@ final class InputMessageFactory {
     return new Config(maxRollbackTicks, timeServerPort, defaultPlayerSpeed, playerBallCooldown, defaultBallSpeed, defaultBallLifespan);
   }
 
-  // On utilise notre propre méthode de lecture de String au cas où le protocole change (au lieu
-  // d'utiliser dis.readUTF() qui par coïncidence utilise la même méthode que nous)
+  // DIS' readString method reads some codepoints differently than what we want, use a custom readString method
   private static String readString(DataInputStream dis) throws IOException {
     int length = dis.readUnsignedShort();
     byte[] data = new byte[length];
