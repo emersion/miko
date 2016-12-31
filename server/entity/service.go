@@ -4,10 +4,11 @@ package entity
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	"git.emersion.fr/saucisse-royale/miko.git/server/delta"
 	"git.emersion.fr/saucisse-royale/miko.git/server/message"
+
+	//"log"
 )
 
 func copyEntityFromDiff(src *Entity, diff *message.EntityDiff) *Entity {
@@ -123,7 +124,7 @@ func (s *Service) acceptUpdate(req *UpdateRequest) error {
 	// Add delta to history
 	if req.requested {
 		s.deltas.Insert(d)
-		log.Println("Accepted update request for entity", entity.Id)
+		//log.Println("Accepted update request for entity", entity.Id)
 	}
 	// TODO: fix this
 	// && !current.ToMessage().EqualsWithDiff(entity.ToMessage(), diff)

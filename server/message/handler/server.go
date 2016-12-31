@@ -170,6 +170,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		}
 
 		// Send new entity to this client
+		log.Println("Sending new entity to client")
 		err = conn.Write(func (w io.Writer) error {
 			return builder.SendEntityCreate(w, ctx.Clock.GetRelativeTick(), session.Entity)
 		})
@@ -182,6 +183,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		conn.State = message.Ready
 
 		// Broadcast player_joined to everyone (including this client)
+		log.Println("Broadcasting player joined")
 		err = conn.Broadcast(func (w io.Writer) error {
 			return builder.SendPlayerJoined(w, ctx.Clock.GetRelativeTick(), session.Entity.Id, username)
 		})
@@ -231,7 +233,7 @@ var serverHandlers = &map[message.Type]TypeHandler{
 		t := ctx.Clock.ToAbsoluteTick(readTick(conn))
 
 		entity, diff := ReadEntity(conn)
-		log.Printf("Received entity update: tick=%v entity=%+v position=%+v speed=%+v\n", t, entity, entity.Position, entity.Speed)
+		//log.Printf("Received entity update: tick=%v entity=%+v position=%+v speed=%+v\n", t, entity, entity.Position, entity.Speed)
 		ctx.Entity.Update(entity, diff, t)
 
 		return nil

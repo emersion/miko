@@ -56,13 +56,13 @@ func (m *Mover) UpdateEntity(ent *entity.Entity, now message.AbsoluteTick) (req 
 		last = now
 	}
 
-	m.lastUpdates[ent.Id] = now
 	dt := time.Duration(now-last) * clock.TickDuration // Convert to seconds
+  	if dt < 0 {
+		return // TODO: figure out if it's the right thing to do here
+	}
+  	m.lastUpdates[ent.Id] = now
 	if dt == 0 {
 		return
-	}
-	if dt < 0 {
-		return // TODO: figure out if it's the right thing to do here
 	}
 
 	speed := ent.Speed

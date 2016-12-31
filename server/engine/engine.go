@@ -145,7 +145,7 @@ func (e *Engine) moveEntities(t message.AbsoluteTick) {
 
 func (e *Engine) broadcastChanges() {
 	if e.ctx.Entity.IsDirty() {
-		log.Println("Entity diff dirty, broadcasting to clients...")
+		//log.Println("Entity diff dirty, broadcasting to clients...")
 		err := e.srv.Write(func (w io.Writer) error {
 			return builder.SendEntitiesDiffToClients(w, e.ctx.Entity.Flush())
 		})
@@ -234,7 +234,7 @@ func (e *Engine) executeTick(currentTick message.AbsoluteTick) {
 
 	// Initiate lag compensation if necessary
 	if acceptedMinTick < currentTick {
-		log.Println("Back to the past!", currentTick, acceptedMinTick)
+		//log.Println("Back to the past!", currentTick, acceptedMinTick)
 		e.terrain.Rewind(e.terrain.GetTick() - acceptedMinTick)
 		e.entity.Rewind(e.entity.GetTick() - acceptedMinTick)
 	}
@@ -333,10 +333,10 @@ func (e *Engine) executeTick(currentTick message.AbsoluteTick) {
 	e.action.Cleanup(currentTick)
 
 	// DEBUG: print all entites
-	log.Printf("Tick %v finished, entities:\n", currentTick)
-	for _, ent := range e.entity.List() {
-		log.Printf("entity=%+v position=%+v speed=%+v", ent, ent.Position, ent.Speed)
-	}
+	//log.Printf("Tick %v finished, entities:\n", currentTick)
+	//for _, ent := range e.entity.List() {
+	//	log.Printf("entity=%+v position=%+v speed=%+v", ent, ent.Position, ent.Speed)
+	//}
 }
 
 func (e *Engine) listenNewClients() {

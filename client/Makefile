@@ -1,5 +1,5 @@
 target/miko.jar:
-  mvn package
+	mvn package
 
 all: target/miko.jar
 
